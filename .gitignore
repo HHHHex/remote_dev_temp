@@ -1,0 +1,67 @@
+# Visual Studio projects
+*.sln.docstates
+*.suo
+*.user
+*.vcxproj.user
+*.vcxproj.filters
+*.ncb
+*.sdf
+ipch/
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+Win32/
+ARM/
+ARM64/
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_obj
+*.log
+*.vspscc
+*.vssscc
+.builds
+.vs/
+*.tlog
+
+# Executables
+*.exe
+*.dll
+*.appx
+*.msix
+*.msm
+*.msp
+
+# NuGet
+*.nupkg
+*.nuget.props
+*.nuget.targets
+
+# vcpkg
+vcpkg/
+*.vcpkg
+*.vcpkg.json
+*.vcpkg-root
+
+# Other
+new_agora_sdk.zip
+temp_sdk/
+logs/
+sdk_backup/
+*.bak
+.editorconfig 

@@ -1,0 +1,3 @@
+C:/Users/cyg/source/repos/ThousChannel/ThousChannel/build/CMakeFiles/ThousChannel.dir
+C:/Users/cyg/source/repos/ThousChannel/ThousChannel/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/cyg/source/repos/ThousChannel/ThousChannel/build/CMakeFiles/ZERO_CHECK.dir

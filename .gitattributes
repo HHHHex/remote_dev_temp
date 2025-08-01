@@ -1,0 +1,56 @@
+# Handle line endings automatically for files detected as text
+# and enforce LF line endings.
+* text=auto eol=lf
+
+#
+# The above will handle all files NOT found below
+#
+
+# These files are text and should be normalized
+*.c text
+*.cpp text
+*.h text
+*.hpp text
+*.cs text
+*.java text
+*.js text
+*.ts text
+*.json text
+*.xml text
+*.yml text
+*.yaml text
+*.md text
+*.txt text
+*.py text
+*.ps1 text
+*.sh text
+*.bat text
+*.sln text
+*.vcxproj text
+*.vcxproj.filters text
+*.vcxproj.user text
+*.rc text
+*.cmake text
+*.gradle text
+*.kts text
+*.podspec text
+*.plist text
+*.swift text
+*.entitlements text
+
+# These files are binary and should be left untouched
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.dll binary
+*.lib binary
+*.so binary
+*.a binary
+*.exe binary
+*.pdb binary
+*.jar binary
+*.zip binary
+*.nupkg binary 

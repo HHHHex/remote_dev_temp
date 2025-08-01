@@ -1,0 +1,176 @@
+﻿//{{NO_DEPENDENCIES}}
+// 生成的 Microsoft Visual C++ 包含文件。
+// 由 ThousChannel.rc 使用
+//
+#define IDD_ABOUTBOX				100
+#define IDP_OLE_INIT_FAILED			100
+#define IDR_POPUP_EDIT				119
+#define ID_STATUSBAR_PANE1			120
+#define ID_STATUSBAR_PANE2			121
+#define IDS_STATUS_PANE1			122
+#define IDS_STATUS_PANE2			123
+#define IDS_TOOLBAR_STANDARD		124
+#define IDS_TOOLBAR_CUSTOMIZE		125
+#define ID_VIEW_CUSTOMIZE			126
+#define IDR_MAINFRAME				128
+#define IDR_MAINFRAME_256			129
+#define IDR_ThousChannelTYPE				130
+#define ID_WINDOW_MANAGER			131
+#define ID_VIEW_FILEVIEW			133
+#define ID_VIEW_CLASSVIEW			134
+#define ID_PROPERTIES				135
+#define ID_OPEN						136
+#define ID_OPEN_WITH				137
+#define ID_DUMMY_COMPILE			138
+#define ID_CLASS_ADD_MEMBER_FUNCTION	139
+#define ID_CLASS_ADD_MEMBER_VARIABLE	140
+#define ID_CLASS_DEFINITION			141
+#define ID_CLASS_PROPERTIES			142
+#define ID_NEW_FOLDER				143
+#define ID_SORT_MENU				144
+#define ID_SORTING_GROUPBYTYPE		145
+#define ID_SORTING_SORTALPHABETIC	146
+#define ID_SORTING_SORTBYTYPE		147
+#define ID_SORTING_SORTBYACCESS		148
+#define ID_VIEW_OUTPUTWND			149
+#define ID_VIEW_PROPERTIESWND		150
+#define ID_SORTPROPERTIES			151
+#define ID_PROPERTIES1				152
+#define ID_PROPERTIES2				153
+#define ID_EXPAND_ALL				154
+#define IDS_FILE_VIEW				155
+#define IDS_CLASS_VIEW				156
+#define IDS_OUTPUT_WND				157
+#define IDS_PROPERTIES_WND			158
+#define IDI_FILE_VIEW				161
+#define IDI_FILE_VIEW_HC			162
+#define IDI_CLASS_VIEW				163
+#define IDI_CLASS_VIEW_HC			164
+#define IDI_OUTPUT_WND				165
+#define IDI_OUTPUT_WND_HC			166
+#define IDI_PROPERTIES_WND			167
+#define IDI_PROPERTIES_WND_HC		168
+#define IDR_EXPLORER				169
+#define IDB_EXPLORER_24				170
+#define IDR_SORT					171
+#define IDB_SORT_24					172
+#define IDR_POPUP_SORT				173
+#define IDR_POPUP_EXPLORER			174
+#define IDB_FILE_VIEW				175
+#define IDB_FILE_VIEW_24			176
+#define IDB_CLASS_VIEW				177
+#define IDB_CLASS_VIEW_24			178
+#define IDR_MENU_IMAGES				179
+#define IDB_MENU_IMAGES_24			180
+#define ID_TOOLS_MACRO				181
+#define IDR_OUTPUT_POPUP			182
+#define IDR_PROPERTIES				183
+#define IDB_PROPERTIES_HC			184
+#define IDR_THEME_MENU				200
+#define ID_SET_STYLE				201
+#define ID_VIEW_APPLOOK_WIN_2000	205
+#define ID_VIEW_APPLOOK_OFF_XP		206
+#define ID_VIEW_APPLOOK_WIN_XP		207
+#define ID_VIEW_APPLOOK_OFF_2003	208
+#define ID_VIEW_APPLOOK_VS_2005		209
+#define ID_VIEW_APPLOOK_VS_2008		210
+#define ID_VIEW_APPLOOK_OFF_2007_BLUE	215
+#define ID_VIEW_APPLOOK_OFF_2007_BLACK	216
+#define ID_VIEW_APPLOOK_OFF_2007_SILVER	217
+#define ID_VIEW_APPLOOK_OFF_2007_AQUA	218
+#define ID_VIEW_APPLOOK_WINDOWS_7	219
+#define IDS_BUILD_TAB				300
+#define IDS_DEBUG_TAB				301
+#define IDS_FIND_TAB				302
+#define IDS_EXPLORER				305
+#define IDS_EDIT_MENU				306
+
+// 加频道前页面相关资源ID
+#define IDD_JOIN_CHANNEL_DLG        320
+#define IDC_COMBO_APPID             1001
+#define IDC_EDIT_CHANNEL_ID         1002
+// 用户名相关ID已移除 - #define IDC_EDIT_USERNAME           1003
+#define IDC_COMBO_AUDIO_PULL        1004
+#define IDC_BTN_JOIN_CHANNEL        1005
+#define IDC_CHECK_ENABLE_CAMERA     1006
+#define IDC_CHECK_ENABLE_MIC        1007
+#define IDC_STATIC_APPID            1008
+#define IDC_STATIC_CHANNEL_ID       1009
+// 用户名相关ID已移除 - #define IDC_STATIC_USERNAME         1010
+#define IDC_STATIC_AUDIO_PULL       1011
+#define IDC_EDIT_APP_CERTIFICATE    1012
+#define IDC_STATIC_TOKEN_STATUS     1013
+#define IDC_STATIC_APP_CERTIFICATE  1014
+
+// 频道页面相关资源ID
+#define IDD_CHANNEL_PAGE_DLG        350
+#define IDC_STATIC_CHANNEL_ID_PAGE  1020
+#define IDC_BTN_EXIT_CHANNEL        1022
+#define IDC_STATIC_VIDEO_CONTAINER  1023
+#define IDC_COMBO_GRID_MODE         1024
+#define IDC_BTN_PREV_PAGE           1025
+#define IDC_BTN_NEXT_PAGE           1026
+#define IDC_STATIC_CURRENT_PAGE     1027
+
+// 视频窗格控件ID范围 (1050-1150)
+#define IDC_VIDEO_WINDOW_BASE       1050
+#define IDC_VIDEO_WINDOW_1          1050
+#define IDC_VIDEO_WINDOW_2          1051
+#define IDC_VIDEO_WINDOW_3          1052
+#define IDC_VIDEO_WINDOW_4          1053
+#define IDC_VIDEO_WINDOW_5          1054
+#define IDC_VIDEO_WINDOW_6          1055
+#define IDC_VIDEO_WINDOW_7          1056
+#define IDC_VIDEO_WINDOW_8          1057
+#define IDC_VIDEO_WINDOW_9          1058
+#define IDC_VIDEO_WINDOW_MAX        1150
+
+// 用户控制按钮ID范围 (1200-1300)
+#define IDC_USER_BTN_BASE           1200
+#define IDC_USER_CAMERA_BTN_BASE    1200
+#define IDC_USER_MIC_BTN_BASE       1250
+
+// 字符串资源ID
+#define IDS_SELECT_APPID            2001
+#define IDS_APPID_1                 2002
+#define IDS_APPID_2                 2003
+#define IDS_APPID_3                 2004
+#define IDS_APPID_TEST              2005
+#define IDS_CERTIFICATE_TEST        2006
+#define IDS_CHANNEL_ID_HINT         2007
+// 用户名相关字符串ID已移除 - #define IDS_USERNAME_HINT           2008
+#define IDS_SELECT_AUDIO_PULL       2009
+#define IDS_AUDIO_PULL_UID          2010
+#define IDS_AUDIO_PULL_TOPN         2011
+#define IDS_JOIN_CHANNEL            2012
+#define IDS_DLG_TITLE               2013
+#define IDS_MSG_SELECT_APPID        2014
+#define IDS_MSG_ENTER_CHANNEL       2015
+// 用户名相关字符串ID已移除 - #define IDS_MSG_ENTER_USERNAME      2016
+#define IDS_MSG_SELECT_AUDIO        2017
+
+// 频道页面字符串资源ID
+#define IDS_CHANNEL_PAGE_TITLE      2030
+#define IDS_CURRENT_CHANNEL         2031
+#define IDS_EXIT_CHANNEL            2032
+#define IDS_GRID_MODE_2X2           2033
+#define IDS_GRID_MODE_3X3           2034
+#define IDS_GRID_MODE_4X4           2035
+#define IDS_GRID_MODE_5X5           2036
+#define IDS_GRID_MODE_7X7           2037
+#define IDS_CURRENT_PAGE            2038
+#define IDS_LOCAL_USER              2039
+#define IDS_REMOTE_USER             2040
+#define IDS_ROBOT_USER              2041
+
+// 新对象的下一组默认值
+//
+#ifdef APSTUDIO_INVOKED
+#ifndef APSTUDIO_READONLY_SYMBOLS
+#define _APS_NEXT_RESOURCE_VALUE	400
+#define _APS_NEXT_CONTROL_VALUE		1400
+#define _APS_NEXT_SYMED_VALUE		400
+#define _APS_NEXT_COMMAND_VALUE		32771
+#endif
+#endif
+
