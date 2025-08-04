@@ -906,28 +906,6 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
     }
 }
 
-void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL isAudioSubscribed)
-{
-    int userIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage + cellIndex;
-    if (userIndex >= 0 && userIndex < m_pageState.userList.GetSize()) {
-        ChannelUser* user = m_pageState.userList[userIndex];
-        if (user && !user->isLocal) {
-            user->isAudioSubscribed = isAudioSubscribed;
-            if (m_rteManager) {
-                // SubscribeRemoteAudio and UnsubscribeRemoteAudio were removed or renamed.
-                // The logic for audio subscription needs to be updated based on the new RteManager API.
-                // For now, we'll just log it.
-                LOG_INFO_FMT(_T("Audio subscription for user %s set to %d"), user->GetUID(), isAudioSubscribed);
-            }
-            
-            // 更新UI显示状态
-            if (cellIndex < m_videoWindows.GetSize()) {
-                m_videoWindows[cellIndex]->SetAudioSubscription(isAudioSubscribed);
-            }
-        }
-    }
-}
-
 
 
 void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL isAudioSubscribed)
