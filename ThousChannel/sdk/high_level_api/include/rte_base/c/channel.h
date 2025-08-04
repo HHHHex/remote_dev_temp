@@ -15,8 +15,8 @@
 #include "utils/buf.h"
 #include "user/remote_user.h"
 #include "stream/remote_stream.h"
-#include "rte_base/c/utils/audio_utility_types.h"
-#include "utils/audio_utility_types.h"
+// #include "rte_base/c/utils/audio_utility_types.h"
+// #include "utils/audio_utility_types.h"
 
 #ifdef __cplusplus
 extern "C" {

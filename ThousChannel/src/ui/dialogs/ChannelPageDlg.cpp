@@ -854,7 +854,7 @@ int CChannelPageDlg::GetMaxPages()
     if (m_pageState.usersPerPage <= 0) return 1;
     if (m_pageState.userList.GetSize() == 0) return 1;
     
-    return (m_pageState.userList.GetSize() + m_pageState.usersPerPage - 1) / m_pageState.usersPerPage;
+    return (int)(m_pageState.userList.GetSize() + m_pageState.usersPerPage - 1) / m_pageState.usersPerPage;
 }
 
 
