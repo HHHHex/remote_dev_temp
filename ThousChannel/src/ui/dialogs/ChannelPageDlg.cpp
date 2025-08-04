@@ -391,8 +391,8 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
         
         if (m_rteManager && !userInfo->isLocal) {
             std::string userIdStr(CT2A(uid));
-            m_rteManager->UnsubscribeRemoteVideo(userIdStr);
-            LOG_INFO_FMT(_T("Unsubscribing from remote video for user: %s"), uid);
+             m_rteManager->UnsubscribeRemoteVideo(userIdStr);
+             LOG_INFO_FMT(_T("Unsubscribing from remote video for user: %s"), uid);
             // m_rteManager->UnsubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
         }
         
@@ -926,6 +926,7 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
         }
     }
 }
+
 
 //===========================================================================
 // RTE Integration Helpers
