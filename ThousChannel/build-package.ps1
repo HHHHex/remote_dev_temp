@@ -1,5 +1,5 @@
-# ThousChannel 自动化打包脚本
-# 版本: 1.0.1 (修复路径问题)
+# ThousChannel Build Package Script
+# Version: 1.0.3 (Fix encoding issues)
 
 param(
     [Parameter(Mandatory=$false)]
@@ -30,17 +30,17 @@ param(
     [switch]$SkipBuild
 )
 
-# 设置控制台颜色函数
+# Console color output function
 function Write-ColorOutput {
     param([string]$Message, [string]$Color = "White")
     Write-Host $Message -ForegroundColor $Color
 }
 
-# 检查必要工具
+# Check prerequisites
 function Test-Prerequisites {
-    Write-ColorOutput "检查打包环境..." "Yellow"
+    Write-ColorOutput "Checking build environment..." "Yellow"
     
-    # 检查MSBuild
+    # Check MSBuild
     $msbuildPath = $null
     $vsInstallations = @(
         "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe",
@@ -59,40 +59,40 @@ function Test-Prerequisites {
     }
     
     if (-not $msbuildPath) {
-        Write-ColorOutput "错误: 找不到MSBuild，请确保已安装Visual Studio 2022" "Red"
+        Write-ColorOutput "Error: MSBuild not found. Please ensure Visual Studio 2022 is installed." "Red"
         exit 1
     }
-    Write-ColorOutput "找到MSBuild: $msbuildPath" "Green"
+    Write-ColorOutput "Found MSBuild: $msbuildPath" "Green"
 
-    # 检查Inno Setup
+    # Check Inno Setup
     $innoSetupPath = "${env:ProgramFiles(x86)}\Inno Setup 6\iscc.exe"
     if (-not (Test-Path $innoSetupPath)) {
-        Write-ColorOutput "警告: 找不到Inno Setup编译器 (iscc.exe)，将无法创建安装包。" "Yellow"
-        Write-ColorOutput "请访问 https://jrsoftware.org/isinfo.php 下载并安装。" "Yellow"
+        Write-ColorOutput "Warning: Inno Setup compiler (iscc.exe) not found. Installer creation will be skipped." "Yellow"
+        Write-ColorOutput "Please visit https://jrsoftware.org/isinfo.php to download and install." "Yellow"
         $innoSetupPath = $null
     } else {
-        Write-ColorOutput "找到Inno Setup: $innoSetupPath" "Green"
+        Write-ColorOutput "Found Inno Setup: $innoSetupPath" "Green"
     }
 
     return $msbuildPath, $innoSetupPath
 }
 
-# 清理输出目录
+# Clear output directory
 function Clear-OutputDirectory {
     param([string]$Path)
     if (Test-Path $Path) {
-        Write-ColorOutput "清理输出目录: $Path" "Yellow"
+        Write-ColorOutput "Clearing output directory: $Path" "Yellow"
         Remove-Item $Path -Recurse -Force
     }
     New-Item -ItemType Directory -Path $Path -Force | Out-Null
 }
 
-# 编译项目
+# Build project
 function Build-Project {
     param([string]$MsbuildPath, [string]$Configuration, [string]$Platform)
     
-    Write-ColorOutput "开始编译项目..." "Yellow"
-    Write-ColorOutput "配置: $Configuration, 平台: $Platform" "Cyan"
+    Write-ColorOutput "Starting project build..." "Yellow"
+    Write-ColorOutput "Configuration: $Configuration, Platform: $Platform" "Cyan"
     
     $buildArgs = @(
         "ThousChannel.sln",
@@ -104,20 +104,20 @@ function Build-Project {
     $process = Start-Process -FilePath $MsbuildPath -ArgumentList $buildArgs -Wait -PassThru -NoNewWindow
     
     if ($process.ExitCode -ne 0) {
-        Write-ColorOutput "编译失败！退出代码: $($process.ExitCode)" "Red"
+        Write-ColorOutput "Build failed! Exit code: $($process.ExitCode)" "Red"
         exit 1
     }
     
-    Write-ColorOutput "编译成功！" "Green"
+    Write-ColorOutput "Build successful!" "Green"
 }
 
-# 收集依赖文件
+# Copy dependencies
 function Copy-Dependencies {
     param([string]$SourceDir, [string]$TargetDir)
     
-    Write-ColorOutput "复制依赖文件..." "Yellow"
+    Write-ColorOutput "Copying dependencies..." "Yellow"
     
-    # 创建目录结构
+    # Create directory structure
     $dirs = @("", "sdk", "resources")
     foreach ($dir in $dirs) {
         $targetPath = Join-Path $TargetDir $dir
@@ -126,211 +126,211 @@ function Copy-Dependencies {
         }
     }
     
-    # 复制主程序
+    # Copy main executable
     $exePath = Join-Path $SourceDir "ThousChannel.exe"
     if (Test-Path $exePath) {
         Copy-Item $exePath $TargetDir
-        Write-ColorOutput "复制主程序: ThousChannel.exe" "Green"
+        Write-ColorOutput "Copied main executable: ThousChannel.exe" "Green"
     } else {
-        Write-ColorOutput "警告: 找不到主程序文件" "Yellow"
+        Write-ColorOutput "Warning: Main executable not found" "Yellow"
     }
     
-    # 复制SDK文件
+    # Copy SDK files
     $sdkSource = "sdk\x86_64"
     $sdkTarget = Join-Path $TargetDir "sdk"
     if (Test-Path $sdkSource) {
         Copy-Item "$sdkSource\*.dll" $sdkTarget -ErrorAction SilentlyContinue
         Copy-Item "$sdkSource\*.lib" $sdkTarget -ErrorAction SilentlyContinue
-        Write-ColorOutput "复制SDK文件到: $sdkTarget" "Green"
+        Write-ColorOutput "Copied SDK files to: $sdkTarget" "Green"
     }
     
-    # 复制资源文件
+    # Copy resource files
     $resSource = "resources"
     $resTarget = Join-Path $TargetDir "resources"
     if (Test-Path $resSource) {
         Copy-Item "$resSource\*" $resTarget -Recurse -ErrorAction SilentlyContinue
-        Write-ColorOutput "复制资源文件到: $resTarget" "Green"
+        Write-ColorOutput "Copied resource files to: $resTarget" "Green"
     }
 }
 
-# 创建便携版
+# Create portable package
 function Create-PortablePackage {
     param([string]$SourceDir, [string]$OutputPath, [string]$Version)
     
-    Write-ColorOutput "创建便携版..." "Yellow"
+    Write-ColorOutput "Creating portable package..." "Yellow"
     
     $portableDir = Join-Path $OutputPath "ThousChannel-Portable-v$Version"
     Clear-OutputDirectory $portableDir
     
-    # 复制文件
+    # Copy files
     Copy-Dependencies $SourceDir $portableDir
     
-    # 创建启动脚本
-    $startupScriptContent = @'
+    # Create startup script
+    $startupScript = @"
 @echo off
 chcp 65001 >nul
-title ThousChannel 启动器
+title ThousChannel Launcher
 
 echo ========================================
-echo           ThousChannel v{0}
+echo           ThousChannel v$Version
 echo ========================================
 echo.
 
-REM 检查主程序是否存在
+REM Check if main executable exists
 if not exist "ThousChannel.exe" (
-    echo [错误] 找不到主程序文件 ThousChannel.exe
+    echo [ERROR] Main executable ThousChannel.exe not found
     pause
     exit /b 1
 )
 
-echo [信息] 正在启动 ThousChannel...
+echo [INFO] Starting ThousChannel...
 start "" "ThousChannel.exe"
-echo [信息] 程序已启动
+echo [INFO] Application started
 pause
-'@ -f $Version
+"@
     
-    $startupScriptContent | Out-File (Join-Path $portableDir "启动ThousChannel.bat") -Encoding oem
+    $startupScript | Out-File (Join-Path $portableDir "StartThousChannel.bat") -Encoding ASCII
     
-    # 创建README文件
-    $readmeContent = @'
-# ThousChannel 便携版 v{0}
+    # Create README file
+    $readmeContent = @"
+# ThousChannel Portable v$Version
 
-## 使用说明
-1. 双击 `启动ThousChannel.bat` 启动程序
-2. 程序会自动检查依赖文件并启动
+## Usage Instructions
+1. Double-click `StartThousChannel.bat` to launch the application
+2. The application will automatically check dependencies and start
 
-## 系统要求
-- Windows 10 或更高版本
-- x64 架构
+## System Requirements
+- Windows 10 or higher
+- x64 architecture
 
-## 文件说明
-- `ThousChannel.exe` - 主程序
-- `sdk/` - SDK依赖文件
-- `resources/` - 资源文件
-- `启动ThousChannel.bat` - 启动脚本
+## File Description
+- `ThousChannel.exe` - Main executable
+- `sdk/` - SDK dependency files
+- `resources/` - Resource files
+- `StartThousChannel.bat` - Startup script
 
-## 注意事项
-- 请勿删除任何文件
-- 建议将整个文件夹放在固定位置使用
-'@ -f $Version
+## Notes
+- Do not delete any files
+- It is recommended to place the entire folder in a fixed location
+"@
     
-    $readmeContent | Out-File (Join-Path $portableDir "README.txt") -Encoding UTF8BOM
+    $readmeContent | Out-File (Join-Path $portableDir "README.txt") -Encoding ASCII
     
-    # 创建ZIP包
+    # Create ZIP package
     $zipPath = Join-Path $OutputPath "ThousChannel-Portable-v$Version.zip"
     if (Test-Path $zipPath) {
         Remove-Item $zipPath -Force
     }
     
-    Write-ColorOutput "创建ZIP包..." "Yellow"
+    Write-ColorOutput "Creating ZIP package..." "Yellow"
     Compress-Archive -Path "$portableDir\*" -DestinationPath $zipPath -CompressionLevel Optimal
     
-    Write-ColorOutput "便携版创建完成！" "Green"
-    Write-ColorOutput "目录: $portableDir" "Cyan"
-    Write-ColorOutput "ZIP包: $zipPath" "Cyan"
+    Write-ColorOutput "Portable package created successfully!" "Green"
+    Write-ColorOutput "Directory: $portableDir" "Cyan"
+    Write-ColorOutput "ZIP package: $zipPath" "Cyan"
 }
 
-# 创建安装程序
+# Create installer package
 function Create-InstallerPackage {
     param([string]$SourceDir, [string]$OutputPath, [string]$Version, [string]$Company, [string]$InnoSetupPath)
 
     if (-not $InnoSetupPath) {
-        Write-ColorOutput "跳过创建安装程序，因为找不到Inno Setup编译器。" "Yellow"
+        Write-ColorOutput "Skipping installer creation - Inno Setup compiler not found." "Yellow"
         return
     }
 
-    Write-ColorOutput "创建安装程序..." "Yellow"
+    Write-ColorOutput "Creating installer package..." "Yellow"
 
     $appName = "ThousChannel"
     $installerDir = Join-Path $OutputPath "ThousChannel-Installer-v$Version"
     Clear-OutputDirectory $installerDir
 
-    # 复制文件到临时目录
+    # Copy files to temporary directory
     Copy-Dependencies $SourceDir $installerDir
 
-    # Inno Setup 脚本模板
-    $issScriptContent = @'
+    # Inno Setup script template
+    $issScriptContent = @"
 [Setup]
-AppName={0}
-AppVersion={1}
-AppPublisher={2}
-DefaultDirName={{autopf}}\{0}
-DefaultGroupName={0}
-UninstallDisplayIcon={{app}}\{0}.exe
+AppName=$appName
+AppVersion=$Version
+AppPublisher=$Company
+DefaultDirName={autopf}\$appName
+DefaultGroupName=$appName
+UninstallDisplayIcon={app}\$appName.exe
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-OutputBaseFilename=ThousChannel-Setup-v{1}
-OutputDir={3}
+OutputBaseFilename=ThousChannel-Setup-v$Version
+OutputDir=$OutputPath
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{{cm:CreateDesktopIcon}}"; GroupDescription: "{{cm:AdditionalIcons}}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{4}\*"; DestDir: "{{app}}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "$installerDir\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{{group}}\{0}"; Filename: "{{app}}\{0}.exe"
-Name: "{{group}}\{{cm:UninstallProgram,{0}}}"; Filename: "{{uninstallexe}}"
-Name: "{{autodesktop}}\{0}"; Filename: "{{app}}\{0}.exe"; Tasks: desktopicon
+Name: "{group}\$appName"; Filename: "{app}\$appName.exe"
+Name: "{group}\{cm:UninstallProgram,$appName}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\$appName"; Filename: "{app}\$appName.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{{app}}\{0}.exe"; Description: "{{cm:LaunchProgram,{0}}}"; Flags: nowait postinstall skipifsilent
-'@ -f $appName, $Version, $Company, $OutputPath, $installerDir
-
+Filename: "{app}\$appName.exe"; Description: "{cm:LaunchProgram,$appName}"; Flags: nowait postinstall skipifsilent
+"@
+    
     $issPath = Join-Path $OutputPath "ThousChannel.iss"
-    $issScriptContent | Out-File -FilePath $issPath -Encoding UTF8BOM
-
-    Write-ColorOutput "生成Inno Setup脚本: $issPath" "Green"
-
-    # 运行Inno Setup编译器
+    $issScriptContent | Out-File -FilePath $issPath -Encoding ASCII
+    
+    Write-ColorOutput "Generated Inno Setup script: $issPath" "Green"
+    
+    # Run Inno Setup compiler
     $process = Start-Process -FilePath $InnoSetupPath -ArgumentList "/q `"$issPath`"" -Wait -PassThru -NoNewWindow
     if ($process.ExitCode -ne 0) {
-        Write-ColorOutput "创建安装程序失败！退出代码: $($process.ExitCode)" "Red"
+        Write-ColorOutput "Installer creation failed! Exit code: $($process.ExitCode)" "Red"
     } else {
-        Write-ColorOutput "安装程序创建成功！" "Green"
-        Write-ColorOutput "输出文件: $(Join-Path $OutputPath "ThousChannel-Setup-v$Version.exe")" "Cyan"
+        Write-ColorOutput "Installer created successfully!" "Green"
+        Write-ColorOutput "Output file: $(Join-Path $OutputPath "ThousChannel-Setup-v$Version.exe")" "Cyan"
     }
 
-    # 清理临时文件
+    # Clean up temporary files
     Remove-Item $issPath -Force
     Remove-Item $installerDir -Recurse -Force
 }
 
-# 主函数
+# Main function
 function Main {
     Write-ColorOutput "========================================" "Cyan"
-    Write-ColorOutput "      ThousChannel 自动化打包工具" "Cyan"
+    Write-ColorOutput "      ThousChannel Build Package Tool" "Cyan"
     Write-ColorOutput "========================================" "Cyan"
     Write-ColorOutput ""
     
-    # 检查参数
-    Write-ColorOutput "打包参数:" "Yellow"
-    Write-ColorOutput "  配置: $Configuration" "White"
-    Write-ColorOutput "  平台: $Platform" "White"
-    Write-ColorOutput "  输出路径: $OutputPath" "White"
-    Write-ColorOutput "  打包类型: $PackageType" "White"
-    Write-ColorOutput "  版本: $Version" "White"
+    # Check parameters
+    Write-ColorOutput "Package parameters:" "Yellow"
+    Write-ColorOutput "  Configuration: $Configuration" "White"
+    Write-ColorOutput "  Platform: $Platform" "White"
+    Write-ColorOutput "  Output path: $OutputPath" "White"
+    Write-ColorOutput "  Package type: $PackageType" "White"
+    Write-ColorOutput "  Version: $Version" "White"
     Write-ColorOutput ""
     
-    # 检查必要工具
+    # Check prerequisites
     $msbuildPath, $innoSetupPath = Test-Prerequisites
     
-    # 清理输出目录
+    # Clear output directory
     if ($Clean) {
         Clear-OutputDirectory $OutputPath
     }
     
-    # 编译项目
+    # Build project
     if (-not $SkipBuild) {
         Build-Project $msbuildPath $Configuration $Platform
     }
     
-    # 确定源目录 - 修复版本：支持多个可能的路径
+    # Determine source directory - support multiple possible paths
     $possiblePaths = @(
         "x64\$Configuration",
         "project\x64\$Configuration",
@@ -341,21 +341,21 @@ function Main {
     foreach ($path in $possiblePaths) {
         if (Test-Path $path) {
             $sourceDir = $path
-            Write-ColorOutput "找到编译输出目录: $sourceDir" "Green"
+            Write-ColorOutput "Found build output directory: $sourceDir" "Green"
             break
         }
     }
     
     if (-not $sourceDir) {
-        Write-ColorOutput "错误: 找不到编译输出目录" "Red"
-        Write-ColorOutput "尝试过的路径:" "Red"
+        Write-ColorOutput "Error: Build output directory not found" "Red"
+        Write-ColorOutput "Tried paths:" "Red"
         foreach ($path in $possiblePaths) {
             Write-ColorOutput "  $path" "Red"
         }
         exit 1
     }
     
-    # 创建包
+    # Create packages
     switch ($PackageType) {
         "Portable" {
             Create-PortablePackage $sourceDir $OutputPath $Version
@@ -371,15 +371,15 @@ function Main {
     
     Write-ColorOutput ""
     Write-ColorOutput "========================================" "Cyan"
-    Write-ColorOutput "      打包完成！" "Green"
+    Write-ColorOutput "      Package creation completed!" "Green"
     Write-ColorOutput "========================================" "Cyan"
-    Write-ColorOutput "输出目录: $OutputPath" "White"
+    Write-ColorOutput "Output directory: $OutputPath" "White"
 }
 
-# 执行主函数
+# Execute main function
 try {
     Main
 } catch {
-    Write-ColorOutput "打包过程中发生错误: $($_.Exception.Message)" "Red"
+    Write-ColorOutput "Error occurred during packaging: $($_.Exception.Message)" "Red"
     exit 1
-}
+} 
