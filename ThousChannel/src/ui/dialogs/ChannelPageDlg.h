@@ -6,9 +6,10 @@
 #include "HomePageDlg.h"
 #include "VideoGridCell.h"
 #include "../../core/RteManager.h"  // 替换RTC为RTE
-#include "../../sdk/high_level_api/include/AgoraMediaBase.h"  // 包含user_id_t定义
+#include "IAgoraRtcEngine.h"
 
-using namespace agora::base;  // 使用agora::base命名空间
+using namespace agora;
+using namespace agora::rtc;
 
 // Custom Windows Messages for RTE events
 #define WM_USER_RTE_JOIN_CHANNEL_SUCCESS        (WM_USER + 201)
@@ -23,15 +24,15 @@ using namespace agora::base;  // 使用agora::base命名空间
 class ChannelUser
 {
 public:
-    ChannelUser() : uid(""), isLocal(FALSE), isRobot(FALSE), isConnected(FALSE),
+    ChannelUser() : uid(_T("")), isLocal(FALSE), isRobot(FALSE), isConnected(FALSE),
         isVideoSubscribed(TRUE), isAudioSubscribed(TRUE),
         isCurrentlyVisible(FALSE), lastVisiblePage(0) {}
 
-    user_id_t GetUID() const { return uid; }
+    CString GetUID() const { return uid; }
 
 public:
     CString userName;
-    user_id_t uid;
+    CString uid;
     BOOL isLocal;
     BOOL isRobot;
     BOOL isConnected;
@@ -136,11 +137,11 @@ private:
     // Video Canvas Management (for RTE rendering)
     void DetachAllUsersFromDisplay();
     void AttachVisibleUsersToDisplay();
-    HWND GetOrCreateUserCanvas(user_id_t uid);
-    void DestroyUserCanvas(user_id_t uid);
+    HWND GetOrCreateUserCanvas(LPCTSTR uid);
+    void DestroyUserCanvas(LPCTSTR uid);
 
     // User & Page Management
-    int FindUserIndex(user_id_t uid);
+    int FindUserIndex(LPCTSTR uid);
     void SortUserList();
     void UpdatePageDisplay();
     int GetMaxPages();
@@ -167,5 +168,5 @@ private:
     // RTE Integration Helpers
     void UpdateSubscribedUsers();
     void UpdateViewUserBindings();
-}; 
+};
 

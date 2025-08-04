@@ -1,14 +1,11 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ThousChannel.h"
 #include "ChannelPageDlg.h"
 #include "Logger.h"
 #include "RteManager.h"
 #include "afxdialogex.h"
-#include "../../../sdk/high_level_api/include/AgoraMediaBase.h"
 #include <algorithm>
 #include <string>
-
-using namespace agora::base;  // 使用agora::base命名空间
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -27,7 +24,8 @@ static int CompareUsers(const void* a, const void* b)
     if (!userA->isRobot && userB->isRobot) return -1;
     if (userA->isRobot && !userB->isRobot) return 1;
 
-    int result = strcmp(userA->uid, userB->uid);
+    // Use _tcscmp for CString comparison
+    int result = _tcscmp(userA->GetUID(), userB->GetUID());
     if (result < 0) return -1;
     if (result > 0) return 1;
 
@@ -72,7 +70,9 @@ CChannelPageDlg::CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pPar
     // Create placeholders for real users (UID 2-31)
     for (int i = 2; i <= 31; ++i) {
         ChannelUser* placeholderUser = new ChannelUser();
-        placeholderUser->uid = std::to_string(i).c_str();
+        CString uidStr;
+        uidStr.Format(_T("%d"), i);
+        placeholderUser->uid = uidStr;
         placeholderUser->isLocal = FALSE;
         placeholderUser->isRobot = FALSE;
         placeholderUser->isConnected = FALSE;
@@ -90,12 +90,12 @@ CChannelPageDlg::~CChannelPageDlg()
     DestroyVideoWindows();
     
     // Clean up all user canvases
-    UINT_PTR uid;
+    UINT_PTR uidKey;
     HWND canvas;
     POSITION pos = m_userCanvasMap.GetStartPosition();
     while (pos != NULL)
     {
-        m_userCanvasMap.GetNextAssoc(pos, uid, canvas);
+        m_userCanvasMap.GetNextAssoc(pos, uidKey, canvas);
         if (::IsWindow(canvas))
         {
             ::DestroyWindow(canvas);
@@ -152,7 +152,7 @@ BOOL CChannelPageDlg::OnInitDialog()
     localUser->isLocal = TRUE;
     localUser->isConnected = TRUE;
     localUser->userName = m_pageState.currentUserId;
-    localUser->uid = ""; // Will be updated onJoinChannelSuccess
+    localUser->uid = _T(""); // Will be updated onJoinChannelSuccess
     m_pageState.userList.InsertAt(0, localUser);
     
     // UpdateChannelInfo(); // This function was removed during refactoring.
@@ -247,21 +247,16 @@ void CChannelPageDlg::OnConnectionStateChanged(int state)
 
 void CChannelPageDlg::OnUserJoined(const std::string& userId)
 {
-    // Store the userId in a member variable for later use
-    // We'll handle this in the message handler
-    m_lastUserId = userId;
-    
-    // Post message to UI thread
-    PostMessage(WM_USER_RTE_USER_JOINED, 0, 0);
+    // Convert std::string to CString and post it
+    CString* uidStr = new CString(userId.c_str());
+    PostMessage(WM_USER_RTE_USER_JOINED, (WPARAM)uidStr, 0);
 }
 
 void CChannelPageDlg::OnUserLeft(const std::string& userId)
 {
-    // Store the userId in a member variable for later use
-    m_lastUserId = userId;
-    
-    // Post message to UI thread
-    PostMessage(WM_USER_RTE_USER_LEFT, 0, 0);
+    // Convert std::string to CString and post it
+    CString* uidStr = new CString(userId.c_str());
+    PostMessage(WM_USER_RTE_USER_LEFT, (WPARAM)uidStr, 0);
 }
 
 void CChannelPageDlg::OnLocalAudioStateChanged(int state)
@@ -278,20 +273,16 @@ void CChannelPageDlg::OnLocalVideoStateChanged(int state)
 
 void CChannelPageDlg::OnRemoteAudioStateChanged(const std::string& userId, int state)
 {
-    // Store the userId in a member variable for later use
-    m_lastUserId = userId;
-    
-    // Post message to UI thread
-    PostMessage(WM_USER_RTE_REMOTE_VIDEO_STATE_CHANGED, 0, state);
+    // Convert std::string to CString and post it
+    CString* uidStr = new CString(userId.c_str());
+    PostMessage(WM_USER_RTE_REMOTE_VIDEO_STATE_CHANGED, (WPARAM)uidStr, state);
 }
 
 void CChannelPageDlg::OnRemoteVideoStateChanged(const std::string& userId, int state)
 {
-    // Store the userId in a member variable for later use
-    m_lastUserId = userId;
-    
-    // Post message to UI thread
-    PostMessage(WM_USER_RTE_REMOTE_VIDEO_STATE_CHANGED, 0, state);
+    // Convert std::string to CString and post it
+    CString* uidStr = new CString(userId.c_str());
+    PostMessage(WM_USER_RTE_REMOTE_VIDEO_STATE_CHANGED, (WPARAM)uidStr, state);
 }
 
 void CChannelPageDlg::OnError(int error)
@@ -308,45 +299,38 @@ void CChannelPageDlg::OnUserListChanged()
 
 LRESULT CChannelPageDlg::OnRteJoinChannelSuccess(WPARAM wParam, LPARAM lParam)
 {
-    // For now, we'll use a default local user ID
-    // In a real implementation, this would come from the RTE SDK
-    std::string localUserId = "1"; // Default local user ID
-    
+    CString localUserId = _T("1"); // Default local user ID
+
     if (m_pageState.userList.GetSize() > 0) {
         ChannelUser* localUser = m_pageState.userList[0];
         if (localUser->isLocal) {
-            localUser->uid = localUserId.c_str(); 
-            localUser->userName.Format(_T("Local User (%s)"), CString(localUserId.c_str()));
-            
+            localUser->uid = localUserId;
+            localUser->userName.Format(_T("Local User (%s)"), localUserId);
+
             HWND canvas = NULL;
             if (m_userCanvasMap.Lookup(0, canvas)) {
                 m_userCanvasMap.RemoveKey(0);
-                m_userCanvasMap.SetAt((UINT_PTR)localUserId.c_str(), canvas);
+                m_userCanvasMap.SetAt((UINT_PTR)(LPCTSTR)localUserId, canvas);
             }
-            
+
             UpdateVideoLayout();
-            
+
             CString strChannelInfo;
-            strChannelInfo.Format(_T("Channel: %s (My UID: %s)"), m_pageState.channelId, CString(localUserId.c_str()));
+            strChannelInfo.Format(_T("Channel: %s (My UID: %s)"), m_pageState.channelId, localUserId);
             m_staticChannelId.SetWindowText(strChannelInfo);
         }
     }
-    
+
     return 0;
 }
 
 LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
 {
-    user_id_t uid = m_lastUserId.c_str();
+    CString* uidPtr = (CString*)wParam;
+    CString uid = *uidPtr;
+    delete uidPtr;
 
-    // Check if it's a robot user (ID >= 1000)
-    bool isRobot = false;
-    try {
-        int uidInt = std::stoi(m_lastUserId);
-        isRobot = (uidInt >= 1000);
-    } catch (...) {
-        isRobot = false;
-    }
+    bool isRobot = (_ttoi(uid) >= 1000);
 
     if (isRobot) { // Robot user
         if (FindUserIndex(uid) != -1) return 0; // Already exists
@@ -356,7 +340,7 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
         robotUser->isConnected = TRUE;
         robotUser->isLocal = FALSE;
         robotUser->isRobot = TRUE;
-        robotUser->userName.Format(_T("Robot %s"), CString(uid));
+        robotUser->userName.Format(_T("Robot %s"), uid);
         m_pageState.userList.Add(robotUser);
     }
     else { // Real user
@@ -365,18 +349,19 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
             ChannelUser* user = m_pageState.userList[userIndex];
             if (user && !user->isConnected) {
                 user->isConnected = TRUE;
-                user->userName.Format(_T("Remote User %s"), CString(uid));
+                user->userName.Format(_T("Remote User %s"), uid);
             }
         }
     }
-    
+
     SortUserList();
     GetOrCreateUserCanvas(uid);
 
     // Default subscribe to new user's streams
     if (m_rteManager) {
-        m_rteManager->SubscribeRemoteVideo(m_lastUserId);
-        m_rteManager->SubscribeRemoteAudio(m_lastUserId);
+        std::string userIdStr(CT2A(uid));
+        m_rteManager->SubscribeRemoteVideo(userIdStr);
+        m_rteManager->SubscribeRemoteAudio(userIdStr);
     }
     int userIndex = FindUserIndex(uid);
     if (userIndex != -1) {
@@ -394,7 +379,10 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
 
 LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
 {
-    user_id_t uid = m_lastUserId.c_str();
+    CString* uidPtr = (CString*)wParam;
+    CString uid = *uidPtr;
+    delete uidPtr;
+
     int userIndex = FindUserIndex(uid);
 
     if (userIndex != -1) {
@@ -413,7 +401,7 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
         } else if (!userInfo->isLocal) {
             // Reset placeholder
             userInfo->isConnected = FALSE;
-            userInfo->userName.Format(_T("User %s (Offline)"), CString(uid));
+            userInfo->userName.Format(_T("User %s (Offline)"), uid);
             userInfo->isVideoSubscribed = TRUE;
             userInfo->isAudioSubscribed = TRUE;
         }
@@ -435,11 +423,13 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
 
 LRESULT CChannelPageDlg::OnRteRemoteVideoStateChanged(WPARAM wParam, LPARAM lParam)
 {
-    // Placeholder implementation
-    user_id_t uid = m_lastUserId.c_str();
+    CString* uidPtr = (CString*)wParam;
+    CString uid = *uidPtr;
+    delete uidPtr;
+
     int state = LOWORD(lParam);
     int reason = HIWORD(lParam);
-    LOG_INFO_FMT(_T("Remote video state changed for user %s, state=%d, reason=%d"), CString(uid), state, reason);
+    LOG_INFO_FMT(_T("Remote video state changed for user %s, state=%d, reason=%d"), uid, state, reason);
 
     // You might want to update the UI for this user
     // For example, show an icon if their video is disabled
@@ -563,16 +553,11 @@ void CChannelPageDlg::ReleaseRteEngine()
 BOOL CChannelPageDlg::StartLocalPreview()
 {
     if (!m_rteManager) return FALSE;
-    
+
     // Enable local audio/video based on join params
-    if (m_joinParams.enableAudio) {
-        m_rteManager->SetLocalAudioCaptureEnabled(TRUE);
-    }
-    
-    if (m_joinParams.enableCamera) {
-        m_rteManager->SetLocalVideoCaptureEnabled(TRUE);
-    }
-    
+    m_rteManager->SetLocalAudioCaptureEnabled(m_joinParams.enableMic);
+    m_rteManager->SetLocalVideoCaptureEnabled(m_joinParams.enableCamera);
+
     return TRUE;
 }
 
@@ -760,7 +745,7 @@ void CChannelPageDlg::CalculateGridLayout(int gridMode, CRect containerRect, CAr
 
 void CChannelPageDlg::DetachAllUsersFromDisplay()
 {
-    UINT_PTR uid;
+    CString uid;
     HWND canvas;
     POSITION pos = m_userCanvasMap.GetStartPosition();
     while (pos != NULL)
@@ -799,10 +784,10 @@ void CChannelPageDlg::AttachVisibleUsersToDisplay()
     }
 }
 
-HWND CChannelPageDlg::GetOrCreateUserCanvas(user_id_t uid)
+HWND CChannelPageDlg::GetOrCreateUserCanvas(LPCTSTR uid)
 {
     HWND canvas = NULL;
-    if (m_userCanvasMap.Lookup((UINT_PTR)uid, canvas)) {
+    if (m_userCanvasMap.Lookup(uid, canvas)) {
         return canvas;
     }
 
@@ -813,24 +798,24 @@ HWND CChannelPageDlg::GetOrCreateUserCanvas(user_id_t uid)
         ::GetDesktopWindow(), NULL, AfxGetInstanceHandle(), NULL);
 
     if (canvas) {
-        LOG_INFO_FMT(_T("Canvas created for UID %s: 0x%p"), CString(uid), canvas);
-        m_userCanvasMap.SetAt((UINT_PTR)uid, canvas);
+        LOG_INFO_FMT(_T("Canvas created for UID %s: 0x%p"), uid, canvas);
+        m_userCanvasMap.SetAt(uid, canvas);
     }
     else {
-        LOG_ERROR_FMT(_T("Canvas creation failed for UID %s: %d"), CString(uid), GetLastError());
+        LOG_ERROR_FMT(_T("Canvas creation failed for UID %s: %d"), uid, GetLastError());
     }
 
     return canvas;
 }
 
-void CChannelPageDlg::DestroyUserCanvas(user_id_t uid)
+void CChannelPageDlg::DestroyUserCanvas(LPCTSTR uid)
 {
     HWND canvas = NULL;
-    if (m_userCanvasMap.Lookup((UINT_PTR)uid, canvas)) {
+    if (m_userCanvasMap.Lookup(uid, canvas)) {
         if (::IsWindow(canvas)) {
             ::DestroyWindow(canvas);
         }
-        m_userCanvasMap.RemoveKey((UINT_PTR)uid);
+        m_userCanvasMap.RemoveKey(uid);
     }
 }
 
@@ -839,11 +824,11 @@ void CChannelPageDlg::DestroyUserCanvas(user_id_t uid)
 // User & Page Management
 //===========================================================================
 
-int CChannelPageDlg::FindUserIndex(user_id_t uid)
+int CChannelPageDlg::FindUserIndex(LPCTSTR uid)
 {
     for (int i = 0; i < m_pageState.userList.GetSize(); i++)
     {
-        if (strcmp(m_pageState.userList[i]->GetUID(), uid) == 0)
+        if (_tcscmp(m_pageState.userList[i]->GetUID(), uid) == 0)
         {
             return i;
         }
@@ -907,7 +892,7 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
         if (user && !user->isLocal) {
             user->isVideoSubscribed = isVideoSubscribed;
             if (m_rteManager) {
-                std::string userId = std::to_string(user->GetUID());
+                std::string userId = CT2A(user->GetUID());
                 if (isVideoSubscribed) {
                     m_rteManager->SubscribeRemoteVideo(userId);
                 } else {
@@ -934,7 +919,7 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
         if (user && !user->isLocal) {
             user->isAudioSubscribed = isAudioSubscribed;
             if (m_rteManager) {
-                std::string userId = std::to_string(user->GetUID());
+                std::string userId = CT2A(user->GetUID());
                 if (isAudioSubscribed) {
                     m_rteManager->SubscribeRemoteAudio(userId);
                 } else {
@@ -970,7 +955,7 @@ void CChannelPageDlg::UpdateSubscribedUsers()
             // 注意：这里我们只考虑视频订阅状态，因为SetSubscribedUsers主要用于视频流管理
             // 音频订阅通过单独的API管理
             if (user->isVideoSubscribed) {
-                subscribedUserIds.push_back(std::to_string(user->GetUID()));
+                subscribedUserIds.push_back(CT2A(user->GetUID()));
             }
         }
     }
@@ -995,7 +980,7 @@ void CChannelPageDlg::UpdateViewUserBindings()
                 // 获取视频窗口的画布容器作为视图
                 HWND canvasContainer = m_videoWindows[i]->GetCanvasContainer();
                 if (canvasContainer) {
-                    viewToUserMap[canvasContainer] = std::to_string(user->GetUID());
+                    viewToUserMap[canvasContainer] = CT2A(user->GetUID());
                 }
             }
         }
