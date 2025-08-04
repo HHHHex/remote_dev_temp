@@ -28,8 +28,8 @@ public:
     void SetLocalAudioCaptureEnabled(bool enabled);
     void SetLocalVideoCaptureEnabled(bool enabled);
 
-    void SubscribeRemoteVideo(const std::string& userId);
-    void UnsubscribeRemoteVideo(const std::string& userId);
+    void SubscribeRemoteVideo(const char* userId);
+    void UnsubscribeRemoteVideo(const char* userId);
 
     void SubscribeRemoteAudio(const std::string& userId);
     void UnsubscribeRemoteAudio(const std::string& userId);

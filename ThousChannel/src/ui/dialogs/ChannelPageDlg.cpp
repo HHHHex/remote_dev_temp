@@ -886,11 +886,10 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
         if (user && !user->isLocal) {
             user->isVideoSubscribed = isVideoSubscribed;
             if (m_rteManager) {
-                std::string userIdStr(CT2A(user->GetUID()));
                 if (isVideoSubscribed) {
-                    m_rteManager->SubscribeRemoteVideo(userIdStr);
+                    m_rteManager->SubscribeRemoteVideo(CT2A(user->GetUID()));
                 } else {
-                    m_rteManager->UnsubscribeRemoteVideo(userIdStr);
+                    m_rteManager->UnsubscribeRemoteVideo(CT2A(user->GetUID()));
                 }
             }
 
@@ -913,7 +912,6 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
         if (user && !user->isLocal) {
             user->isAudioSubscribed = isAudioSubscribed;
             if (m_rteManager) {
-                std::string userIdStr(CT2A(user->GetUID()));
                 // SubscribeRemoteAudio and UnsubscribeRemoteAudio were removed or renamed.
                 // The logic for audio subscription needs to be updated based on the new RteManager API.
                 // For now, we'll just log it.
@@ -926,7 +924,6 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
             }
         }
     }
-}
 
 //===========================================================================
 // RTE Integration Helpers
