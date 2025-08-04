@@ -166,13 +166,13 @@ function Create-PortablePackage {
     Copy-Dependencies $SourceDir $portableDir
     
     # 创建启动脚本
-    $startupScript = @"
+    $startupScriptContent = @'
 @echo off
 chcp 65001 >nul
 title ThousChannel 启动器
 
 echo ========================================
-echo           ThousChannel v$Version
+echo           ThousChannel v{0}
 echo ========================================
 echo.
 
@@ -187,13 +187,13 @@ echo [信息] 正在启动 ThousChannel...
 start "" "ThousChannel.exe"
 echo [信息] 程序已启动
 pause
-"@
+'@ -f $Version
     
-    $startupScript | Out-File (Join-Path $portableDir "启动ThousChannel.bat") -Encoding Default
+    $startupScriptContent | Out-File (Join-Path $portableDir "启动ThousChannel.bat") -Encoding oem
     
     # 创建README文件
-    $readmeContent = @"
-# ThousChannel 便携版 v$Version
+    $readmeContent = @'
+# ThousChannel 便携版 v{0}
 
 ## 使用说明
 1. 双击 `启动ThousChannel.bat` 启动程序
@@ -212,9 +212,9 @@ pause
 ## 注意事项
 - 请勿删除任何文件
 - 建议将整个文件夹放在固定位置使用
-"@
+'@ -f $Version
     
-    $readmeContent | Out-File (Join-Path $portableDir "README.txt") -Encoding UTF8
+    $readmeContent | Out-File (Join-Path $portableDir "README.txt") -Encoding UTF8BOM
     
     # 创建ZIP包
     $zipPath = Join-Path $OutputPath "ThousChannel-Portable-v$Version.zip"
@@ -249,41 +249,41 @@ function Create-InstallerPackage {
     Copy-Dependencies $SourceDir $installerDir
 
     # Inno Setup 脚本模板
-    $issScriptContent = @"
+    $issScriptContent = @'
 [Setup]
-AppName=$appName
-AppVersion=$Version
-AppPublisher=$Company
-DefaultDirName={autopf}\$appName
-DefaultGroupName=$appName
-UninstallDisplayIcon={app}\$appName.exe
+AppName={0}
+AppVersion={1}
+AppPublisher={2}
+DefaultDirName={{autopf}}\{0}
+DefaultGroupName={0}
+UninstallDisplayIcon={{app}}\{0}.exe
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-OutputBaseFilename=ThousChannel-Setup-v$Version
-OutputDir=$OutputPath
+OutputBaseFilename=ThousChannel-Setup-v{1}
+OutputDir={3}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{{cm:CreateDesktopIcon}}"; GroupDescription: "{{cm:AdditionalIcons}}"; Flags: unchecked
 
 [Files]
-Source: "$installerDir\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{4}\*"; DestDir: "{{app}}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\$appName"; Filename: "{app}\$appName.exe"
-Name: "{group}\{cm:UninstallProgram,$appName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\$appName"; Filename: "{app}\$appName.exe"; Tasks: desktopicon
+Name: "{{group}}\{0}"; Filename: "{{app}}\{0}.exe"
+Name: "{{group}}\{{cm:UninstallProgram,{0}}}"; Filename: "{{uninstallexe}}"
+Name: "{{autodesktop}}\{0}"; Filename: "{{app}}\{0}.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\$appName.exe"; Description: "{cm:LaunchProgram,$appName}"; Flags: nowait postinstall skipifsilent
-"@
+Filename: "{{app}}\{0}.exe"; Description: "{{cm:LaunchProgram,{0}}}"; Flags: nowait postinstall skipifsilent
+'@ -f $appName, $Version, $Company, $OutputPath, $installerDir
 
     $issPath = Join-Path $OutputPath "ThousChannel.iss"
-    $issScriptContent | Out-File -FilePath $issPath -Encoding utf8
+    $issScriptContent | Out-File -FilePath $issPath -Encoding UTF8BOM
 
     Write-ColorOutput "生成Inno Setup脚本: $issPath" "Green"
 
