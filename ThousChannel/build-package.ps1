@@ -43,6 +43,9 @@ function Test-Prerequisites {
     # 检查MSBuild
     $msbuildPath = $null
     $vsInstallations = @(
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe",
         "${env:ProgramFiles}\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe",
         "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe",
         "${env:ProgramFiles}\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
@@ -59,9 +62,19 @@ function Test-Prerequisites {
         Write-ColorOutput "错误: 找不到MSBuild，请确保已安装Visual Studio 2022" "Red"
         exit 1
     }
-    
     Write-ColorOutput "找到MSBuild: $msbuildPath" "Green"
-    return $msbuildPath
+
+    # 检查Inno Setup
+    $innoSetupPath = "${env:ProgramFiles(x86)}\Inno Setup 6\iscc.exe"
+    if (-not (Test-Path $innoSetupPath)) {
+        Write-ColorOutput "警告: 找不到Inno Setup编译器 (iscc.exe)，将无法创建安装包。" "Yellow"
+        Write-ColorOutput "请访问 https://jrsoftware.org/isinfo.php 下载并安装。" "Yellow"
+        $innoSetupPath = $null
+    } else {
+        Write-ColorOutput "找到Inno Setup: $innoSetupPath" "Green"
+    }
+
+    return $msbuildPath, $innoSetupPath
 }
 
 # 清理输出目录
@@ -217,6 +230,77 @@ pause
     Write-ColorOutput "ZIP包: $zipPath" "Cyan"
 }
 
+# 创建安装程序
+function Create-InstallerPackage {
+    param([string]$SourceDir, [string]$OutputPath, [string]$Version, [string]$Company, [string]$InnoSetupPath)
+
+    if (-not $InnoSetupPath) {
+        Write-ColorOutput "跳过创建安装程序，因为找不到Inno Setup编译器。" "Yellow"
+        return
+    }
+
+    Write-ColorOutput "创建安装程序..." "Yellow"
+
+    $appName = "ThousChannel"
+    $installerDir = Join-Path $OutputPath "ThousChannel-Installer-v$Version"
+    Clear-OutputDirectory $installerDir
+
+    # 复制文件到临时目录
+    Copy-Dependencies $SourceDir $installerDir
+
+    # Inno Setup 脚本模板
+    $issScriptContent = @"
+[Setup]
+AppName=$appName
+AppVersion=$Version
+AppPublisher=$Company
+DefaultDirName={autopf}\$appName
+DefaultGroupName=$appName
+UninstallDisplayIcon={app}\$appName.exe
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+OutputBaseFilename=ThousChannel-Setup-v$Version
+OutputDir=$OutputPath
+
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+[Files]
+Source: "$installerDir\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Icons]
+Name: "{group}\$appName"; Filename: "{app}\$appName.exe"
+Name: "{group}\{cm:UninstallProgram,$appName}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\$appName"; Filename: "{app}\$appName.exe"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\$appName.exe"; Description: "{cm:LaunchProgram,$appName}"; Flags: nowait postinstall skipifsilent
+"@
+
+    $issPath = Join-Path $OutputPath "ThousChannel.iss"
+    $issScriptContent | Out-File -FilePath $issPath -Encoding utf8
+
+    Write-ColorOutput "生成Inno Setup脚本: $issPath" "Green"
+
+    # 运行Inno Setup编译器
+    $process = Start-Process -FilePath $InnoSetupPath -ArgumentList "/q `"$issPath`"" -Wait -PassThru -NoNewWindow
+    if ($process.ExitCode -ne 0) {
+        Write-ColorOutput "创建安装程序失败！退出代码: $($process.ExitCode)" "Red"
+    } else {
+        Write-ColorOutput "安装程序创建成功！" "Green"
+        Write-ColorOutput "输出文件: $(Join-Path $OutputPath "ThousChannel-Setup-v$Version.exe")" "Cyan"
+    }
+
+    # 清理临时文件
+    Remove-Item $issPath -Force
+    Remove-Item $installerDir -Recurse -Force
+}
+
 # 主函数
 function Main {
     Write-ColorOutput "========================================" "Cyan"
@@ -234,7 +318,7 @@ function Main {
     Write-ColorOutput ""
     
     # 检查必要工具
-    $msbuildPath = Test-Prerequisites
+    $msbuildPath, $innoSetupPath = Test-Prerequisites
     
     # 清理输出目录
     if ($Clean) {
@@ -276,8 +360,12 @@ function Main {
         "Portable" {
             Create-PortablePackage $sourceDir $OutputPath $Version
         }
+        "Installer" {
+            Create-InstallerPackage $sourceDir $OutputPath $Version $Company $innoSetupPath
+        }
         "All" {
             Create-PortablePackage $sourceDir $OutputPath $Version
+            Create-InstallerPackage $sourceDir $OutputPath $Version $Company $innoSetupPath
         }
     }
     
