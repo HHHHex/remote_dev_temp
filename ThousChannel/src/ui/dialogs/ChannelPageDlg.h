@@ -112,8 +112,7 @@ private:
     ChannelPageState m_pageState;
     RteManager* m_rteManager;
     BOOL m_isChannelJoined;
-    CMap<UINT_PTR, UINT_PTR, HWND, HWND> m_userCanvasMap;
-    std::string m_lastUserId;  // Temporary storage for user ID in message handlers
+    CMap<CString, LPCTSTR, HWND, HWND> m_userCanvasMap;
 
     // Initialization
     void InitializeControls();
