@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ThousChannel.h"
 #include "ChannelPageDlg.h"
 #include "Logger.h"
@@ -889,7 +889,8 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
                 std::string userIdStr = CT2A(user->GetUID());
                 if (isVideoSubscribed) {
                     m_rteManager->SubscribeRemoteVideo(userIdStr);
-                } else {
+                }
+                else {
                     m_rteManager->UnsubscribeRemoteVideo(userIdStr);
                 }
             }
@@ -962,7 +963,6 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     // This function's logic might need a complete review based on RteManager's capabilities.
     // The SetSubscribedUsers might have been intended for bulk subscription management which may have changed.
     // For now, we will comment out the call to avoid compilation errors.
-}
 
     /*
     std::vector<std::string> subscribedUserIds;
