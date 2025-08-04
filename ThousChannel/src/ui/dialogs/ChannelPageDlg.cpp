@@ -904,7 +904,6 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
         }
     }
 }
-}
 
 void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL isAudioSubscribed)
 {
@@ -927,7 +926,6 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
             }
         }
     }
-}
 }
 
 //===========================================================================
