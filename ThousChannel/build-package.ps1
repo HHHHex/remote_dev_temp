@@ -1,5 +1,5 @@
 # ThousChannel Build Package Script
-# Version: 1.0.3 (Fix encoding issues)
+# Version: 1.0.4 (Add timestamp to package names)
 
 param(
     [Parameter(Mandatory=$false)]
@@ -132,7 +132,25 @@ function Copy-Dependencies {
         Copy-Item $exePath $TargetDir
         Write-ColorOutput "Copied main executable: ThousChannel.exe" "Green"
     } else {
-        Write-ColorOutput "Warning: Main executable not found" "Yellow"
+        Write-ColorOutput "Warning: Main executable not found at: $exePath" "Yellow"
+        # Try alternative paths
+        $alternativePaths = @(
+            "..\x64\$Configuration\ThousChannel.exe",
+            "..\..\x64\$Configuration\ThousChannel.exe",
+            "x64\$Configuration\ThousChannel.exe"
+        )
+        $found = $false
+        foreach ($altPath in $alternativePaths) {
+            if (Test-Path $altPath) {
+                Copy-Item $altPath $TargetDir
+                Write-ColorOutput "Copied main executable from alternative path: $altPath" "Green"
+                $found = $true
+                break
+            }
+        }
+        if (-not $found) {
+            Write-ColorOutput "Error: Could not find ThousChannel.exe in any expected location" "Red"
+        }
     }
     
     # Copy SDK files
@@ -142,6 +160,25 @@ function Copy-Dependencies {
         Copy-Item "$sdkSource\*.dll" $sdkTarget -ErrorAction SilentlyContinue
         Copy-Item "$sdkSource\*.lib" $sdkTarget -ErrorAction SilentlyContinue
         Write-ColorOutput "Copied SDK files to: $sdkTarget" "Green"
+    } else {
+        # Try alternative SDK paths
+        $sdkAlternativePaths = @(
+            "..\sdk\x86_64",
+            "..\..\sdk\x86_64"
+        )
+        $sdkFound = $false
+        foreach ($sdkAltPath in $sdkAlternativePaths) {
+            if (Test-Path $sdkAltPath) {
+                Copy-Item "$sdkAltPath\*.dll" $sdkTarget -ErrorAction SilentlyContinue
+                Copy-Item "$sdkAltPath\*.lib" $sdkTarget -ErrorAction SilentlyContinue
+                Write-ColorOutput "Copied SDK files from alternative path: $sdkAltPath" "Green"
+                $sdkFound = $true
+                break
+            }
+        }
+        if (-not $sdkFound) {
+            Write-ColorOutput "Warning: SDK files not found" "Yellow"
+        }
     }
     
     # Copy resource files
@@ -150,6 +187,24 @@ function Copy-Dependencies {
     if (Test-Path $resSource) {
         Copy-Item "$resSource\*" $resTarget -Recurse -ErrorAction SilentlyContinue
         Write-ColorOutput "Copied resource files to: $resTarget" "Green"
+    } else {
+        # Try alternative resource paths
+        $resAlternativePaths = @(
+            "..\resources",
+            "..\..\resources"
+        )
+        $resFound = $false
+        foreach ($resAltPath in $resAlternativePaths) {
+            if (Test-Path $resAltPath) {
+                Copy-Item "$resAltPath\*" $resTarget -Recurse -ErrorAction SilentlyContinue
+                Write-ColorOutput "Copied resource files from alternative path: $resAltPath" "Green"
+                $resFound = $true
+                break
+            }
+        }
+        if (-not $resFound) {
+            Write-ColorOutput "Warning: Resource files not found" "Yellow"
+        }
     }
 }
 
@@ -159,7 +214,9 @@ function Create-PortablePackage {
     
     Write-ColorOutput "Creating portable package..." "Yellow"
     
-    $portableDir = Join-Path $OutputPath "ThousChannel-Portable-v$Version"
+    # Generate timestamp for package naming
+    $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+    $portableDir = Join-Path $OutputPath "ThousChannel-Portable-v$Version-$timestamp"
     Clear-OutputDirectory $portableDir
     
     # Copy files
@@ -217,7 +274,7 @@ pause
     $readmeContent | Out-File (Join-Path $portableDir "README.txt") -Encoding ASCII
     
     # Create ZIP package
-    $zipPath = Join-Path $OutputPath "ThousChannel-Portable-v$Version.zip"
+    $zipPath = Join-Path $OutputPath "ThousChannel-Portable-v$Version-$timestamp.zip"
     if (Test-Path $zipPath) {
         Remove-Item $zipPath -Force
     }
@@ -242,7 +299,9 @@ function Create-InstallerPackage {
     Write-ColorOutput "Creating installer package..." "Yellow"
 
     $appName = "ThousChannel"
-    $installerDir = Join-Path $OutputPath "ThousChannel-Installer-v$Version"
+    # Generate timestamp for package naming
+    $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+    $installerDir = Join-Path $OutputPath "ThousChannel-Installer-v$Version-$timestamp"
     Clear-OutputDirectory $installerDir
 
     # Copy files to temporary directory
@@ -260,7 +319,7 @@ UninstallDisplayIcon={app}\$appName.exe
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-OutputBaseFilename=ThousChannel-Setup-v$Version
+OutputBaseFilename=ThousChannel-Setup-v$Version-$timestamp
 OutputDir=$OutputPath
 
 [Languages]
@@ -293,7 +352,7 @@ Filename: "{app}\$appName.exe"; Description: "{cm:LaunchProgram,$appName}"; Flag
         Write-ColorOutput "Installer creation failed! Exit code: $($process.ExitCode)" "Red"
     } else {
         Write-ColorOutput "Installer created successfully!" "Green"
-        Write-ColorOutput "Output file: $(Join-Path $OutputPath "ThousChannel-Setup-v$Version.exe")" "Cyan"
+        Write-ColorOutput "Output file: $(Join-Path $OutputPath "ThousChannel-Setup-v$Version-$timestamp.exe")" "Cyan"
     }
 
     # Clean up temporary files
