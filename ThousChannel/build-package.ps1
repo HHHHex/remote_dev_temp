@@ -75,7 +75,6 @@ function Test-Prerequisites {
     }
 
     return $msbuildPath, $innoSetupPath
-    }
 }
 
 # 清理输出目录
