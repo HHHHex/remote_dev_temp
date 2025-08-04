@@ -359,7 +359,7 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
 
     // Default subscribe to new user's streams
     if (m_rteManager) {
-        std::string userIdStr(CT2A(uid));
+        std::string userIdStr = CT2A(uid);
         m_rteManager->SubscribeRemoteVideo(userIdStr);
         LOG_INFO_FMT(_T("Subscribing to remote video for user: %s"), uid);
         // m_rteManager->SubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
@@ -390,7 +390,7 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
         ChannelUser* userInfo = m_pageState.userList[userIndex];
         
         if (m_rteManager && !userInfo->isLocal) {
-            std::string userIdStr(CT2A(uid));
+            std::string userIdStr = CT2A(uid);
              m_rteManager->UnsubscribeRemoteVideo(userIdStr);
              LOG_INFO_FMT(_T("Unsubscribing from remote video for user: %s"), uid);
             // m_rteManager->UnsubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
@@ -886,7 +886,7 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
         if (user && !user->isLocal) {
             user->isVideoSubscribed = isVideoSubscribed;
             if (m_rteManager) {
-                std::string userIdStr(CT2A(user->GetUID()));
+                std::string userIdStr = CT2A(user->GetUID());
                 if (isVideoSubscribed) {
                     m_rteManager->SubscribeRemoteVideo(userIdStr);
                 } else {
