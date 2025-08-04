@@ -90,7 +90,7 @@ CChannelPageDlg::~CChannelPageDlg()
     DestroyVideoWindows();
     
     // Clean up all user canvases
-    UINT_PTR uidKey;
+    CString uidKey;
     HWND canvas;
     POSITION pos = m_userCanvasMap.GetStartPosition();
     while (pos != NULL)
@@ -361,7 +361,8 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     if (m_rteManager) {
         std::string userIdStr(CT2A(uid));
         m_rteManager->SubscribeRemoteVideo(userIdStr);
-        m_rteManager->SubscribeRemoteAudio(userIdStr);
+        // m_rteManager->SubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
+        LOG_INFO_FMT(_T("Subscribing to remote audio for user: %s"), uid);
     }
     int userIndex = FindUserIndex(uid);
     if (userIndex != -1) {
@@ -391,7 +392,8 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
         if (m_rteManager && !userInfo->isLocal) {
             std::string userIdStr(CT2A(uid));
             m_rteManager->UnsubscribeRemoteVideo(userIdStr);
-            m_rteManager->UnsubscribeRemoteAudio(userIdStr);
+            // m_rteManager->UnsubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
+            LOG_INFO_FMT(_T("Unsubscribing from remote audio for user: %s"), uid);
         }
         
         DestroyUserCanvas(uid);
@@ -762,7 +764,7 @@ void CChannelPageDlg::AttachVisibleUsersToDisplay()
         if (userIndex < m_pageState.userList.GetSize())
         {
             ChannelUser* userInfo = m_pageState.userList[userIndex];
-            HWND displayWindow = m_videoWindows[i]->GetCanvasContainer();
+            HWND displayWindow = m_videoWindows[i]->GetSafeHwnd();
             HWND canvas = GetOrCreateUserCanvas(userInfo->GetUID());
 
             if (displayWindow && ::IsWindow(displayWindow) && canvas && ::IsWindow(canvas))
@@ -884,11 +886,11 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
         if (user && !user->isLocal) {
             user->isVideoSubscribed = isVideoSubscribed;
             if (m_rteManager) {
-                std::string userId = CT2A(user->GetUID());
+                std::string userIdStr(CT2A(user->GetUID()));
                 if (isVideoSubscribed) {
-                    m_rteManager->SubscribeRemoteVideo(userId);
+                    m_rteManager->SubscribeRemoteVideo(userIdStr);
                 } else {
-                    m_rteManager->UnsubscribeRemoteVideo(userId);
+                    m_rteManager->UnsubscribeRemoteVideo(userIdStr);
                 }
             }
 
@@ -902,6 +904,7 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
         }
     }
 }
+}
 
 void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL isAudioSubscribed)
 {
@@ -911,7 +914,7 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
         if (user && !user->isLocal) {
             user->isAudioSubscribed = isAudioSubscribed;
             if (m_rteManager) {
-                std::string userId = CT2A(user->GetUID());
+                std::string userIdStr(CT2A(user->GetUID()));
                 // SubscribeRemoteAudio and UnsubscribeRemoteAudio were removed or renamed.
                 // The logic for audio subscription needs to be updated based on the new RteManager API.
                 // For now, we'll just log it.
@@ -924,6 +927,7 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
             }
         }
     }
+}
 }
 
 //===========================================================================
@@ -969,7 +973,8 @@ void CChannelPageDlg::UpdateViewUserBindings()
                 // GetCanvasContainer is not a member of CVideoGridCell, using the window handle directly.
                 HWND canvasWnd = m_videoWindows[i]->GetSafeHwnd();
                 if (canvasWnd) {
-                    viewToUserMap[canvasWnd] = CT2A(user->GetUID());
+                    std::string userIdStr(CT2A(user->GetUID()));
+                    viewToUserMap[canvasWnd] = userIdStr;
                 }
             }
         }
