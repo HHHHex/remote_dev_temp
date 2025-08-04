@@ -18,8 +18,25 @@
 
 class RteManager::Impl {
 public:
+    IRteManagerEventHandler* eventHandler_;
+    bool inChannel_;
+    RteManagerConfig config_;
+    std::unique_ptr<rte::Rte> rte_;
+    std::unique_ptr<rte::LocalUser> localUser_;
+    std::unique_ptr<rte::Channel> channel_;
+    std::unique_ptr<RteManagerChannelObserver> channelObserver_;
+    std::string currentChannelId_;
+    std::unique_ptr<rte::LocalRealTimeStream> localStream_;
+    std::unique_ptr<rte::MicAudioTrack> audioTrack_;
+    std::unique_ptr<rte::CameraVideoTrack> videoTrack_;
+
+
+
+
+
+
     Impl() : eventHandler_(nullptr), inChannel_(false) {}
-    ~Impl() { Destroy(); }
+    ~Impl() { this->Destroy(); }
 
     void SetEventHandler(IRteManagerEventHandler* handler) {
         eventHandler_ = handler;
@@ -63,37 +80,41 @@ public:
     class RteManagerChannelObserver : public rte::ChannelObserver {
     public:
         explicit RteManagerChannelObserver(Impl* owner) : owner_(owner) {}
-        void OnRemoteUsersJoined(const std::vector<rte::RemoteUser>& new_users, const std::vector<rte::RemoteUserInfo>&) override {
+        void OnRemoteUsersJoined(const std::vector<rte::RemoteUser>& new_users, const std::vector<rte::RemoteUserInfo>& new_users_info) override {
             for (const auto& user : new_users) {
-                const std::string& userId = user.GetUserId();
+                rte::UserInfo userInfo;
+                user.GetInfo(&userInfo);
+                const std::string& userId = userInfo.UserId();
                 bool isRobot = false;
                 try {
                     isRobot = std::stoi(userId) > 1000;
                 } catch (...) {}
                 if (isRobot) {
-                    if (std::find(owner_->robotUserIds_.begin(), owner_->robotUserIds_.end(), userId) == owner_->robotUserIds_.end())
-                        owner_->robotUserIds_.push_back(userId);
+                    if (std::find(this->owner_->robotUserIds_.begin(), this->owner_->robotUserIds_.end(), userId) == this->owner_->robotUserIds_.end())
+                        this->owner_->robotUserIds_.push_back(userId);
                 } else {
-                    if (std::find(owner_->realUserIds_.begin(), owner_->realUserIds_.end(), userId) == owner_->realUserIds_.end())
-                        owner_->realUserIds_.push_back(userId);
+                    if (std::find(this->owner_->realUserIds_.begin(), this->owner_->realUserIds_.end(), userId) == this->owner_->realUserIds_.end())
+                        this->owner_->realUserIds_.push_back(userId);
                 }
             }
-            if (owner_->eventHandler_) owner_->eventHandler_->OnUserListChanged();
+            if (this->owner_->eventHandler_) this->owner_->eventHandler_->OnUserListChanged();
         }
-        void OnRemoteUsersLeft(const std::vector<rte::RemoteUser>& removed_users, const std::vector<rte::RemoteUserInfo>&) override {
+        void OnRemoteUsersLeft(const std::vector<rte::RemoteUser>& removed_users, const std::vector<rte::RemoteUserInfo>& removed_users_info) override {
             for (const auto& user : removed_users) {
-                const std::string& userId = user.GetUserId();
-                auto rit = std::find(owner_->robotUserIds_.begin(), owner_->robotUserIds_.end(), userId);
-                if (rit != owner_->robotUserIds_.end()) {
-                    owner_->robotUserIds_.erase(rit);
+                rte::UserInfo userInfo;
+                user.GetInfo(&userInfo);
+                const std::string& userId = userInfo.UserId();
+                auto rit = std::find(this->owner_->robotUserIds_.begin(), this->owner_->robotUserIds_.end(), userId);
+                if (rit != this->owner_->robotUserIds_.end()) {
+                    this->owner_->robotUserIds_.erase(rit);
                     continue;
                 }
-                auto uit = std::find(owner_->realUserIds_.begin(), owner_->realUserIds_.end(), userId);
-                if (uit != owner_->realUserIds_.end()) {
-                    owner_->realUserIds_.erase(uit);
+                auto uit = std::find(this->owner_->realUserIds_.begin(), this->owner_->realUserIds_.end(), userId);
+                if (uit != this->owner_->realUserIds_.end()) {
+                    this->owner_->realUserIds_.erase(uit);
                 }
             }
-            if (owner_->eventHandler_) owner_->eventHandler_->OnUserListChanged();
+            if (this->owner_->eventHandler_) this->owner_->eventHandler_->OnUserListChanged();
         }
     private:
         Impl* owner_;
@@ -522,4 +543,4 @@ const std::vector<std::string>& RteManager::GetRealUserIds() const {
 
 const std::vector<std::string>& RteManager::GetRobotUserIds() const {
     return impl_->robotUserIds_;
-} 
+}

@@ -37,35 +37,35 @@ using TrackPubStateChangedReason = RteTrackPubStateChangedReason;
  * @brief Audio volume information
  * @technical preview
  */
-class AudioVolumeInfo {
-  public:
-    explicit AudioVolumeInfo(RteAudioVolumeInfo* info) {
-      if(info != nullptr) {
-        c_info = *info;
-      }
-    }
+// class AudioVolumeInfo {
+//   public:
+//     explicit AudioVolumeInfo(RteAudioVolumeInfo* info) {
+//       if(info != nullptr) {
+//         c_info = *info;
+//       }
+//     }
 
-    /**
-     * @brief Get the user ID
-     * @technical preview
-     * @return std::string User ID
-     */
-    std::string GetUserId() const {
-      return "";
-    }
+//     /**
+//      * @brief Get the user ID
+//      * @technical preview
+//      * @return std::string User ID
+//      */
+//     std::string GetUserId() const {
+//       return "";
+//     }
 
-    /**
-     * @brief Get the volume level
-     * @technical preview
-     * @return int Volume level
-     */
-    int GetVolume() const {
-      return c_info.volume;
-    }
+//     /**
+//      * @brief Get the volume level
+//      * @technical preview
+//      * @return int Volume level
+//      */
+//     int GetVolume() const {
+//       return c_info.volume;
+//     }
 
-  private:
-    RteAudioVolumeInfo c_info;
-};
+//   private:
+//     RteAudioVolumeInfo c_info;
+// };
 
 /**
  * @brief 
@@ -588,7 +588,7 @@ static void OnSubStateChanged(RteChannelObserver *self, RteRemoteStream *stream,
 static void OnPubStateChanged(RteChannelObserver *self, RteLocalStream *stream, RteTrack *track, RteTrackMediaType track_media_type,
                             RteTrackPubState old_state, RteTrackPubState new_state, RteTrackPubStateChangedReason reason, RteError *err);
 static void OnActiveSpeaker(RteChannelObserver *self, RteStream *stream);
-static void OnAudioVolumeIndication(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt);
+// static void OnAudioVolumeIndication(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt);
 static void OnChannelTokenWillExpire(RteChannelObserver *self, RteString *channel_token);
 static void OnStreamTokenWillExpire(RteChannelObserver *self, RteStream *stream, RteString *stream_token);
 static void OnChannelTokenExpired(RteChannelObserver *self);
@@ -626,7 +626,7 @@ class ChannelObserver {
       c_observer->on_sub_state_changed = rte::OnSubStateChanged;
       c_observer->on_pub_state_changed = rte::OnPubStateChanged;
       c_observer->on_active_speaker = rte::OnActiveSpeaker;
-      c_observer->on_audio_volume_indication = rte::OnAudioVolumeIndication;
+      // c_observer->on_audio_volume_indication = rte::OnAudioVolumeIndication;
       c_observer->on_channel_token_will_expire = rte::OnChannelTokenWillExpire;
       c_observer->on_stream_token_will_expire = rte::OnStreamTokenWillExpire;
       c_observer->on_channel_token_expired = rte::OnChannelTokenExpired;
@@ -775,8 +775,8 @@ class ChannelObserver {
      * @param audio_volume_infos Array of audio volume information
      * @param audio_volume_infos_cnt Number of audio volume information entries
      */
-    virtual void OnAudioVolumeIndication(const std::vector<AudioVolumeInfo>& audio_volume_infos) {
-    }
+    // virtual void OnAudioVolumeIndication(const std::vector<AudioVolumeInfo>& audio_volume_infos) {
+    // }
 
     /**
      * @brief Called when channel token is about to expire
@@ -1028,16 +1028,16 @@ void OnActiveSpeaker(RteChannelObserver *self, RteStream *stream) {
   }
 }
 
-void OnAudioVolumeIndication(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt) {
-  if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    std::vector<AudioVolumeInfo> volume_infos;
-    for(size_t i = 0; i < audio_volume_infos_cnt; i++) {
-      volume_infos.push_back(AudioVolumeInfo(&audio_volume_infos[i]));
-    }
-    observer->OnAudioVolumeIndication(volume_infos);
-  }
-}
+// void OnAudioVolumeIndication(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt) {
+//   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
+//     ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
+//     std::vector<AudioVolumeInfo> volume_infos;
+//     for(size_t i = 0; i < audio_volume_infos_cnt; i++) {
+//       volume_infos.push_back(AudioVolumeInfo(&audio_volume_infos[i]));
+//     }
+//     observer->OnAudioVolumeIndication(volume_infos);
+//   }
+// }
 
 void OnChannelTokenWillExpire(RteChannelObserver *self, RteString *channel_token) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {

@@ -178,7 +178,7 @@ struct RteChannelObserver {
   void (*on_pub_state_changed)(RteChannelObserver *self, RteLocalStream *stream, RteTrack *track, RteTrackMediaType track_media_type, 
                                 RteTrackPubState old_state, RteTrackPubState new_state, RteTrackPubStateChangedReason reason, RteError *err);
   void (*on_active_speaker)(RteChannelObserver *self, RteStream *stream);
-  void (*on_audio_volume_indication)(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt);
+  // void (*on_audio_volume_indication)(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt);
   void (*on_channel_token_will_expire)(RteChannelObserver *self, RteString *channel_token);
   void (*on_stream_token_will_expire)(RteChannelObserver *self, RteStream *stream, RteString *stream_token);
   void (*on_channel_token_expired)(RteChannelObserver *self);
