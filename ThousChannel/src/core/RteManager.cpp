@@ -39,11 +39,11 @@ void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
     // Mock action
 }
 
-void RteManager::SubscribeRemoteVideo(const char* userId) {
+void RteManager::SubscribeRemoteVideo(const std::string& userId) {
     // Mock action
 }
 
-void RteManager::UnsubscribeRemoteVideo(const char* userId) {
+void RteManager::UnsubscribeRemoteVideo(const std::string& userId) {
     // Mock action
 }
 
