@@ -110,7 +110,7 @@ private:
     bool is_owner_ = false;
 };
 
-// 静态回调函数声明
+// Static callback function declaration
 static void OnVideoTrackEvent(RteVideoTrackObserver *self, RteVideoTrackEvent event);
 static void OnVideoTrackFrame(RteVideoTrackObserver *self, RteVideoFrame *video_frame);
 
@@ -120,7 +120,7 @@ public:
         c_observer = RteVideoTrackObserverCreate(nullptr);
         if (c_observer != nullptr) {
             c_observer->base_observer.me_in_target_lang = this;
-            // 注意：C接口中这些回调函数被注释掉了，暂时无法设置
+            // Note: These callback functions are commented out in the C interface and cannot be set for now
             // c_observer->on_event = rte::OnVideoTrackEvent;
             // c_observer->on_frame = rte::OnVideoTrackFrame;
         }
@@ -154,7 +154,7 @@ private:
     RteVideoTrackObserver* c_observer;
 };
 
-// 静态回调函数实现
+// Static callback function implementation
 void OnVideoTrackEvent(RteVideoTrackObserver *self, RteVideoTrackEvent event) {
     if (self != nullptr) {
         VideoTrackObserver* observer = static_cast<VideoTrackObserver*>(self->base_observer.me_in_target_lang);

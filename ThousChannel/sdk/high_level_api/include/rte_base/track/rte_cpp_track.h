@@ -26,9 +26,9 @@ public:
     }
 
     explicit TrackConfig(RteTrackConfig* config)
-        : c_track_config_(config), is_owner_(false) { 
+        : c_track_config_(config), is_owner_(false) {
     }
-    
+
     virtual ~TrackConfig() {
         if(is_owner_ && c_track_config_ != nullptr){
             RteTrackConfigDeinit(c_track_config_, nullptr);
@@ -52,7 +52,7 @@ public:
     RteTrackConfig* get_underlying_impl() {
         return c_track_config_;
     }
-    
+
 private:
     RteTrackConfig* c_track_config_ = nullptr;
     bool is_owner_ = false;
@@ -66,10 +66,10 @@ public:
     }
 
     explicit TrackInfo(RteTrackInfo* info)
-        : c_track_info_(info), is_owner_(false) { 
+        : c_track_info_(info), is_owner_(false) {
     }
-    
-    virtual ~TrackInfo() { 
+
+    virtual ~TrackInfo() {
         if(is_owner_ && c_track_info_ != nullptr){
             RteTrackInfoDeinit(c_track_info_, nullptr);
             delete c_track_info_;
@@ -103,15 +103,15 @@ private:
     RteTrackStats c_stats_;
 };
 
-// 静态回调函数声明
+// Static callback function declaration
 static void OnTrackStateChanged(RteTrackObserver *self, RteTrackState old_state, RteTrackState new_state, RteTrackStateChangedReason reason, RteError *err);
 
 class TrackObserver {
 public:
     TrackObserver() {
     }
-    
-    ~TrackObserver() { 
+
+    ~TrackObserver() {
     }
 
 
@@ -126,7 +126,7 @@ private:
     RteTrackObserver* c_observer;
 };
 
-// 静态回调函数实现
+// Static callback function implementation
 void OnTrackStateChanged(RteTrackObserver *self, RteTrackState old_state, RteTrackState new_state, RteTrackStateChangedReason reason, RteError *err) {
     if (self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
         TrackObserver* observer = static_cast<TrackObserver*>(self->base_observer.me_in_target_lang);
@@ -148,7 +148,7 @@ class Track {
             c_track.handle = track->handle;
         }
     }
-    
+
     virtual ~Track() = default;
 
     void GetStats(std::function<void(TrackStats* stats, Error* err)> cb) {
@@ -173,7 +173,7 @@ class Track {
     }
 
   protected:
-    RteTrack c_track = {0};
+    RteTrack c_track = {};
 };
 
 }  // namespace rte

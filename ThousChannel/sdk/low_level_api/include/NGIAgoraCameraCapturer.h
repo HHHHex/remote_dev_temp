@@ -102,13 +102,13 @@ class ICameraCapturer : public RefCountInterface {
     /**
      * Gets the capability of a specified device.
      * @param deviceUniqueIdUTF8 The pointer to the ID of the device in the UTF8 format.
-     * @param deviceCapabilityNumber The capability number of the device.
+     * @param capabilityIndex The capability index of the device.
      * @param capability The reference to the video capability. See {@link VideoFormat}.
      * @return
      * The capability number of the device.
      */
     virtual int32_t GetCapability(const char* deviceUniqueIdUTF8,
-                                  const uint32_t deviceCapabilityNumber,
+                                  const uint32_t capabilityIndex,
                                   VideoFormat& capability) = 0;
   };
 

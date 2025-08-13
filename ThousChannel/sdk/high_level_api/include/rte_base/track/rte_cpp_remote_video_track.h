@@ -133,7 +133,7 @@ public:
         c_observer = RteRemoteVideoTrackObserverCreate(nullptr);
         if (c_observer != nullptr) {
             c_observer->video_track_observer.base_observer.me_in_target_lang = this;
-            // 注意：C接口中这些回调函数被注释掉了，暂时无法设置
+            // Note: These callback functions are commented out in the C interface and cannot be set for now
             // c_observer->on_event = rte::OnRemoteVideoTrackEvent;
             // c_observer->on_frame = rte::OnRemoteVideoTrackFrame;
         }
@@ -203,8 +203,8 @@ public:
      * @param err Pointer to Error object (optional)
      */
     void RegisterTrackObserver(RemoteVideoTrackObserver* observer, std::function<void(RemoteVideoTrackObserver* self)> destroyer, Error* err = nullptr) {
-        // 注意：C接口中的回调函数签名与C++不同，需要适配
-        // 这里暂时提供一个简化的实现
+        // Note: The callback function signatures in the C interface are different from C++, adaptation is required
+        // A simplified implementation is provided here
         RteRemoteVideoTrackRegisterTrackObserver(&c_remote_video_track, observer != nullptr ? observer->get_underlying_impl() : nullptr, nullptr, err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 

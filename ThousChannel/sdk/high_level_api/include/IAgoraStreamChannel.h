@@ -234,6 +234,16 @@ class IStreamChannel {
   virtual void getSubscribedUserList(const char* topic, uint64_t& requestId) = 0;
 
   /**
+   * Set parameters of the stream channel
+   *
+   * @param [in] parameters The parameters in json format
+   * @return
+   * - 0: Success.
+   * - < 0: Failure.
+   */
+  virtual int setParameters(const char* parameters) = 0;
+
+  /**
    * Release the stream channel instance.
    *
    * @return

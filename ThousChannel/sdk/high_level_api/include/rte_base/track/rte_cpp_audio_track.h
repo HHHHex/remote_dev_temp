@@ -38,14 +38,14 @@ public:
      * @param config Pointer to existing RteAudioTrackConfig
      */
     explicit AudioTrackConfig(RteAudioTrackConfig* config)
-        : TrackConfig(reinterpret_cast<RteTrackConfig*>(config)), c_audio_track_config_(config), is_owner_(false) { 
+        : TrackConfig(reinterpret_cast<RteTrackConfig*>(config)), c_audio_track_config_(config), is_owner_(false) {
     }
-    
+
     /**
      * @brief Destructor for AudioTrackConfig
      * @technical preview
      */
-    virtual ~AudioTrackConfig() { 
+    virtual ~AudioTrackConfig() {
         if(is_owner_ && c_audio_track_config_ != nullptr){
             RteAudioTrackConfigDeinit(c_audio_track_config_, nullptr);
             delete c_audio_track_config_;
@@ -92,12 +92,12 @@ public:
     explicit AudioTrackInfo(RteAudioTrackInfo* info)
         : TrackInfo(reinterpret_cast<RteTrackInfo*>(info)), c_audio_track_info_(info), is_owner_(false) {
     }
-    
+
     /**
      * @brief Destructor for AudioTrackInfo
      * @technical preview
      */
-    virtual ~AudioTrackInfo() { 
+    virtual ~AudioTrackInfo() {
         if(is_owner_ && c_audio_track_info_ != nullptr){
             RteAudioTrackInfoDeinit(c_audio_track_info_, nullptr);
             delete c_audio_track_info_;
@@ -130,16 +130,16 @@ public:
      * @brief Default constructor for AudioTrackObserver
      * @technical preview
      */
-    AudioTrackObserver() { 
+    AudioTrackObserver() {
         c_observer = RteAudioTrackObserverCreate(nullptr);
     }
-    
+
     /**
      * @brief Destructor for AudioTrackObserver
      * @technical preview
      */
-    ~AudioTrackObserver() { 
-        RteAudioTrackObserverDestroy(c_observer, nullptr); 
+    ~AudioTrackObserver() {
+        RteAudioTrackObserverDestroy(c_observer, nullptr);
     }
 
     /**
@@ -174,7 +174,7 @@ public:
 
     virtual ~AudioTrack() = default;
 
-    // 注意：RteAudioTrackGetInfo 在 C 接口中未定义，这里暂时注释掉
+    // Note: RteAudioTrackGetInfo is not defined in the C interface, temporarily commented out here
     // bool GetInfo(AudioTrackInfo* info, Error* err = nullptr) {
     //     return RteAudioTrackGetInfo(&c_audio_track, info != nullptr ? info->get_underlying_impl() : nullptr, err != nullptr ? err->get_underlying_impl() : nullptr);
     // }
@@ -211,7 +211,7 @@ public:
     }
 
 protected:
-    RteAudioTrack c_audio_track = {0};
+    RteAudioTrack c_audio_track = {};
 };
 
 }  // namespace rte

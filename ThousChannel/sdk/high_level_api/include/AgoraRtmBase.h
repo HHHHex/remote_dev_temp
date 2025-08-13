@@ -77,6 +77,7 @@ namespace agora {
 namespace rtm {
 
 class IRtmEventHandler;
+
 const uint32_t DEFAULT_LOG_SIZE_IN_KB = 1024;
 
 /**
@@ -326,6 +327,10 @@ enum RTM_LINK_STATE_CHANGE_REASON {
    * Lock not available.
    */
   RTM_LINK_STATE_CHANGE_REASON_LOCK_NOT_AVAILABLE = 36,
+  /**
+   * Login too frequent.
+   */
+  RTM_LINK_STATE_CHANGE_REASON_LOGIN_TOO_FREQUENT = 37,
 };
 
 /**
@@ -530,6 +535,10 @@ enum RTM_ERROR_CODE {
    * -10025: Perform operation failed due to RTM service is not connected.
    */
   RTM_ERROR_NOT_CONNECTED = -10025,
+  /**
+   * -10026: Renew token timeout.
+   */
+  RTM_ERROR_RENEW_TOKEN_TIMEOUT = -10026,
 
   /**
    * -11001 ~ -12000 : reserved for channel error.
@@ -1688,6 +1697,13 @@ struct RtmConfig {
   bool multipath;
 
   /**
+   * iot devices may be restricted by isp, need to enable this feature to connect to server by domain.
+   * -true: connect to servers restricted by isp
+   * -false: (Default) connect to servers with no limit
+   */
+  bool ispPolicyEnabled;
+
+  /**
    * The callbacks handler
    */
   IRtmEventHandler* eventHandler;
@@ -1721,6 +1737,7 @@ struct RtmConfig {
                 context(NULL),
                 useStringUserId(true),
                 multipath(false),
+                ispPolicyEnabled(false),
                 eventHandler(NULL) {}
 };
 

@@ -32,40 +32,41 @@ using TrackSubState = RteTrackSubState;
 using TrackPubState = RteTrackPubState;
 using TrackSubStateChangedReason = RteTrackSubStateChangedReason;
 using TrackPubStateChangedReason = RteTrackPubStateChangedReason;
+using ChannelSubscribeType = RteChannelSubscribeType;
 
 /**
  * @brief Audio volume information
  * @technical preview
  */
-// class AudioVolumeInfo {
-//   public:
-//     explicit AudioVolumeInfo(RteAudioVolumeInfo* info) {
-//       if(info != nullptr) {
-//         c_info = *info;
-//       }
-//     }
+class AudioVolumeInfo {
+  public:
+    explicit AudioVolumeInfo(RteAudioVolumeInfo* info) {
+      if(info != nullptr) {
+        c_info = *info;
+      }
+    }
 
-//     /**
-//      * @brief Get the user ID
-//      * @technical preview
-//      * @return std::string User ID
-//      */
-//     std::string GetUserId() const {
-//       return "";
-//     }
+    /**
+     * @brief Get the user ID
+     * @technical preview
+     * @return std::string User ID
+     */
+    std::string GetUserId() const {
+      return "";
+    }
 
-//     /**
-//      * @brief Get the volume level
-//      * @technical preview
-//      * @return int Volume level
-//      */
-//     int GetVolume() const {
-//       return c_info.volume;
-//     }
+    /**
+     * @brief Get the volume level
+     * @technical preview
+     * @return int Volume level
+     */
+    int GetVolume() const {
+      return c_info.volume;
+    }
 
-//   private:
-//     RteAudioVolumeInfo c_info;
-// };
+  private:
+    RteAudioVolumeInfo c_info;
+};
 
 /**
  * @brief 
@@ -588,7 +589,7 @@ static void OnSubStateChanged(RteChannelObserver *self, RteRemoteStream *stream,
 static void OnPubStateChanged(RteChannelObserver *self, RteLocalStream *stream, RteTrack *track, RteTrackMediaType track_media_type,
                             RteTrackPubState old_state, RteTrackPubState new_state, RteTrackPubStateChangedReason reason, RteError *err);
 static void OnActiveSpeaker(RteChannelObserver *self, RteStream *stream);
-// static void OnAudioVolumeIndication(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt);
+static void OnAudioVolumeIndication(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt);
 static void OnChannelTokenWillExpire(RteChannelObserver *self, RteString *channel_token);
 static void OnStreamTokenWillExpire(RteChannelObserver *self, RteStream *stream, RteString *stream_token);
 static void OnChannelTokenExpired(RteChannelObserver *self);
@@ -596,10 +597,8 @@ static void OnStreamTokenExpired(RteChannelObserver *self, RteStream *stream);
 static void OnChannelStreamStateSnapshotReceived(RteChannelObserver *self, RtePresenceState *states, size_t states_cnt);
 static void OnChannelStreamStateChanged(RteChannelObserver *self, RtePresenceState *state);
 
-static void OnSubscribeChannelUserResult(RteChannelObserver *self, RteError *err);
-static void OnSubscribeChannelStreamResult(RteChannelObserver *self, RteError *err);
-static void OnUnsubscribeChannelUserResult(RteChannelObserver *self, RteError *err);
-static void OnUnsubscribeChannelStreamResult(RteChannelObserver *self, RteError *err);
+static void OnSubscribeResult(RteChannelObserver *self, ChannelSubscribeType subscribe_type, RteError *err);
+static void OnUnsubscribeResult(RteChannelObserver *self, ChannelSubscribeType subscribe_type, RteError *err);
 
 /*
  * @brief ChannelObserver
@@ -626,7 +625,7 @@ class ChannelObserver {
       c_observer->on_sub_state_changed = rte::OnSubStateChanged;
       c_observer->on_pub_state_changed = rte::OnPubStateChanged;
       c_observer->on_active_speaker = rte::OnActiveSpeaker;
-      // c_observer->on_audio_volume_indication = rte::OnAudioVolumeIndication;
+      c_observer->on_audio_volume_indication = rte::OnAudioVolumeIndication;
       c_observer->on_channel_token_will_expire = rte::OnChannelTokenWillExpire;
       c_observer->on_stream_token_will_expire = rte::OnStreamTokenWillExpire;
       c_observer->on_channel_token_expired = rte::OnChannelTokenExpired;
@@ -634,10 +633,8 @@ class ChannelObserver {
       c_observer->on_channel_stream_state_snapshot_received = rte::OnChannelStreamStateSnapshotReceived;
       c_observer->on_channel_stream_state_changed = rte::OnChannelStreamStateChanged;
 
-      c_observer->on_subscribe_channel_user_result = rte::OnSubscribeChannelUserResult;
-      c_observer->on_subscribe_channel_stream_result = rte::OnSubscribeChannelStreamResult;
-      c_observer->on_unsubscribe_channel_user_result = rte::OnUnsubscribeChannelUserResult;
-      c_observer->on_unsubscribe_channel_stream_result = rte::OnUnsubscribeChannelStreamResult;
+      c_observer->on_subscribe_result = rte::OnSubscribeResult;
+      c_observer->on_unsubscribe_result = rte::OnUnsubscribeResult;
     }
     ~ChannelObserver(){ RteChannelObserverDestroy(c_observer, nullptr);}
 
@@ -775,8 +772,8 @@ class ChannelObserver {
      * @param audio_volume_infos Array of audio volume information
      * @param audio_volume_infos_cnt Number of audio volume information entries
      */
-    // virtual void OnAudioVolumeIndication(const std::vector<AudioVolumeInfo>& audio_volume_infos) {
-    // }
+    virtual void OnAudioVolumeIndication(const std::vector<AudioVolumeInfo>& audio_volume_infos) {
+    }
 
     /**
      * @brief Called when channel token is about to expire
@@ -826,36 +823,23 @@ class ChannelObserver {
     virtual void OnChannelStreamStateChanged(const PresenceState& state) {
     }
 
+
     /**
-     * @brief Called when subscribe channel user result is received 
+     * @brief Called when subscribe result is received
      * @technical preview
+     * @param subscribe_type The type of subscribe
      * @param err Error information if any
      */
-    virtual void OnSubscribeChannelUserResult(Error* err) {
+    virtual void OnSubscribeResult(ChannelSubscribeType subscribe_type, Error* err) {
     }
 
     /**
-     * @brief Called when subscribe channel stream result is received
+     * @brief Called when unsubscribe result is received
      * @technical preview
+     * @param subscribe_type The type of subscribe
      * @param err Error information if any
      */
-    virtual void OnSubscribeChannelStreamResult(Error* err) {
-    }
-
-    /**
-     * @brief Called when unsubscribe channel user result is received
-     * @technical preview
-     * @param err Error information if any
-     */
-    virtual void OnUnsubscribeChannelUserResult(Error* err) {
-    }
-
-    /**
-     * @brief Called when unsubscribe channel stream result is received
-     * @technical preview
-     * @param err Error information if any
-     */
-    virtual void OnUnsubscribeChannelStreamResult(Error* err) {
+    virtual void OnUnsubscribeResult(ChannelSubscribeType subscribe_type, Error* err) {
     }
 
     friend class Channel;
@@ -1028,16 +1012,16 @@ void OnActiveSpeaker(RteChannelObserver *self, RteStream *stream) {
   }
 }
 
-// void OnAudioVolumeIndication(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt) {
-//   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-//     ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-//     std::vector<AudioVolumeInfo> volume_infos;
-//     for(size_t i = 0; i < audio_volume_infos_cnt; i++) {
-//       volume_infos.push_back(AudioVolumeInfo(&audio_volume_infos[i]));
-//     }
-//     observer->OnAudioVolumeIndication(volume_infos);
-//   }
-// }
+void OnAudioVolumeIndication(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt) {
+  if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
+    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
+    std::vector<AudioVolumeInfo> volume_infos;
+    for(size_t i = 0; i < audio_volume_infos_cnt; i++) {
+      volume_infos.push_back(AudioVolumeInfo(&audio_volume_infos[i]));
+    }
+    observer->OnAudioVolumeIndication(volume_infos);
+  }
+}
 
 void OnChannelTokenWillExpire(RteChannelObserver *self, RteString *channel_token) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
@@ -1090,35 +1074,19 @@ void OnChannelStreamStateChanged(RteChannelObserver *self, RtePresenceState *sta
   }
 }
 
-void OnSubscribeChannelUserResult(RteChannelObserver *self, RteError *err) {  
+void OnSubscribeResult(RteChannelObserver *self, ChannelSubscribeType subscribe_type, RteError *err) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
     ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
     Error error(err);
-    observer->OnSubscribeChannelUserResult(&error);
+    observer->OnSubscribeResult(subscribe_type, &error);
   }
 }
 
-void OnSubscribeChannelStreamResult(RteChannelObserver *self, RteError *err) {
+void OnUnsubscribeResult(RteChannelObserver *self, ChannelSubscribeType subscribe_type, RteError *err) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
     ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
     Error error(err);
-    observer->OnSubscribeChannelStreamResult(&error);
-  }
-}
-
-void OnUnsubscribeChannelUserResult(RteChannelObserver *self, RteError *err) {
-  if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    Error error(err);
-    observer->OnUnsubscribeChannelUserResult(&error);
-  }
-}
-
-void OnUnsubscribeChannelStreamResult(RteChannelObserver *self, RteError *err) {
-  if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    Error error(err);
-    observer->OnUnsubscribeChannelStreamResult(&error);
+    observer->OnUnsubscribeResult(subscribe_type, &error);
   }
 }
 

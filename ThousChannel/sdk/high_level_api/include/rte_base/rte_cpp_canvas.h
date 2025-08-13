@@ -26,7 +26,7 @@ class CanvasInitialConfig {
   public:
     CanvasInitialConfig() {RteCanvasInitialConfigInit(&c_canvas_initial_config, nullptr);}
     ~CanvasInitialConfig() {RteCanvasInitialConfigDeinit(&c_canvas_initial_config, nullptr);}
-  
+
   private:
     friend class Canvas;
     ::RteCanvasInitialConfig c_canvas_initial_config;
@@ -59,7 +59,7 @@ class CanvasConfig {
   * @since v4.4.0
   * @param err Possible return values for ErrorCode:
   *  - kRteOk: Success
-  * @return VideoRenderMode 
+  * @return VideoRenderMode
   */
   VideoRenderMode GetRenderMode(Error *err = nullptr) {
     VideoRenderMode mode;
@@ -79,7 +79,7 @@ class CanvasConfig {
   void SetMirrorMode(VideoMirrorMode mode, Error *err = nullptr) {
     RteCanvasConfigSetVideoMirrorMode(&c_canvas_config, mode, err != nullptr ? err->get_underlying_impl() : nullptr);
   }
-  
+
   /**
    * Get the video mirror mode.
    * @since v4.4.0
@@ -131,7 +131,7 @@ class Canvas {
  public:
 
   Canvas() {
-    c_canvas = {0};
+    c_canvas = {};
     is_owner_ = false;
   }
 
@@ -145,8 +145,8 @@ class Canvas {
     c_canvas = ::RteCanvasCreate(&rte->c_rte, initial_config != nullptr ? &initial_config->c_canvas_initial_config : nullptr, nullptr);
     is_owner_ = true;
   };
-  
-  ~Canvas() { 
+
+  ~Canvas() {
     if (is_owner_) {
       RteCanvasDestroy(&c_canvas, nullptr);
     }
@@ -226,7 +226,7 @@ class Canvas {
     return RteCanvasAddView(&c_canvas, view, config, err != nullptr ? err->get_underlying_impl() : nullptr);
   }
 
-  /** 
+  /**
    * Remove a rendering view.
    * @since v4.4.0
    * @param view Pointer to the View object.
@@ -251,7 +251,7 @@ class Canvas {
 
   friend class Player;
 
-  ::RteCanvas c_canvas = {0};
+  ::RteCanvas c_canvas = {};
   bool is_owner_ = false;
 };
 

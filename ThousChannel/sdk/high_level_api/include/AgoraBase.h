@@ -3487,12 +3487,6 @@ enum LOCAL_VIDEO_STREAM_REASON {
   LOCAL_VIDEO_STREAM_REASON_SCREEN_CAPTURE_INTERRUPTED_BY_OTHER = 32,
   /* 32: (HMOS only) ScreenCapture stopped by SIM call */
   LOCAL_VIDEO_STREAM_REASON_SCREEN_CAPTURE_STOPPED_BY_CALL = 33,
- /**
-   * @technical preview
-   *
-   * 34: HDR Video Source fallback to SDR when Capacity negotiation
-   */
-  LOCAL_VIDEO_STREAM_REASON_VIDEO_SOURCE_HDR_TO_SDR = 34,
 };
 
 /**

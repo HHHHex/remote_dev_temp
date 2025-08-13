@@ -44,7 +44,7 @@ public:
     explicit StreamConfig(RteStreamConfig* config)
         : c_config_(config), is_owner_(false) {
     }
-    
+
     /**
      * @brief Virtual destructor for StreamConfig
      * @technical preview
@@ -427,7 +427,7 @@ public:
         }
         return *this;
     }
-    
+
     /**
      * @brief Destructor for StreamInfo
      * @technical preview
@@ -471,7 +471,7 @@ public:
     StreamObserver() : c_observer(::RteStreamObserverCreate(nullptr)) {
         c_observer->base_observer.me_in_target_lang = this;
     }
-    
+
     /**
      * @brief Destructor for StreamObserver
      * @technical preview
@@ -598,8 +598,8 @@ class Stream {
    */
   VideoTrack GetVideoTrack(Error* err = nullptr) {
     // return VideoTrack(std::move(RteStreamGetVideoTrack(&c_stream, err != nullptr ? err->get_underlying_impl() : nullptr)));
-    // VideoTrack video_track;
-    // return video_track;
+     VideoTrack video_track;
+     return video_track;
   }
 
   /**
@@ -666,7 +666,7 @@ class Stream {
     CallbackContext<Stream>* context = new CallbackContext<Stream>(this, cb);
     RteStreamSetAudioEncoderConfig(&c_stream, config != nullptr ? config->get_underlying_impl() : nullptr, &CallbackFunc<::RteStream, Stream>, context);
   }
-  
+
   /**
    * @brief Set the video encoder configuration for the stream asynchronously.
    * @note technical preview
@@ -717,7 +717,7 @@ class Stream {
   friend class Rte;
   friend class Player;
 
-  ::RteStream c_stream = {0};
+  ::RteStream c_stream = {};
 };
 
 }  // namespace rte

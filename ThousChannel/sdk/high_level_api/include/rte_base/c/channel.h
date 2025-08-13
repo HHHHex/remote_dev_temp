@@ -15,8 +15,8 @@
 #include "utils/buf.h"
 #include "user/remote_user.h"
 #include "stream/remote_stream.h"
-// #include "rte_base/c/utils/audio_utility_types.h"
-// #include "utils/audio_utility_types.h"
+#include "rte_base/c/utils/audio_utility_types.h"
+#include "utils/audio_utility_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,9 +73,10 @@ typedef enum RteChannelConnectionStateChangedReason {
 } RteChannelConnectionStateChangedReason;
 
 typedef enum RteTrackSubState {
-  kRteTrackSubStateSubscribing,
-  kRteTrackSubStateSubscribed,
-  kRteTrackSubStateNotSubscribed
+  kRteTrackSubStateIdle = 0,
+  kRteTrackSubStateNotSubscribed = 1,
+  kRteTrackSubStateSubscribing = 2,
+  kRteTrackSubStateSubscribed = 3
 } RteTrackSubState;
 
 typedef enum RteTrackSubStateChangedReason {
@@ -86,9 +87,10 @@ typedef enum RteTrackSubStateChangedReason {
 } RteTrackSubStateChangedReason;
 
 typedef enum RteTrackPubState {
-  kRteTrackPubStatePublishing,
-  kRteTrackPubStatePublished,
-  kRteTrackPubStateNotPublished
+  kRteTrackPubStateIdle = 0,
+  kRteTrackPubStateNotPublished = 1,
+  kRteTrackPubStatePublishing = 2,
+  kRteTrackPubStatePublished = 3
 } RteTrackPubState;
 
 typedef enum RteTrackPubStateChangedReason {
@@ -120,6 +122,15 @@ typedef enum RteLockChangedEvent {
   kRteLockChangedEventReleased,
   kRteLockChangedEventExpired
 } RteLockChangedEvent;
+
+
+typedef enum RteChannelSubscribeType {
+  kRteChannelSubscribeTypeStreamPresence = 0,
+  kRteChannelSubscribeTypeMessage = 1,
+  kRteChannelSubscribeTypeMetadata = 2,
+  kRteChannelSubscribeTypeUserPresence = 3,
+  
+} RteSubscribeType;
 
 typedef struct RteChannelConfig {
   RteString *channel_id;
@@ -178,7 +189,7 @@ struct RteChannelObserver {
   void (*on_pub_state_changed)(RteChannelObserver *self, RteLocalStream *stream, RteTrack *track, RteTrackMediaType track_media_type, 
                                 RteTrackPubState old_state, RteTrackPubState new_state, RteTrackPubStateChangedReason reason, RteError *err);
   void (*on_active_speaker)(RteChannelObserver *self, RteStream *stream);
-  // void (*on_audio_volume_indication)(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt);
+  void (*on_audio_volume_indication)(RteChannelObserver *self, RteAudioVolumeInfo *audio_volume_infos, size_t audio_volume_infos_cnt);
   void (*on_channel_token_will_expire)(RteChannelObserver *self, RteString *channel_token);
   void (*on_stream_token_will_expire)(RteChannelObserver *self, RteStream *stream, RteString *stream_token);
   void (*on_channel_token_expired)(RteChannelObserver *self);
@@ -186,12 +197,8 @@ struct RteChannelObserver {
   void (*on_channel_stream_state_snapshot_received)(RteChannelObserver *self, RtePresenceState *states, size_t states_cnt);
   void (*on_channel_stream_state_changed)(RteChannelObserver *self, RtePresenceState *state);
 
-
-  void (*on_subscribe_channel_user_result)(RteChannelObserver *self, RteError *err);
-  void (*on_unsubscribe_channel_user_result)(RteChannelObserver *self, RteError *err);
-
-  void (*on_subscribe_channel_stream_result)(RteChannelObserver *self, RteError *err);
-  void (*on_unsubscribe_channel_stream_result)(RteChannelObserver *self, RteError *err);
+  void (*on_subscribe_result)(RteChannelObserver *self, RteChannelSubscribeType subscribe_type, RteError *err);
+  void (*on_unsubscribe_result)(RteChannelObserver *self, RteChannelSubscribeType subscribe_type, RteError *err);
 };
 
 typedef struct RteSubscribeOptions {

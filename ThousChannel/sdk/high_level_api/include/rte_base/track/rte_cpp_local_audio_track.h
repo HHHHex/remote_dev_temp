@@ -324,7 +324,7 @@ private:
     bool is_owner_ = false;
 };
 
-// 静态回调函数声明
+// Static callback function declaration
 static void OnLocalAudioTrackFrame(RteLocalAudioTrackObserver *self, RteAudioFrame *audio_frame);
 
 /**
@@ -340,8 +340,8 @@ public:
     LocalAudioTrackObserver() {
         c_observer = RteLocalAudioTrackObserverCreate(nullptr);
         if (c_observer != nullptr) {
-            // 注意：RteLocalTrackObserver 在 C 接口中只是一个占位符，没有 base_observer 成员
-            // 这里暂时注释掉，等待 C 接口完善后再启用
+            // Note: RteLocalTrackObserver is just a placeholder in the C interface and does not have a base_observer member
+            // Temporarily commented out here, will be enabled after the C interface is improved
             // c_observer->local_track_observer.base_observer.me_in_target_lang = this;
             c_observer->on_frame = rte::OnLocalAudioTrackFrame;
         }
@@ -376,11 +376,11 @@ private:
     RteLocalAudioTrackObserver* c_observer;
 };
 
-// 静态回调函数实现
+// Static callback function implementation
 void OnLocalAudioTrackFrame(RteLocalAudioTrackObserver *self, RteAudioFrame *audio_frame) {
     if (self != nullptr) {
-        // 注意：由于 RteLocalTrackObserver 只是一个占位符，这里暂时无法获取 C++ 对象指针
-        // 等待 C 接口完善后再实现完整的回调机制
+        // Note: Since RteLocalTrackObserver is just a placeholder, it is temporarily impossible to obtain the C++ object pointer here
+        // The complete callback mechanism will be implemented after the C interface is improved
         // LocalAudioTrackObserver* observer = static_cast<LocalAudioTrackObserver*>(self->local_track_observer.base_observer.me_in_target_lang);
         // AudioFrame frame(audio_frame);
         // observer->OnFrame(frame);

@@ -26,20 +26,20 @@ using LocalUserLinkState = RteLocalUserLinkState;
 using LocalUserLinkStateChangedReason = RteLocalUserLinkStateChangedReason;
 
 /**
- * @brief 
- * 
+ * @brief
+ *
  */
 class UserConfig {
   public:
-    UserConfig(){ 
+    UserConfig(){
       c_config = new RteUserConfig();
       RteUserConfigInit(c_config, nullptr);
     }
-    virtual ~UserConfig(){ 
+    virtual ~UserConfig(){
       if (c_config != nullptr) {
         RteUserConfigDeinit(c_config, nullptr);
-        delete c_config; c_config = nullptr; 
-      } 
+        delete c_config; c_config = nullptr;
+      }
     }
 
     RteUserConfig* get_underlying_impl(){
@@ -56,23 +56,23 @@ class UserConfig {
 };
 
 /**
- * @brief 
+ * @brief
  * @technical preview
  */
 class UserInfo {
   public:
-    UserInfo(){ 
+    UserInfo(){
       c_info = new RteUserInfo();
       RteUserInfoInit(c_info, nullptr);
     }
-    virtual ~UserInfo(){ 
-      if (c_info != nullptr) { 
+    virtual ~UserInfo(){
+      if (c_info != nullptr) {
         RteUserInfoDeinit(c_info, nullptr);
-        delete c_info; c_info = nullptr; 
-      } 
+        delete c_info; c_info = nullptr;
+      }
     }
 
-    
+
     /**
      * @brief Get the user ID.
      * @technical preview
@@ -111,7 +111,7 @@ class UserObserver {
 
     RteUserObserver* get_underlying_impl(){
       return c_observer;
-    } 
+    }
 
   protected:
     explicit UserObserver(RteUserObserver* observer){c_observer = observer;}
@@ -174,13 +174,13 @@ class User {
     }
 
   protected:
-    RteUser c_user = {0};
+    RteUser c_user = {};
     bool is_handle_owner = false;
 };
 
 
 /**
- * @brief 
+ * @brief
  * @technical preview
  */
 class LocalUserConfig : public UserConfig {
@@ -192,16 +192,16 @@ class LocalUserConfig : public UserConfig {
     ~LocalUserConfig(){
       if (c_config != nullptr) {
         RteLocalUserConfigDeinit(reinterpret_cast<RteLocalUserConfig*>(c_config), nullptr);
-        delete c_config; 
-        c_config = nullptr; 
+        delete c_config;
+        c_config = nullptr;
       }
     }
 
     /**
      * @brief Set the User Id object
      * @technical preview
-     * @param user_id 
-     * @param err 
+     * @param user_id
+     * @param err
      */
     void SetUserId(const std::string& user_id, Error* err = nullptr){
       String str(user_id.c_str());
@@ -211,8 +211,8 @@ class LocalUserConfig : public UserConfig {
     /**
      * @brief Get the User Id object
      * @technical preview
-     * @param err 
-     * @return std::string 
+     * @param err
+     * @return std::string
      */
     std::string GetUserId(Error* err = nullptr){
       String str;
@@ -223,8 +223,8 @@ class LocalUserConfig : public UserConfig {
     /**
      * @brief Set the User Token object
      * @technical preview
-     * @param user_token 
-     * @param err 
+     * @param user_token
+     * @param err
      */
     void SetUserToken(const std::string& user_token, Error* err = nullptr){
       String str(user_token.c_str());
@@ -234,8 +234,8 @@ class LocalUserConfig : public UserConfig {
     /**
      * @brief Get the User Token object
      * @technical preview
-     * @param err 
-     * @return std::string 
+     * @param err
+     * @return std::string
      */
     std::string GetUserToken(Error* err = nullptr){
       String str;
@@ -246,8 +246,8 @@ class LocalUserConfig : public UserConfig {
     /**
      * @brief Set the Json Parameter object
      * @technical preview
-     * @param json_parameter 
-     * @param err 
+     * @param json_parameter
+     * @param err
      */
     void SetJsonParameter(const std::string& json_parameter, Error* err = nullptr){
       String str(json_parameter.c_str());
@@ -257,8 +257,8 @@ class LocalUserConfig : public UserConfig {
     /**
      * @brief Get the Json Parameter object
      * @technical preview
-     * @param err 
-     * @return std::string 
+     * @param err
+     * @return std::string
      */
     std::string GetJsonParameter(Error* err = nullptr){
       String str;
@@ -272,7 +272,7 @@ class LocalUserConfig : public UserConfig {
 };
 
 /**
- * @brief 
+ * @brief
  * @technical preview
  */
 class LocalUserInfo : public UserInfo {
@@ -282,10 +282,10 @@ class LocalUserInfo : public UserInfo {
     }
 
     ~LocalUserInfo(){
-      if (c_info != nullptr) { 
+      if (c_info != nullptr) {
         RteLocalUserInfoDeinit(reinterpret_cast<RteLocalUserInfo*>(c_info), nullptr);
-        delete c_info; 
-        c_info = nullptr; 
+        delete c_info;
+        c_info = nullptr;
       }
     }
 
@@ -297,14 +297,14 @@ class LocalUserInfo : public UserInfo {
 static void OnUserMetadataSnapshotReceived(RteLocalUserObserver *self, RteMetadata *metadata, RteMetadataInfo *metadata_info);
 static void OnUserMetadataChanged(RteLocalUserObserver *self, RteMetadata *metadata, RteMetadataInfo *metadata_info);
 static void OnLocalUserTokenPrivilegeWillExpire(RteLocalUserObserver *self);
-static void OnLinkStateEvent(RteLocalUserObserver *self, RteLocalUserLinkState old_state, 
+static void OnLinkStateEvent(RteLocalUserObserver *self, RteLocalUserLinkState old_state,
       RteLocalUserLinkState new_state, RteLocalUserLinkStateChangedReason reason, RteError *err);
 static void OnLocalUserMessageReceived(RteLocalUserObserver *self,
                                    RteString *publisher, RteBuf *message);
 static void OnRenewTokenResult(RteLocalUserObserver *self, RteError *err);
 
 /**
- * @brief 
+ * @brief
  * @technical preview
  */
 class LocalUserObserver : public UserObserver {
@@ -324,48 +324,48 @@ class LocalUserObserver : public UserObserver {
     ~LocalUserObserver(){if (c_observer != nullptr) { RteLocalUserObserverDestroy(reinterpret_cast<RteLocalUserObserver*>(c_observer), nullptr); c_observer = nullptr; } }
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param metadata 
+     * @param metadata
      */
     virtual void OnUserMetadataSnapshotReceived(const Metadata& metadata, const MetadataInfo& metadata_info){}
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param metadata 
+     * @param metadata
      */
     virtual void OnUserMetadataChanged(const Metadata& metadata, const MetadataInfo& metadata_info){}
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
      */
     virtual void OnTokenPrivilegeWillExpire(){}
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param old_state 
-     * @param new_state 
-     * @param reason 
-     * @param err 
+     * @param old_state
+     * @param new_state
+     * @param reason
+     * @param err
      */
-    virtual void OnLinkStateEvent(LocalUserLinkState old_state, 
+    virtual void OnLinkStateEvent(LocalUserLinkState old_state,
       LocalUserLinkState new_state, LocalUserLinkStateChangedReason reason, const Error& err){}
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param publisher 
-     * @param message 
+     * @param publisher
+     * @param message
      */
     virtual void OnUserMessageReceived(const std::string& publisher, const Buffer& message){}
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param err 
+     * @param err
      */
     virtual void OnRenewTokenResult(const Error& err){}
 };
@@ -395,7 +395,7 @@ void OnLocalUserTokenPrivilegeWillExpire(RteLocalUserObserver *self){
   }
 }
 
-void OnLinkStateEvent(RteLocalUserObserver *self, RteLocalUserLinkState old_state, 
+void OnLinkStateEvent(RteLocalUserObserver *self, RteLocalUserLinkState old_state,
       RteLocalUserLinkState new_state, RteLocalUserLinkStateChangedReason reason, RteError *err){
   if(self != nullptr && self->base_observer.base_observer.me_in_target_lang != nullptr){
     LocalUserObserver* observer = static_cast<LocalUserObserver*>(self->base_observer.base_observer.me_in_target_lang);
@@ -422,13 +422,13 @@ void OnRenewTokenResult(RteLocalUserObserver *self, RteError *err){
   }
 }
 /**
- * @brief 
+ * @brief
  * @technical preview
- * 
+ *
  */
 class LocalUser : public User {
   public:
-    LocalUser(Rte* rte, LocalUserConfig *config = nullptr) : User(RteLocalUserCreate(rte != nullptr ? &(rte->c_rte) : nullptr, 
+    LocalUser(Rte* rte, LocalUserConfig *config = nullptr) : User(RteLocalUserCreate(rte != nullptr ? &(rte->c_rte) : nullptr,
     config != nullptr ? reinterpret_cast<RteLocalUserConfig*>(config->get_underlying_impl()) : nullptr, nullptr)){
       is_handle_owner = true;
     }
@@ -456,39 +456,39 @@ class LocalUser : public User {
      * @param err The error object
      */
     void GetConfigs(LocalUserConfig* config, Error* err = nullptr) {
-      RteLocalUserGetConfigs(reinterpret_cast<RteLocalUser*>(&c_user), 
-                            config != nullptr ? reinterpret_cast<RteLocalUserConfig*>(config->get_underlying_impl()) : nullptr, 
+      RteLocalUserGetConfigs(reinterpret_cast<RteLocalUser*>(&c_user),
+                            config != nullptr ? reinterpret_cast<RteLocalUserConfig*>(config->get_underlying_impl()) : nullptr,
                             err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 
     /**
      * @brief Set the Configs object
      * @technical preview
-     * @param config 
-     * @param err 
+     * @param config
+     * @param err
      */
     void SetConfigs(LocalUserConfig* config, Error* err = nullptr) {
-      RteLocalUserSetConfigs(reinterpret_cast<RteLocalUser*>(&c_user), 
-                            config != nullptr ? reinterpret_cast<RteLocalUserConfig*>(config->get_underlying_impl()) : nullptr, 
+      RteLocalUserSetConfigs(reinterpret_cast<RteLocalUser*>(&c_user),
+                            config != nullptr ? reinterpret_cast<RteLocalUserConfig*>(config->get_underlying_impl()) : nullptr,
                             err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 
     /**
      * @brief Get the Info object
      * @technical preview
-     * @param info 
-     * @param err 
+     * @param info
+     * @param err
      */
     void GetInfo(LocalUserInfo* info, Error* err = nullptr) {
-      RteLocalUserGetInfo(reinterpret_cast<RteLocalUser*>(&c_user), 
-                         info != nullptr ? reinterpret_cast<RteLocalUserInfo*>(info->get_underlying_impl()) : nullptr, 
+      RteLocalUserGetInfo(reinterpret_cast<RteLocalUser*>(&c_user),
+                         info != nullptr ? reinterpret_cast<RteLocalUserInfo*>(info->get_underlying_impl()) : nullptr,
                          err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param callback 
+     * @param callback
      */
     void Connect(std::function<void(Error*)> callback) {
       CallbackContextWithArgs<LocalUser>* callbackCtx = new CallbackContextWithArgs<LocalUser>(this, callback);
@@ -496,9 +496,9 @@ class LocalUser : public User {
     }
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param callback 
+     * @param callback
      */
     void Disconnect(std::function<void(Error*)> callback) {
       CallbackContextWithArgs<LocalUser>* callbackCtx = new CallbackContextWithArgs<LocalUser>(this, callback);
@@ -506,36 +506,36 @@ class LocalUser : public User {
     }
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @return true 
-     * @return false 
+     * @return true
+     * @return false
      */
     bool IsConnected() {
       return RteLocalUserIsConnected(reinterpret_cast<RteLocalUser*>(&c_user));
     }
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param user_id 
-     * @param message 
-     * @param callback 
+     * @param user_id
+     * @param message
+     * @param callback
      */
     void PublishMessage(const std::string& user_id, Buffer* message, std::function<void(Error*)> callback) {
       CallbackContextWithArgs<LocalUser>* callbackCtx = new CallbackContextWithArgs<LocalUser>(this, callback);
-      RteLocalUserPublishMessage(reinterpret_cast<RteLocalUser*>(&c_user), 
-                                user_id.c_str(), 
-                                message != nullptr ? message->get_underlying_impl() : nullptr, 
-                                &CallbackFuncWithArgs<::RteLocalUser, LocalUser>, 
+      RteLocalUserPublishMessage(reinterpret_cast<RteLocalUser*>(&c_user),
+                                user_id.c_str(),
+                                message != nullptr ? message->get_underlying_impl() : nullptr,
+                                &CallbackFuncWithArgs<::RteLocalUser, LocalUser>,
                                 callbackCtx);
     }
 
     /**
      * @brief Get the Metadata object
      * @technical preview
-     * @param user_id 
-     * @param cb 
+     * @param user_id
+     * @param cb
      */
     void GetMetadata(const std::string& user_id, std::function<void(Metadata* items, Error* err)> cb){
       std::function<void(RteMetadata* items, Error* err)> callback = [cb](RteMetadata* items, Error* err){
@@ -549,10 +549,10 @@ class LocalUser : public User {
     }
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param user_id 
-     * @param cb 
+     * @param user_id
+     * @param cb
      */
     void SubscribeMetadata(const std::string& user_id, std::function<void(Error* err)> cb){
       CallbackContextWithArgs<LocalUser>* callbackCtx = new CallbackContextWithArgs<LocalUser>(this, cb);
@@ -560,10 +560,10 @@ class LocalUser : public User {
     }
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param user_id 
-     * @param cb 
+     * @param user_id
+     * @param cb
      */
     void UnsubscribeMetadata(const std::string& user_id, std::function<void(Error* err)> cb){
       CallbackContextWithArgs<LocalUser>* callbackCtx = new CallbackContextWithArgs<LocalUser>(this, cb);
@@ -573,63 +573,63 @@ class LocalUser : public User {
     /**
      * @brief Set the Metadata object
      * @technical preview
-     * @param user_id 
-     * @param items 
-     * @param config 
-     * @param cb 
+     * @param user_id
+     * @param items
+     * @param config
+     * @param cb
      */
     void SetMetadata(const std::string& user_id, Metadata* items, MetadataConfig* config, std::function<void(Error* err)> cb){
       CallbackContextWithArgs<LocalUser>* callbackCtx = new CallbackContextWithArgs<LocalUser>(this, cb);
-      RteLocalUserSetMetadata(reinterpret_cast<RteLocalUser*>(&c_user), user_id.c_str(), 
-                         items != nullptr ? items->get_underlying_impl() : nullptr, 
-                         config != nullptr ? config->get_underlying_impl() : nullptr, 
+      RteLocalUserSetMetadata(reinterpret_cast<RteLocalUser*>(&c_user), user_id.c_str(),
+                         items != nullptr ? items->get_underlying_impl() : nullptr,
+                         config != nullptr ? config->get_underlying_impl() : nullptr,
                          &CallbackFuncWithArgs<::RteLocalUser, LocalUser>, callbackCtx);
     }
-  
+
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param user_id 
-     * @param items 
-     * @param cb 
+     * @param user_id
+     * @param items
+     * @param cb
      */
     void RemoveMetadata(const std::string& user_id, Metadata* items, MetadataConfig* config, std::function<void(Error* err)> cb){
       CallbackContextWithArgs<LocalUser>* callbackCtx = new CallbackContextWithArgs<LocalUser>(this, cb);
-      RteLocalUserRemoveMetadata(reinterpret_cast<RteLocalUser*>(&c_user), user_id.c_str(), 
-                            items != nullptr ? items->get_underlying_impl() : nullptr, 
-                            config != nullptr ? config->get_underlying_impl() : nullptr, 
-                            &CallbackFuncWithArgs<::RteLocalUser, LocalUser>, 
+      RteLocalUserRemoveMetadata(reinterpret_cast<RteLocalUser*>(&c_user), user_id.c_str(),
+                            items != nullptr ? items->get_underlying_impl() : nullptr,
+                            config != nullptr ? config->get_underlying_impl() : nullptr,
+                            &CallbackFuncWithArgs<::RteLocalUser, LocalUser>,
                             callbackCtx);
     }
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param observer 
-     * @param err 
-     * @return true 
-     * @return false 
+     * @param observer
+     * @param err
+     * @return true
+     * @return false
      */
     bool RegisterObserver(LocalUserObserver* observer, Error* err = nullptr) {
-      return RteLocalUserRegisterObserver(reinterpret_cast<RteLocalUser*>(&c_user), 
-                                         reinterpret_cast<RteLocalUserObserver*>(observer->get_underlying_impl()), 
+      return RteLocalUserRegisterObserver(reinterpret_cast<RteLocalUser*>(&c_user),
+                                         reinterpret_cast<RteLocalUserObserver*>(observer->get_underlying_impl()),
                                          err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 
     /**
-     * @brief 
+     * @brief
      * @technical preview
-     * @param observer 
-     * @param err 
-     * @return true 
-     * @return false 
+     * @param observer
+     * @param err
+     * @return true
+     * @return false
      */
     bool UnregisterObserver(LocalUserObserver* observer, Error* err = nullptr) {
-      return RteLocalUserUnregisterObserver(reinterpret_cast<RteLocalUser*>(&c_user), 
-                                           reinterpret_cast<RteLocalUserObserver*>(observer->get_underlying_impl()), 
+      return RteLocalUserUnregisterObserver(reinterpret_cast<RteLocalUser*>(&c_user),
+                                           reinterpret_cast<RteLocalUserObserver*>(observer->get_underlying_impl()),
                                            err != nullptr ? err->get_underlying_impl() : nullptr);
     }
-    
+
     friend class Channel;
 };
 
@@ -652,7 +652,7 @@ class RemoteUserConfig : public UserConfig {
       RteRemoteUserConfigSetJsonParameter(reinterpret_cast<RteRemoteUserConfig*>(c_config), str.get_underlying_impl(), err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 
-    std::string GetJsonParameter(Error* err = nullptr){ 
+    std::string GetJsonParameter(Error* err = nullptr){
       String str;
       RteRemoteUserConfigGetJsonParameter(reinterpret_cast<RteRemoteUserConfig*>(c_config), str.get_underlying_impl(), err != nullptr ? err->get_underlying_impl() : nullptr);
       return std::string(str.CStr());
@@ -691,7 +691,7 @@ class RemoteUserObserver: public UserObserver {
 };
 
 /**
- * @brief 
+ * @brief
  * @technical preview
  */
 class RemoteUser : public User {
@@ -710,40 +710,40 @@ class RemoteUser : public User {
     // @}
 
     void GetConfigs(RemoteUserConfig* config, Error* err = nullptr) {
-      RteRemoteUserGetConfigs(reinterpret_cast<RteRemoteUser*>(&c_user), 
-                             config != nullptr ? reinterpret_cast<RteRemoteUserConfig*>(config->get_underlying_impl()) : nullptr, 
+      RteRemoteUserGetConfigs(reinterpret_cast<RteRemoteUser*>(&c_user),
+                             config != nullptr ? reinterpret_cast<RteRemoteUserConfig*>(config->get_underlying_impl()) : nullptr,
                              err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 
     void SetConfigs(RemoteUserConfig* config, std::function<void(Error*)> callback) {
       CallbackContextWithArgs<RemoteUser>* callbackCtx = new CallbackContextWithArgs<RemoteUser>(this, callback);
-      RteRemoteUserSetConfigs(reinterpret_cast<RteRemoteUser*>(&c_user), 
-                             config != nullptr ? reinterpret_cast<RteRemoteUserConfig*>(config->get_underlying_impl()) : nullptr, 
-                             &CallbackFuncWithArgs<::RteRemoteUser, RemoteUser>, 
+      RteRemoteUserSetConfigs(reinterpret_cast<RteRemoteUser*>(&c_user),
+                             config != nullptr ? reinterpret_cast<RteRemoteUserConfig*>(config->get_underlying_impl()) : nullptr,
+                             &CallbackFuncWithArgs<::RteRemoteUser, RemoteUser>,
                              callbackCtx);
     }
 
     /**
      * @brief Get the Info object
      * @technical preview
-     * @param info 
-     * @param err 
+     * @param info
+     * @param err
      */
     void GetInfo(RemoteUserInfo* info, Error* err = nullptr) {
-      RteRemoteUserGetInfo(reinterpret_cast<RteRemoteUser*>(&c_user), 
-                          info != nullptr ? reinterpret_cast<RteRemoteUserInfo*>(info->get_underlying_impl()) : nullptr, 
+      RteRemoteUserGetInfo(reinterpret_cast<RteRemoteUser*>(&c_user),
+                          info != nullptr ? reinterpret_cast<RteRemoteUserInfo*>(info->get_underlying_impl()) : nullptr,
                           err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 
     bool RegisterObserver(RemoteUserObserver* observer, Error* err = nullptr) {
-      return RteRemoteUserRegisterObserver(reinterpret_cast<RteRemoteUser*>(&c_user), 
-                                          reinterpret_cast<RteRemoteUserObserver*>(observer->get_underlying_impl()), 
+      return RteRemoteUserRegisterObserver(reinterpret_cast<RteRemoteUser*>(&c_user),
+                                          reinterpret_cast<RteRemoteUserObserver*>(observer->get_underlying_impl()),
                                           err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 
     bool UnregisterObserver(RemoteUserObserver* observer, Error* err = nullptr) {
-      return RteRemoteUserUnregisterObserver(reinterpret_cast<RteRemoteUser*>(&c_user), 
-                                           reinterpret_cast<RteRemoteUserObserver*>(observer->get_underlying_impl()), 
+      return RteRemoteUserUnregisterObserver(reinterpret_cast<RteRemoteUser*>(&c_user),
+                                           reinterpret_cast<RteRemoteUserObserver*>(observer->get_underlying_impl()),
                                            err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 };

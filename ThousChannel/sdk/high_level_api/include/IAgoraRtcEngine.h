@@ -356,6 +356,13 @@ struct LocalVideoStats
   /** The dimensions of the simulcast streams's encoding frame.
     */
   VideoDimensions simulcastDimensions[SimulcastConfig::STREAM_LAYER_COUNT_MAX];
+  /**
+   * @technical preview
+   * The encodedFrameDepth of the local video:
+   * - SDR = 8.
+   * - HDR = 10.
+   */
+  int encodedFrameDepth;
 };
 
 /**
