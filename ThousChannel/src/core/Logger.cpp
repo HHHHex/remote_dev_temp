@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Logger.h"
 #include <ctime>
 #include <iomanip>
@@ -36,7 +36,7 @@ void CLogger::Initialize(const CString& logFilePath)
     
     if (logFilePath.IsEmpty())
     {
-        // 榛樿鏃ュ織鏂囦欢璺緞
+        // Default log file path
         CString defaultPath;
         defaultPath.Format(_T("logs\\ThousChannel_%s.log"), GetCurrentTimeString());
         m_logFilePath = defaultPath;
@@ -46,7 +46,7 @@ void CLogger::Initialize(const CString& logFilePath)
         m_logFilePath = logFilePath;
     }
     
-    // 鍒涘缓鏃ュ織鐩綍
+    // Create log directory
     CString logDir = m_logFilePath;
     int pos = logDir.ReverseFind(_T('\\'));
     if (pos > 0)
@@ -55,11 +55,11 @@ void CLogger::Initialize(const CString& logFilePath)
         CreateDirectory(logDir, NULL);
     }
     
-    // 鎵撳紑鏃ュ織鏂囦欢
+    // Open log file
     m_logFile.open(m_logFilePath, std::ios::app);
     m_initialized = true;
     
-    // 鍐欏叆鍚姩鏃ュ織
+    // Write startup log message
     CString startMsg;
     startMsg.Format(_T("=== ThousChannel Application Started at %s ==="), GetCurrentTimeString());
     WriteToFile(startMsg);
@@ -153,7 +153,7 @@ void CLogger::WriteToFile(const CString& message)
 {
     if (m_logFile.is_open())
     {
-        // 杞崲涓篣TF-8缂栫爜鍐欏叆鏂囦欢
+        // Convert to UTF-8 and write to file
         CT2CA utf8String(message, CP_UTF8);
         m_logFile << utf8String.m_psz << std::endl;
         m_logFile.flush();
@@ -165,4 +165,4 @@ void CLogger::WriteToDebug(const CString& message)
 #ifdef _DEBUG
     OutputDebugString(message + _T("\n"));
 #endif
-} 
+}
