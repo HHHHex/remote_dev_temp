@@ -535,9 +535,10 @@ BOOL CChannelPageDlg::InitializeRteEngine()
     config.userId = CT2A(m_pageState.currentUserId);
     config.userToken = CT2A(m_joinParams.token);
 
-    // The Initialize method in RteManager was renamed or removed.
-    // Assuming it's no longer needed or replaced by other setup.
-    // If initialization is still required, the RteManager interface needs to be checked.
+    if (!m_rteManager->Initialize(config)) {
+        LOG_ERROR(_T("Failed to initialize RteManager"));
+        return FALSE;
+    }
 
     return TRUE;
 }
