@@ -1,7 +1,7 @@
 #include "RteManager.h"
 #include "IAgoraRtcEngine.h"
 #include "AgoraMediaBase.h"
-
+#include <iterator>
 #include <algorithm>
 
 class RteManagerEventHandler : public agora::rtc::IRtcEngineEventHandler {
@@ -50,9 +50,9 @@ public:
         }
     }
 
-    void onLocalVideoStateChanged(agora::media::base::VIDEO_SOURCE_TYPE source, agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason) override {
+    void onLocalVideoStateChanged(agora::media::VIDEO_SOURCE_TYPE source, agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason) override {
         if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnLocalVideoStateChanged((int)state, (int)reason);
+            m_rteManager->m_eventHandler->OnLocalVideoStateChanged(state, reason);
         }
     }
 
@@ -192,14 +192,14 @@ void RteManager::SetSubscribedUsers(const std::vector<std::string>& userIds) {
                         sorted_userIds.begin(), sorted_userIds.end(),
                         std::back_inserter(to_unsubscribe));
 
-    for (const auto& userId : to_subscribe) {
-        SubscribeRemoteVideo(userId);
-        SubscribeRemoteAudio(userId);
+    for (std::vector<std::string>::const_iterator it = to_subscribe.begin(); it != to_subscribe.end(); ++it) {
+        SubscribeRemoteVideo(*it);
+        SubscribeRemoteAudio(*it);
     }
 
-    for (const auto& userId : to_unsubscribe) {
-        UnsubscribeRemoteVideo(userId);
-        UnsubscribeRemoteAudio(userId);
+    for (std::vector<std::string>::const_iterator it = to_unsubscribe.begin(); it != to_unsubscribe.end(); ++it) {
+        UnsubscribeRemoteVideo(*it);
+        UnsubscribeRemoteAudio(*it);
     }
 
     m_subscribedUsers = userIds;
@@ -207,7 +207,9 @@ void RteManager::SetSubscribedUsers(const std::vector<std::string>& userIds) {
 
 void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap) {
     // Unbind old views
-    for (auto const& [view, userId] : m_viewToUserMap) {
+    for (std::map<void*, std::string>::const_iterator it = m_viewToUserMap.begin(); it != m_viewToUserMap.end(); ++it) {
+        void* view = it->first;
+        const std::string& userId = it->second;
         if (viewToUserMap.find(view) == viewToUserMap.end() || viewToUserMap.at(view) != userId) {
              if (m_user_id_to_uid.count(userId)) {
                 agora::rtc::uid_t uid = m_user_id_to_uid[userId];
@@ -220,7 +222,9 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
     }
 
     // Bind new views
-    for (auto const& [view, userId] : viewToUserMap) {
+    for (std::map<void*, std::string>::const_iterator it = viewToUserMap.begin(); it != viewToUserMap.end(); ++it) {
+        void* view = it->first;
+        const std::string& userId = it->second;
         if (m_user_id_to_uid.count(userId)) {
             agora::rtc::uid_t uid = m_user_id_to_uid[userId];
             agora::rtc::VideoCanvas canvas;
