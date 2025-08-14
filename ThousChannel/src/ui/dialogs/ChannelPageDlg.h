@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <afxcoll.h> // For CMap
 #include "afxdialogex.h"
@@ -158,7 +158,7 @@ private:
     void OnUserJoined(const std::string& userId) override;
     void OnUserLeft(const std::string& userId) override;
     void OnLocalAudioStateChanged(int state) override;
-    void OnLocalVideoStateChanged(int state) override;
+        void OnLocalVideoStateChanged(agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason) override;
     void OnRemoteAudioStateChanged(const std::string& userId, int state) override;
     void OnRemoteVideoStateChanged(const std::string& userId, int state) override;
     void OnError(int error) override;

@@ -265,10 +265,10 @@ void CChannelPageDlg::OnLocalAudioStateChanged(int state)
     PostMessage(WM_USER_RTE_LOCAL_VIDEO_STATE_CHANGED, state, 0);
 }
 
-void CChannelPageDlg::OnLocalVideoStateChanged(int state)
+void CChannelPageDlg::OnLocalVideoStateChanged(agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason)
 {
     // Post message to UI thread
-    PostMessage(WM_USER_RTE_LOCAL_VIDEO_STATE_CHANGED, state, 0);
+    PostMessage(WM_USER_RTE_LOCAL_VIDEO_STATE_CHANGED, (WPARAM)state, (LPARAM)reason);
 }
 
 void CChannelPageDlg::OnRemoteAudioStateChanged(const std::string& userId, int state)
