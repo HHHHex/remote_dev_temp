@@ -228,8 +228,12 @@ void CHomePageDlg::GenerateToken()
 	m_joinParams.audioPullMode = temp;
 
 	// 获取复选框状态
-	m_joinParams.enableCamera = m_checkEnableCamera.GetCheck();
-	m_joinParams.enableMic = m_checkEnableMic.GetCheck();
+	m_joinParams.enableCamera = (m_checkEnableCamera.GetCheck() == BST_CHECKED);
+	m_joinParams.enableMic = (m_checkEnableMic.GetCheck() == BST_CHECKED);
+
+	// 记录日志
+	LOG_INFO_FMT(_T("Join params collected. Channel: %s, Camera: %d, Mic: %d"), 
+		m_joinParams.channelId, m_joinParams.enableCamera, m_joinParams.enableMic);
 
 	// 构建Token生成参数
 	TokenGenerateParams tokenParams;
@@ -398,5 +402,5 @@ void CHomePageDlg::OnOK()
 {
 	LOG_INFO(_T("Home page dialog OK button pressed"));
 	OnBnClickedJoinChannel();
-} 
+}
 
