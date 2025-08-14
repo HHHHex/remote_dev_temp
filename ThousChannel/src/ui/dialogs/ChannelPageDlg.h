@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <afxcoll.h> // For CMap
 #include "afxdialogex.h"
@@ -21,8 +21,8 @@ using namespace agora::rtc;
 #define WM_USER_RTE_USER_LIST_CHANGED           (WM_USER + 207)
 
 // ChannelUser类定义，简化为纯数据结构
-class ChannelUser
-{
+class ChannelUser {
+
 public:
     ChannelUser() : uid(_T("")), isLocal(FALSE), isRobot(FALSE), isConnected(FALSE),
         isVideoSubscribed(TRUE), isAudioSubscribed(TRUE),
