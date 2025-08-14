@@ -3,6 +3,7 @@
 #include "AgoraMediaBase.h"
 #include <iterator>
 #include <algorithm>
+#include <set>
 
 class RteManagerEventHandler : public agora::rtc::IRtcEngineEventHandler {
 private:
@@ -50,12 +51,12 @@ public:
         }
     }
 
-    void RteManagerEventHandler::onLocalVideoStateChanged(agora::rtc::VIDEO_SOURCE_TYPE source, agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason)
-{
-    if (m_manager->m_eventHandler) {
-        m_manager->m_eventHandler->OnLocalVideoStateChanged(state, reason);
+    void onLocalVideoStateChanged(agora::rtc::VIDEO_SOURCE_TYPE source, agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason) override
+    {
+        if (m_rteManager->m_eventHandler) {
+            m_rteManager->m_eventHandler->OnLocalVideoStateChanged(state, reason);
+        }
     }
-}
 
     void onRemoteAudioStateChanged(agora::rtc::uid_t uid, agora::rtc::REMOTE_AUDIO_STATE state, agora::rtc::REMOTE_AUDIO_STATE_REASON reason, int elapsed) override {
         if (m_rteManager->m_eventHandler && m_rteManager->m_uid_to_user_id.count(uid)) {
