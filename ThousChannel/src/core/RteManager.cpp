@@ -50,7 +50,7 @@ public:
         }
     }
 
-    void onLocalVideoStateChanged(agora::media::VIDEO_SOURCE_TYPE source, agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason) override {
+    void RteManagerEventHandler::onLocalVideoStateChanged(agora::media::base::VIDEO_SOURCE_TYPE source, agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason) {
         if (m_rteManager->m_eventHandler) {
             m_rteManager->m_eventHandler->OnLocalVideoStateChanged(state, reason);
         }
