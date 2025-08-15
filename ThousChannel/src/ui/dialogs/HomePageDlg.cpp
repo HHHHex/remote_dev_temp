@@ -220,7 +220,8 @@ void CHomePageDlg::GenerateToken()
 	m_editChannelId.GetWindowText(temp);
 	m_joinParams.channelId = temp.Trim();
 
-	// 用户名获取已移除 - 不再需要用户名输入
+	// 生成随机用户ID
+	m_joinParams.userId = GenerateRandomUserId();
 
 	// 获取音频拉流方式
 	int audioPullSel = m_comboAudioPull.GetCurSel();
@@ -232,21 +233,21 @@ void CHomePageDlg::GenerateToken()
 	m_joinParams.enableMic = (m_checkEnableMic.GetCheck() == BST_CHECKED);
 
 	// 记录日志
-	LOG_INFO_FMT(_T("Join params collected. Channel: %s, Camera: %d, Mic: %d"), 
-		m_joinParams.channelId, m_joinParams.enableCamera, m_joinParams.enableMic);
+	LOG_INFO_FMT(_T("Join params collected. Channel: %s, UserID: %s, Camera: %d, Mic: %d"), 
+		m_joinParams.channelId, m_joinParams.userId, m_joinParams.enableCamera, m_joinParams.enableMic);
 
 	// 构建Token生成参数
 	TokenGenerateParams tokenParams;
 	tokenParams.appId = m_joinParams.appId;
 	tokenParams.appCertificate = m_joinParams.appCertificate;
 	tokenParams.channelName = m_joinParams.channelId;
-	tokenParams.uid = _T("0");  // 使用0作为UID，让SDK自动分配
+	tokenParams.userId = m_joinParams.userId;
 	tokenParams.expire = 24 * 60 * 60 ;  // 24小时过期
 	tokenParams.type = 1;      // RTC Token
 	tokenParams.src = _T("Windows");
 
-	LOG_INFO_FMT(_T("Generating token for AppID=%s, Channel=%s"), 
-		tokenParams.appId, tokenParams.channelName);
+	LOG_INFO_FMT(_T("Generating token for AppID=%s, Channel=%s, UserID=%s"), 
+		tokenParams.appId, tokenParams.channelName, tokenParams.userId);
 
 	// 更新状态
 	m_isGeneratingToken = TRUE;
@@ -368,9 +369,6 @@ void CHomePageDlg::OnEnChangeChannelId()
 	}
 }
 
-// 用户名输入变化处理函数已移除 - 不再需要用户名输入
-// void CHomePageDlg::OnEnChangeUsername() - 已删除
-
 void CHomePageDlg::OnCbnSelchangeAppid()
 {
 	// AppID选择变化时的处理
@@ -402,5 +400,31 @@ void CHomePageDlg::OnOK()
 {
 	LOG_INFO(_T("Home page dialog OK button pressed"));
 	OnBnClickedJoinChannel();
+}
+
+CString CHomePageDlg::GenerateRandomUserId()
+{
+	// 获取当前时间戳（毫秒级）
+	SYSTEMTIME st;
+	GetSystemTime(&st);
+	FILETIME ft;
+	SystemTimeToFileTime(&st, &ft);
+	ULARGE_INTEGER uli;
+	uli.LowPart = ft.dwLowDateTime;
+	uli.HighPart = ft.dwHighDateTime;
+	
+	// 获取毫秒时间戳（从1601年开始的100纳秒间隔数）
+	ULONGLONG timestamp = uli.QuadPart;
+	
+	// 生成一个3位的随机数 (100-999)
+	srand((unsigned int)time(NULL));
+	int random = 100 + (rand() % 900);
+	
+	// 使用3位随机数和时间戳的后4位组合
+	// 格式：YYYXXXX，其中YYY是3位随机数, XXXX是时间戳后4位
+	CString userId;
+	userId.Format(_T("%03d%04d"), random, (int)(timestamp % 10000));
+	
+	return userId;
 }
 

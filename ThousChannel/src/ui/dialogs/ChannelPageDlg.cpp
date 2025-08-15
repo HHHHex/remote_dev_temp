@@ -57,7 +57,7 @@ CChannelPageDlg::CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pPar
     : CDialogEx(IDD_CHANNEL_PAGE_DLG, pParent), m_joinParams(joinParams)
 {
     m_pageState.channelId = joinParams.channelId;
-    m_pageState.currentUserId = _T("User");
+    m_pageState.currentUserId = joinParams.userId;
     m_pageState.audioMode = joinParams.audioPullMode;
     m_pageState.isLocalVideoEnabled = joinParams.enableCamera;
     m_pageState.isLocalAudioEnabled = joinParams.enableMic;
