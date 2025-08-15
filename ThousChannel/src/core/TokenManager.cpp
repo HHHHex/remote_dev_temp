@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "TokenManager.h"
 #include "Logger.h"
 #include <winhttp.h>
