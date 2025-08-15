@@ -6,64 +6,73 @@
 #include <set>
 
 // RTE Event Observer for channel events
-class RteManagerEventObserver : public rte::IChannelObserver {
+class RteManagerEventObserver : public rte::ChannelObserver {
 private:
     RteManager* m_rteManager;
 
 public:
     RteManagerEventObserver(RteManager* rteManager) : m_rteManager(rteManager) {}
 
-    void OnConnected(rte::Channel* channel, rte::ChannelInfo channelInfo, rte::Error* err) override {
-        LOG_INFO("OnConnected");
-        if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnConnectionStateChanged(1); // Connected state
+    // Override the correct virtual functions from ChannelObserver
+    void OnRemoteUsersJoined(const std::vector<rte::RemoteUser>& new_users, const std::vector<rte::RemoteUserInfo>& new_users_info) override {
+        LOG_INFO("OnRemoteUsersJoined");
+        for (const auto& user : new_users) {
+            std::string userId = user.GetUserId();
+            LOG_INFO_FMT("OnUserJoined: userId=%hs", userId.c_str());
+            
+            m_rteManager->OnRemoteUserJoined(userId);
+            
+            if (m_rteManager->m_eventHandler) {
+                m_rteManager->m_eventHandler->OnUserJoined(userId);
+                m_rteManager->m_eventHandler->OnUserListChanged();
+            }
         }
     }
 
-    void OnDisconnected(rte::Channel* channel, rte::ChannelInfo channelInfo, rte::Error* err) override {
-        LOG_INFO("OnDisconnected");
-        if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnConnectionStateChanged(0); // Disconnected state
+    void OnRemoteUsersLeft(const std::vector<rte::RemoteUser>& removed_users, const std::vector<rte::RemoteUserInfo>& removed_users_info) override {
+        LOG_INFO("OnRemoteUsersLeft");
+        for (const auto& user : removed_users) {
+            std::string userId = user.GetUserId();
+            LOG_INFO_FMT("OnUserLeft: userId=%hs", userId.c_str());
+            
+            m_rteManager->OnRemoteUserLeft(userId);
+            
+            if (m_rteManager->m_eventHandler) {
+                m_rteManager->m_eventHandler->OnUserLeft(userId);
+                m_rteManager->m_eventHandler->OnUserListChanged();
+            }
         }
     }
 
-    void OnUserJoined(rte::Channel* channel, rte::RemoteUser* user) override {
-        std::string userId = user->GetUserId();
-        LOG_INFO_FMT("OnUserJoined: userId=%hs", userId.c_str());
-        
-        m_rteManager->OnRemoteUserJoined(userId);
-        
-        if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnUserJoined(userId);
-            m_rteManager->m_eventHandler->OnUserListChanged();
+    void OnRemoteStreamsAdded(const std::vector<rte::RemoteStream>& new_streams, const std::vector<rte::RemoteStreamInfo>& new_streams_info) override {
+        LOG_INFO("OnRemoteStreamsAdded");
+        for (const auto& stream : new_streams) {
+            rte::RemoteStreamInfo streamInfo;
+            stream.GetInfo(&streamInfo, nullptr);
+            if (m_rteManager->m_eventHandler && streamInfo.HasAudio()) {
+                // Note: We need to get the user ID from the stream info or context
+                // For now, we'll use a placeholder approach
+                m_rteManager->m_eventHandler->OnRemoteAudioStateChanged("", 2); // REMOTE_AUDIO_STATE_DECODING
+            }
         }
     }
 
-    void OnUserLeft(rte::Channel* channel, rte::RemoteUser* user, rte::UserLeftReason reason) override {
-        std::string userId = user->GetUserId();
-        LOG_INFO_FMT("OnUserLeft: userId=%hs", userId.c_str());
-        
-        m_rteManager->OnRemoteUserLeft(userId);
-        
-        if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnUserLeft(userId);
-            m_rteManager->m_eventHandler->OnUserListChanged();
+    void OnRemoteStreamsRemoved(const std::vector<rte::RemoteStream>& removed_streams, const std::vector<rte::RemoteStreamInfo>& removed_streams_info) override {
+        LOG_INFO("OnRemoteStreamsRemoved");
+        for (const auto& stream : removed_streams) {
+            rte::RemoteStreamInfo streamInfo;
+            stream.GetInfo(&streamInfo, nullptr);
+            if (m_rteManager->m_eventHandler && streamInfo.HasAudio()) {
+                // Note: We need to get the user ID from the stream info or context
+                // For now, we'll use a placeholder approach
+                m_rteManager->m_eventHandler->OnRemoteAudioStateChanged("", 0); // REMOTE_AUDIO_STATE_STOPPED
+            }
         }
     }
 
-    void OnStreamAdded(rte::Channel* channel, rte::RemoteUser* user, rte::RemoteStream* stream) override {
-        LOG_INFO_FMT("OnStreamAdded: userId=%hs", user->GetUserId().c_str());
-        if (m_rteManager->m_eventHandler && stream->HasAudio()) {
-            m_rteManager->m_eventHandler->OnRemoteAudioStateChanged(user->GetUserId(), 2); // REMOTE_AUDIO_STATE_DECODING
-        }
-    }
-
-    void OnStreamRemoved(rte::Channel* channel, rte::RemoteUser* user, rte::RemoteStream* stream) override {
-        LOG_INFO_FMT("OnStreamRemoved: userId=%hs", user->GetUserId().c_str());
-        if (m_rteManager->m_eventHandler && stream->HasAudio()) {
-            m_rteManager->m_eventHandler->OnRemoteAudioStateChanged(user->GetUserId(), 0); // REMOTE_AUDIO_STATE_STOPPED
-        }
-    }
+    // Connection state handling - these might need to be handled differently
+    // as ChannelObserver doesn't have direct OnConnected/OnDisconnected methods
+    // We might need to use other callbacks or handle this through different mechanisms
 };
 
 RteManager::RteManager() : m_eventHandler(nullptr) {
@@ -254,23 +263,13 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     }
     
     // Join channel
-    bool joinSuccess = false;
-    m_channel->Connect(m_localUser.get(), [&joinSuccess, this](rte::Error* err) {
-        if (err && err->Code() == rte::kRteOk) {
-            joinSuccess = true;
-            LOG_INFO("Channel joined successfully");
-        } else {
-            LOG_ERROR_FMT("Channel join failed: error=%d", err ? err->Code() : -1);
-        }
-    });
-    
-    // Wait for join
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-    
-    if (!joinSuccess) {
-        LOG_ERROR("JoinChannel failed: Channel join timeout");
+    bool joinSuccess = m_channel->Join(m_localUser.get(), token, &err);
+    if (!joinSuccess || err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("JoinChannel failed: Join error=%d", err.Code());
         return false;
     }
+    
+    LOG_INFO("Channel joined successfully");
     
     // Create and publish local stream
     m_localStream = std::make_shared<rte::LocalRealTimeStream>(m_rte.get());
@@ -287,10 +286,13 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     }
     
     // Publish stream to channel
-    m_channel->PublishLocalStream(m_localStream.get(), &err);
-    if (err.Code() != rte::kRteOk) {
-        LOG_ERROR_FMT("JoinChannel warning: PublishLocalStream error=%d", err.Code());
-    }
+    m_channel->PublishStream(m_localUser.get(), m_localStream.get(), [this](rte::Error* err) {
+        if (err && err->Code() == rte::kRteOk) {
+            LOG_INFO("Local stream published successfully");
+        } else {
+            LOG_ERROR_FMT("Publish stream failed: error=%d", err ? err->Code() : -1);
+        }
+    });
     
     LOG_INFO("JoinChannel successful");
     return true;
@@ -304,12 +306,18 @@ void RteManager::LeaveChannel() {
         
         // Unpublish local stream
         if (m_localStream) {
-            m_channel->UnpublishLocalStream(m_localStream.get(), &err);
+            m_channel->UnpublishStream(m_localStream.get(), [this](rte::Error* err) {
+                if (err && err->Code() == rte::kRteOk) {
+                    LOG_INFO("Local stream unpublished successfully");
+                } else {
+                    LOG_ERROR_FMT("Unpublish stream failed: error=%d", err ? err->Code() : -1);
+                }
+            });
             m_localStream.reset();
         }
         
-        // Disconnect from channel
-        m_channel->Disconnect(&err);
+        // Leave channel
+        m_channel->Leave(&err);
         
         // Unregister observer
         if (m_channelObserver) {

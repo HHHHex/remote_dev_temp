@@ -51,7 +51,7 @@ private:
     std::shared_ptr<rte::LocalRealTimeStream> m_localStream;
     std::shared_ptr<rte::MicAudioTrack> m_micAudioTrack;
     std::shared_ptr<rte::CameraVideoTrack> m_cameraVideoTrack;
-    std::shared_ptr<rte::IChannelObserver> m_channelObserver;
+    std::shared_ptr<rte::ChannelObserver> m_channelObserver;
 
 
     IRteManagerEventHandler* m_eventHandler;
