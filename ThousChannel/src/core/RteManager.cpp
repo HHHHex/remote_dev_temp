@@ -102,13 +102,13 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     // Configure RTE
     rte::Config rteConfig;
     rteConfig.SetAppId(m_appId.c_str(), &err);
-    if (err.Code() != rte::kRteOk) {
+    if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: SetAppId error=%d", err.Code());
         return false;
     }
 
     m_rte->SetConfigs(&rteConfig, &err);
-    if (err.Code() != rte::kRteOk) {
+    if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: SetConfigs error=%d", err.Code());
         return false;
     }
@@ -116,7 +116,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     // Initialize media engine
     bool initSuccess = false;
     m_rte->InitMediaEngine([&initSuccess, this](rte::Error* err) {
-        if (err && err->Code() == rte::kRteOk) {
+        if (err && err->Code() == kRteOk) {
             initSuccess = true;
             LOG_INFO("Media engine initialized successfully");
         } else {
@@ -139,7 +139,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     localUserConfig.SetUserId(m_userId);
     
     m_localUser->SetConfigs(&localUserConfig, &err);
-    if (err.Code() != rte::kRteOk) {
+    if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: LocalUser SetConfigs error=%d", err.Code());
         return false;
     }
@@ -148,7 +148,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     m_micAudioTrack = std::make_shared<rte::MicAudioTrack>(m_rte.get());
     rte::MicAudioTrackConfig micConfig;
     m_micAudioTrack->SetConfigs(&micConfig, &err);
-    if (err.Code() != rte::kRteOk) {
+    if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
         return false;
     }
@@ -156,7 +156,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     m_cameraVideoTrack = std::make_shared<rte::CameraVideoTrack>(m_rte.get());
     rte::CameraVideoTrackConfig cameraConfig;
     m_cameraVideoTrack->SetConfigs(&cameraConfig, &err);
-    if (err.Code() != rte::kRteOk) {
+    if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: CameraVideoTrack SetConfigs error=%d", err.Code());
         return false;
     }
@@ -218,7 +218,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
         m_localUser->GetConfigs(&localUserConfig, &err);
         localUserConfig.SetUserToken(token);
         m_localUser->SetConfigs(&localUserConfig, &err);
-        if (err.Code() != rte::kRteOk) {
+        if (err.Code() != kRteOk) {
             LOG_ERROR_FMT("JoinChannel failed: SetUserToken error=%d", err.Code());
             return false;
         }
@@ -227,7 +227,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     // Connect local user
     bool connectSuccess = false;
     m_localUser->Connect([&connectSuccess, this](rte::Error* err) {
-        if (err && err->Code() == rte::kRteOk) {
+        if (err && err->Code() == kRteOk) {
             connectSuccess = true;
             LOG_INFO("Local user connected successfully");
         } else {
@@ -251,20 +251,20 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     channelConfig.SetChannelId(channelId);
     
     m_channel->SetConfigs(&channelConfig, &err);
-    if (err.Code() != rte::kRteOk) {
+    if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("JoinChannel failed: Channel SetConfigs error=%d", err.Code());
         return false;
     }
     
     m_channel->RegisterObserver(m_channelObserver.get(), &err);
-    if (err.Code() != rte::kRteOk) {
+    if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("JoinChannel failed: RegisterObserver error=%d", err.Code());
         return false;
     }
     
     // Join channel
     bool joinSuccess = m_channel->Join(m_localUser.get(), token, &err);
-    if (!joinSuccess || err.Code() != rte::kRteOk) {
+    if (!joinSuccess || err.Code() != kRteOk) {
         LOG_ERROR_FMT("JoinChannel failed: Join error=%d", err.Code());
         return false;
     }
@@ -276,18 +276,18 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     
     // Add tracks to stream
     m_localStream->AddAudioTrack(m_micAudioTrack.get(), &err);
-    if (err.Code() != rte::kRteOk) {
+    if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("JoinChannel warning: AddAudioTrack error=%d", err.Code());
     }
     
     m_localStream->AddVideoTrack(m_cameraVideoTrack.get(), &err);
-    if (err.Code() != rte::kRteOk) {
+    if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("JoinChannel warning: AddVideoTrack error=%d", err.Code());
     }
     
     // Publish stream to channel
     m_channel->PublishStream(m_localUser.get(), m_localStream.get(), [this](rte::Error* err) {
-        if (err && err->Code() == rte::kRteOk) {
+        if (err && err->Code() == kRteOk) {
             LOG_INFO("Local stream published successfully");
         } else {
             LOG_ERROR_FMT("Publish stream failed: error=%d", err ? err->Code() : -1);
@@ -307,7 +307,7 @@ void RteManager::LeaveChannel() {
         // Unpublish local stream
         if (m_localStream) {
             m_channel->UnpublishStream(m_localStream.get(), [this](rte::Error* err) {
-                if (err && err->Code() == rte::kRteOk) {
+                if (err && err->Code() == kRteOk) {
                     LOG_INFO("Local stream unpublished successfully");
                 } else {
                     LOG_ERROR_FMT("Unpublish stream failed: error=%d", err ? err->Code() : -1);
@@ -352,7 +352,7 @@ void RteManager::RenewToken(const std::string& token) {
         m_localUser->GetConfigs(&localUserConfig, &err);
         localUserConfig.SetUserToken(token);
         m_localUser->SetConfigs(&localUserConfig, &err);
-        if (err.Code() != rte::kRteOk) {
+        if (err.Code() != kRteOk) {
             LOG_ERROR_FMT("RenewToken failed: error=%d", err.Code());
         }
     }
@@ -412,7 +412,7 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
                 rte::View rteView = reinterpret_cast<rte::View>(view);
                 rte::ViewConfig viewConfig;
                 canvas->AddView(&rteView, &viewConfig, &err);
-                if (err.Code() == rte::kRteOk) {
+                if (err.Code() == kRteOk) {
                     m_remoteUserCanvases[userId] = canvas;
                 } else {
                     LOG_ERROR_FMT("Failed to create canvas for user %hs: error=%d", userId.c_str(), err.Code());
@@ -449,12 +449,12 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
     rte::ViewConfig viewConfig;
     canvas->AddView(&rteView, &viewConfig, &err);
     
-    if (err.Code() == rte::kRteOk) {
+    if (err.Code() == kRteOk) {
         rte::CanvasConfig canvasConfig;
         canvasConfig.SetRenderMode(rte::VideoRenderMode::kRteVideoRenderModeFit);
         canvas->SetConfigs(&canvasConfig, &err);
         
-        if (err.Code() == rte::kRteOk) {
+        if (err.Code() == kRteOk) {
             m_remoteUserCanvases[userId] = canvas;
             LOG_INFO_FMT("Created canvas for user: %hs", userId.c_str());
             return 0;
