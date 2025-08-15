@@ -21,14 +21,24 @@ public:
         }
     }
 
+    void onTokenPrivilegeWillExpire(const char* token) override {
+        LOG_INFO(_T("onTokenPrivilegeWillExpire"));
+        if (m_rteManager->m_eventHandler) {
+            m_rteManager->m_eventHandler->OnTokenPrivilegeWillExpire();
+        }
+    }
+
     void onUserJoined(agora::rtc::uid_t uid, int elapsed) override {
         LOG_INFO_FMT(_T("onUserJoined: uid=%u"), uid);
         agora::rtc::UserInfo userInfo;
         if (m_rteManager->m_rtcEngine->getUserInfoByUid(uid, &userInfo) == 0) {
             std::string userId(userInfo.userAccount);
             LOG_INFO_FMT(_T("onUserJoined: userId=%hs"), userId.c_str());
-            m_rteManager->m_uid_to_user_id[uid] = userId;
-            m_rteManager->m_user_id_to_uid[userId] = uid;
+            {
+                std::lock_guard<std::mutex> lock(m_rteManager->m_mutex);
+                m_rteManager->m_uid_to_user_id[uid] = userId;
+                m_rteManager->m_user_id_to_uid[userId] = uid;
+            }
 
             if (m_rteManager->m_eventHandler) {
                 m_rteManager->m_eventHandler->OnUserJoined(userId);
@@ -41,12 +51,20 @@ public:
 
     void onUserOffline(agora::rtc::uid_t uid, agora::rtc::USER_OFFLINE_REASON_TYPE reason) override {
         LOG_INFO_FMT(_T("onUserOffline: uid=%u, reason=%d"), uid, reason);
-        if (m_rteManager->m_uid_to_user_id.count(uid)) {
-            std::string userId = m_rteManager->m_uid_to_user_id[uid];
-            LOG_INFO_FMT(_T("onUserOffline: userId=%hs"), userId.c_str());
-            m_rteManager->m_uid_to_user_id.erase(uid);
-            m_rteManager->m_user_id_to_uid.erase(userId);
+        std::string userId = "";
+        bool user_exists = false;
+        {
+            std::lock_guard<std::mutex> lock(m_rteManager->m_mutex);
+            if (m_rteManager->m_uid_to_user_id.count(uid)) {
+                userId = m_rteManager->m_uid_to_user_id[uid];
+                m_rteManager->m_uid_to_user_id.erase(uid);
+                m_rteManager->m_user_id_to_uid.erase(userId);
+                user_exists = true;
+            }
+        }
 
+        if (user_exists) {
+            LOG_INFO_FMT(_T("onUserOffline: userId=%hs"), userId.c_str());
             if (m_rteManager->m_eventHandler) {
                 m_rteManager->m_eventHandler->OnUserLeft(userId);
                 m_rteManager->m_eventHandler->OnUserListChanged();
@@ -71,16 +89,28 @@ public:
 
     void onRemoteAudioStateChanged(agora::rtc::uid_t uid, agora::rtc::REMOTE_AUDIO_STATE state, agora::rtc::REMOTE_AUDIO_STATE_REASON reason, int elapsed) override {
         LOG_INFO_FMT(_T("onRemoteAudioStateChanged: uid=%u, state=%d, reason=%d"), uid, state, reason);
-        if (m_rteManager->m_eventHandler && m_rteManager->m_uid_to_user_id.count(uid)) {
-            std::string userId = m_rteManager->m_uid_to_user_id[uid];
+        std::string userId = "";
+        {
+            std::lock_guard<std::mutex> lock(m_rteManager->m_mutex);
+            if (m_rteManager->m_uid_to_user_id.count(uid)) {
+                userId = m_rteManager->m_uid_to_user_id[uid];
+            }
+        }
+        if (m_rteManager->m_eventHandler && !userId.empty()) {
             m_rteManager->m_eventHandler->OnRemoteAudioStateChanged(userId, (int)state);
         }
     }
 
     void onRemoteVideoStateChanged(agora::rtc::uid_t uid, agora::rtc::REMOTE_VIDEO_STATE state, agora::rtc::REMOTE_VIDEO_STATE_REASON reason, int elapsed) override {
         LOG_INFO_FMT(_T("onRemoteVideoStateChanged: uid=%u, state=%d, reason=%d"), uid, state, reason);
-        if (m_rteManager->m_eventHandler && m_rteManager->m_uid_to_user_id.count(uid)) {
-            std::string userId = m_rteManager->m_uid_to_user_id[uid];
+        std::string userId = "";
+        {
+            std::lock_guard<std::mutex> lock(m_rteManager->m_mutex);
+            if (m_rteManager->m_uid_to_user_id.count(uid)) {
+                userId = m_rteManager->m_uid_to_user_id[uid];
+            }
+        }
+        if (m_rteManager->m_eventHandler && !userId.empty()) {
             m_rteManager->m_eventHandler->OnRemoteVideoStateChanged(userId, (int)state);
         }
     }
@@ -168,6 +198,14 @@ void RteManager::LeaveChannel() {
     }
 }
 
+void RteManager::RenewToken(const std::string& token)
+{
+    LOG_INFO(_T("RenewToken called."));
+    if (m_rtcEngine) {
+        m_rtcEngine->renewToken(token.c_str());
+    }
+}
+
 void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
     LOG_INFO_FMT(_T("SetLocalAudioCaptureEnabled: enabled=%d"), enabled);
     if (m_rtcEngine) {
@@ -184,6 +222,7 @@ void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
 
 void RteManager::SubscribeRemoteVideo(const std::string& userId) {
     LOG_INFO_FMT(_T("SubscribeRemoteVideo: userId=%hs"), userId.c_str());
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
         agora::rtc::uid_t uid = m_user_id_to_uid[userId];
         m_rtcEngine->muteRemoteVideoStream(uid, false);
@@ -192,6 +231,7 @@ void RteManager::SubscribeRemoteVideo(const std::string& userId) {
 
 void RteManager::UnsubscribeRemoteVideo(const std::string& userId) {
     LOG_INFO_FMT(_T("UnsubscribeRemoteVideo: userId=%hs"), userId.c_str());
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
         agora::rtc::uid_t uid = m_user_id_to_uid[userId];
         m_rtcEngine->muteRemoteVideoStream(uid, true);
@@ -200,6 +240,7 @@ void RteManager::UnsubscribeRemoteVideo(const std::string& userId) {
 
 void RteManager::SubscribeRemoteAudio(const std::string& userId) {
     LOG_INFO_FMT(_T("SubscribeRemoteAudio: userId=%hs"), userId.c_str());
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
         agora::rtc::uid_t uid = m_user_id_to_uid[userId];
         m_rtcEngine->muteRemoteAudioStream(uid, false);
@@ -208,6 +249,7 @@ void RteManager::SubscribeRemoteAudio(const std::string& userId) {
 
 void RteManager::UnsubscribeRemoteAudio(const std::string& userId) {
     LOG_INFO_FMT(_T("UnsubscribeRemoteAudio: userId=%hs"), userId.c_str());
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
         agora::rtc::uid_t uid = m_user_id_to_uid[userId];
         m_rtcEngine->muteRemoteAudioStream(uid, true);
@@ -216,6 +258,7 @@ void RteManager::UnsubscribeRemoteAudio(const std::string& userId) {
 
 void RteManager::SetSubscribedUsers(const std::vector<std::string>& userIds) {
     LOG_INFO(_T("SetSubscribedUsers called."));
+    std::lock_guard<std::mutex> lock(m_mutex);
     std::vector<std::string> to_subscribe;
     std::vector<std::string> to_unsubscribe;
 
@@ -232,16 +275,16 @@ void RteManager::SetSubscribedUsers(const std::vector<std::string>& userIds) {
                         sorted_userIds.begin(), sorted_userIds.end(),
                         std::back_inserter(to_unsubscribe));
 
-    for (std::vector<std::string>::const_iterator it = to_subscribe.begin(); it != to_subscribe.end(); ++it) {
-        LOG_INFO_FMT(_T("Subscribing to user: %hs"), (*it).c_str());
-        SubscribeRemoteVideo(*it);
-        SubscribeRemoteAudio(*it);
+    for (const auto& user : to_subscribe) {
+        LOG_INFO_FMT(_T("Subscribing to user: %hs"), user.c_str());
+        SubscribeRemoteVideo(user);
+        SubscribeRemoteAudio(user);
     }
 
-    for (std::vector<std::string>::const_iterator it = to_unsubscribe.begin(); it != to_unsubscribe.end(); ++it) {
-        LOG_INFO_FMT(_T("Unsubscribing from user: %hs"), (*it).c_str());
-        UnsubscribeRemoteVideo(*it);
-        UnsubscribeRemoteAudio(*it);
+    for (const auto& user : to_unsubscribe) {
+        LOG_INFO_FMT(_T("Unsubscribing from user: %hs"), user.c_str());
+        UnsubscribeRemoteVideo(user);
+        UnsubscribeRemoteAudio(user);
     }
 
     m_subscribedUsers = userIds;
@@ -249,9 +292,10 @@ void RteManager::SetSubscribedUsers(const std::vector<std::string>& userIds) {
 
 void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap) {
     LOG_INFO(_T("SetViewUserBindings called."));
-    for (std::map<void*, std::string>::const_iterator it = m_viewToUserMap.begin(); it != m_viewToUserMap.end(); ++it) {
-        void* view = it->first;
-        const std::string& userId = it->second;
+    std::lock_guard<std::mutex> lock(m_mutex);
+    for (const auto& pair : m_viewToUserMap) {
+        void* view = pair.first;
+        const std::string& userId = pair.second;
         if (viewToUserMap.find(view) == viewToUserMap.end() || viewToUserMap.at(view) != userId) {
              if (m_user_id_to_uid.count(userId)) {
                 LOG_INFO_FMT(_T("Unbinding view for user: %hs"), userId.c_str());
@@ -264,9 +308,9 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
         }
     }
 
-    for (std::map<void*, std::string>::const_iterator it = viewToUserMap.begin(); it != viewToUserMap.end(); ++it) {
-        void* view = it->first;
-        const std::string& userId = it->second;
+    for (const auto& pair : viewToUserMap) {
+        void* view = pair.first;
+        const std::string& userId = pair.second;
         if (m_user_id_to_uid.count(userId)) {
             LOG_INFO_FMT(_T("Binding view for user: %hs"), userId.c_str());
             agora::rtc::uid_t uid = m_user_id_to_uid[userId];
@@ -282,12 +326,13 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
 int RteManager::SetupRemoteVideo(const std::string& userId, HWND view)
 {
     LOG_INFO_FMT(_T("SetupRemoteVideo for user: %hs"), userId.c_str());
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
         agora::rtc::uid_t uid = m_user_id_to_uid[userId];
         agora::rtc::VideoCanvas canvas;
         canvas.uid = uid;
         canvas.view = (agora::media::base::view_t)view;
-        canvas.renderMode = agora::rtc::RENDER_MODE_FIT;
+        canvas.renderMode = agora::rtc::RENDER_MODE_TYPE::RENDER_MODE_FIT;
         return m_rtcEngine->setupRemoteVideo(canvas);
     }
     LOG_ERROR_FMT(_T("SetupRemoteVideo failed for user: %hs. User not found or engine not ready."), userId.c_str());
