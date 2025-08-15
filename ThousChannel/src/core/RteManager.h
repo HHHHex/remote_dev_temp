@@ -5,26 +5,13 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include "IAgoraRtcEngine.h"
+
+#include "rte_cpp.h"
+
+#include "IRteManagerEventHandler.h"
 
 // Forward declaration
 class RteManager;
-
-// Event handler interface for RteManager
-class IRteManagerEventHandler {
-public:
-    virtual ~IRteManagerEventHandler() = default;
-    virtual void OnConnectionStateChanged(int state) {}
-    virtual void OnUserJoined(const std::string& userId) {}
-    virtual void OnUserLeft(const std::string& userId) {}
-    virtual void OnUserListChanged() {}
-    virtual void OnLocalAudioStateChanged(int state) {}
-    virtual void OnLocalVideoStateChanged(int state, int reason) {}
-    virtual void OnRemoteAudioStateChanged(const std::string& userId, int state) {}
-    virtual void OnRemoteVideoStateChanged(const std::string& userId, int state) {}
-    virtual void OnTokenPrivilegeWillExpire() {}
-    virtual void OnError(int err) {}
-};
 
 // Configuration for RteManager
 struct RteManagerConfig {
@@ -48,22 +35,25 @@ public:
     void SetLocalAudioCaptureEnabled(bool enabled);
     void SetLocalVideoCaptureEnabled(bool enabled);
 
-    void SetSubscribedUsers(const std::vector<std::string>& userIds);
     void SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap);
-    int SetupRemoteVideo(const std::string& userId, HWND view);
+    int SetupRemoteVideo(const std::string& userId, void* view);
 
 private:
-    // Friend class for event handling
-    friend class RteManagerEventHandler;
+    friend class RteManagerEventObserver;
 
-    void SubscribeRemoteVideo(const std::string& userId);
-    void UnsubscribeRemoteVideo(const std::string& userId);
-    void SubscribeRemoteAudio(const std::string& userId);
-    void UnsubscribeRemoteAudio(const std::string& userId);
+    void OnRemoteUserJoined(const std::string& userId);
+    void OnRemoteUserLeft(const std::string& userId);
 
 private:
-    agora::rtc::IRtcEngine* m_rtcEngine;
-    std::shared_ptr<agora::rtc::IRtcEngineEventHandler> m_sdkEventHandler;
+    std::shared_ptr<rte::Rte> m_rte;
+    std::shared_ptr<rte::LocalUser> m_localUser;
+    std::shared_ptr<rte::Channel> m_channel;
+    std::shared_ptr<rte::LocalRealTimeStream> m_localStream;
+    std::shared_ptr<rte::MicAudioTrack> m_micAudioTrack;
+    std::shared_ptr<rte::CameraVideoTrack> m_cameraVideoTrack;
+    std::shared_ptr<rte::IChannelObserver> m_channelObserver;
+
+
     IRteManagerEventHandler* m_eventHandler;
 
     std::string m_appId;
@@ -72,23 +62,7 @@ private:
 
     // Thread-safe members
     std::mutex m_mutex;
-    std::map<agora::rtc::uid_t, std::string> m_uid_to_user_id;
-    std::map<std::string, agora::rtc::uid_t> m_user_id_to_uid;
-    std::vector<std::string> m_subscribedUsers;
     std::map<void*, std::string> m_viewToUserMap;
-};
-
-class IRteManagerEventHandler {
-public:
-    virtual ~IRteManagerEventHandler() {}
-
-    virtual void OnConnectionStateChanged(int state) = 0;
-    virtual void OnUserJoined(const std::string& userId) = 0;
-    virtual void OnUserLeft(const std::string& userId) = 0;
-    virtual void OnLocalAudioStateChanged(int state) = 0;
-    virtual void OnLocalVideoStateChanged(agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason) = 0;
-    virtual void OnRemoteAudioStateChanged(const std::string& userId, int state) = 0;
-    virtual void OnRemoteVideoStateChanged(const std::string& userId, int state) = 0;
-    virtual void OnError(int error) = 0;
-    virtual void OnUserListChanged() = 0;
+    std::map<std::string, std::shared_ptr<rte::Canvas>> m_remoteUserCanvases;
+    std::vector<std::string> m_remoteUsers;
 };

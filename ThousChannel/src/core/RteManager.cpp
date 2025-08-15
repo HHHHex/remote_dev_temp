@@ -1,340 +1,479 @@
 #include "pch.h"
 #include "RteManager.h"
-#include "IAgoraRtcEngine.h"
-#include "AgoraMediaBase.h"
 #include "Logger.h"
 #include <iterator>
 #include <algorithm>
 #include <set>
 
-class RteManagerEventHandler : public agora::rtc::IRtcEngineEventHandler {
+// RTE Event Observer for channel events
+class RteManagerEventObserver : public rte::IChannelObserver {
 private:
     RteManager* m_rteManager;
 
 public:
-    RteManagerEventHandler(RteManager* rteManager) : m_rteManager(rteManager) {}
+    RteManagerEventObserver(RteManager* rteManager) : m_rteManager(rteManager) {}
 
-    void onConnectionStateChanged(agora::rtc::CONNECTION_STATE_TYPE state, agora::rtc::CONNECTION_CHANGED_REASON_TYPE reason) override {
-        LOG_INFO_FMT(_T("onConnectionStateChanged: state=%d, reason=%d"), state, reason);
+    void OnConnected(rte::Channel* channel, rte::ChannelInfo channelInfo, rte::Error* err) override {
+        LOG_INFO("OnConnected");
         if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnConnectionStateChanged((int)state);
+            m_rteManager->m_eventHandler->OnConnectionStateChanged(1); // Connected state
         }
     }
 
-    void onTokenPrivilegeWillExpire(const char* token) override {
-        LOG_INFO(_T("onTokenPrivilegeWillExpire"));
+    void OnDisconnected(rte::Channel* channel, rte::ChannelInfo channelInfo, rte::Error* err) override {
+        LOG_INFO("OnDisconnected");
         if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnTokenPrivilegeWillExpire();
+            m_rteManager->m_eventHandler->OnConnectionStateChanged(0); // Disconnected state
         }
     }
 
-    void onUserJoined(agora::rtc::uid_t uid, int elapsed) override {
-        LOG_INFO_FMT(_T("onUserJoined: uid=%u"), uid);
-        agora::rtc::UserInfo userInfo;
-        if (m_rteManager->m_rtcEngine->getUserInfoByUid(uid, &userInfo) == 0) {
-            std::string userId(userInfo.userAccount);
-            LOG_INFO_FMT(_T("onUserJoined: userId=%hs"), userId.c_str());
-            {
-                std::lock_guard<std::mutex> lock(m_rteManager->m_mutex);
-                m_rteManager->m_uid_to_user_id[uid] = userId;
-                m_rteManager->m_user_id_to_uid[userId] = uid;
-            }
-
-            if (m_rteManager->m_eventHandler) {
-                m_rteManager->m_eventHandler->OnUserJoined(userId);
-                m_rteManager->m_eventHandler->OnUserListChanged();
-            }
-        } else {
-            LOG_ERROR_FMT(_T("onUserJoined: getUserInfoByUid failed for uid=%u"), uid);
-        }
-    }
-
-    void onUserOffline(agora::rtc::uid_t uid, agora::rtc::USER_OFFLINE_REASON_TYPE reason) override {
-        LOG_INFO_FMT(_T("onUserOffline: uid=%u, reason=%d"), uid, reason);
-        std::string userId = "";
-        bool user_exists = false;
-        {
-            std::lock_guard<std::mutex> lock(m_rteManager->m_mutex);
-            if (m_rteManager->m_uid_to_user_id.count(uid)) {
-                userId = m_rteManager->m_uid_to_user_id[uid];
-                m_rteManager->m_uid_to_user_id.erase(uid);
-                m_rteManager->m_user_id_to_uid.erase(userId);
-                user_exists = true;
-            }
-        }
-
-        if (user_exists) {
-            LOG_INFO_FMT(_T("onUserOffline: userId=%hs"), userId.c_str());
-            if (m_rteManager->m_eventHandler) {
-                m_rteManager->m_eventHandler->OnUserLeft(userId);
-                m_rteManager->m_eventHandler->OnUserListChanged();
-            }
-        }
-    }
-
-    void onLocalAudioStateChanged(agora::rtc::LOCAL_AUDIO_STREAM_STATE state, agora::rtc::LOCAL_AUDIO_STREAM_REASON reason) override {
-        LOG_INFO_FMT(_T("onLocalAudioStateChanged: state=%d, reason=%d"), state, reason);
+    void OnUserJoined(rte::Channel* channel, rte::RemoteUser* user) override {
+        std::string userId = user->GetUserId();
+        LOG_INFO_FMT("OnUserJoined: userId=%hs", userId.c_str());
+        
+        m_rteManager->OnRemoteUserJoined(userId);
+        
         if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnLocalAudioStateChanged((int)state);
+            m_rteManager->m_eventHandler->OnUserJoined(userId);
+            m_rteManager->m_eventHandler->OnUserListChanged();
         }
     }
 
-    void onLocalVideoStateChanged(agora::rtc::VIDEO_SOURCE_TYPE source, agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason) override
-    {
-        LOG_INFO_FMT(_T("onLocalVideoStateChanged: source=%d, state=%d, reason=%d"), source, state, reason);
+    void OnUserLeft(rte::Channel* channel, rte::RemoteUser* user, rte::UserLeftReason reason) override {
+        std::string userId = user->GetUserId();
+        LOG_INFO_FMT("OnUserLeft: userId=%hs", userId.c_str());
+        
+        m_rteManager->OnRemoteUserLeft(userId);
+        
         if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnLocalVideoStateChanged(state, reason);
+            m_rteManager->m_eventHandler->OnUserLeft(userId);
+            m_rteManager->m_eventHandler->OnUserListChanged();
         }
     }
 
-    void onRemoteAudioStateChanged(agora::rtc::uid_t uid, agora::rtc::REMOTE_AUDIO_STATE state, agora::rtc::REMOTE_AUDIO_STATE_REASON reason, int elapsed) override {
-        LOG_INFO_FMT(_T("onRemoteAudioStateChanged: uid=%u, state=%d, reason=%d"), uid, state, reason);
-        std::string userId = "";
-        {
-            std::lock_guard<std::mutex> lock(m_rteManager->m_mutex);
-            if (m_rteManager->m_uid_to_user_id.count(uid)) {
-                userId = m_rteManager->m_uid_to_user_id[uid];
-            }
-        }
-        if (m_rteManager->m_eventHandler && !userId.empty()) {
-            m_rteManager->m_eventHandler->OnRemoteAudioStateChanged(userId, (int)state);
+    void OnStreamAdded(rte::Channel* channel, rte::RemoteUser* user, rte::RemoteStream* stream) override {
+        LOG_INFO_FMT("OnStreamAdded: userId=%hs", user->GetUserId().c_str());
+        if (m_rteManager->m_eventHandler && stream->HasAudio()) {
+            m_rteManager->m_eventHandler->OnRemoteAudioStateChanged(user->GetUserId(), 2); // REMOTE_AUDIO_STATE_DECODING
         }
     }
 
-    void onRemoteVideoStateChanged(agora::rtc::uid_t uid, agora::rtc::REMOTE_VIDEO_STATE state, agora::rtc::REMOTE_VIDEO_STATE_REASON reason, int elapsed) override {
-        LOG_INFO_FMT(_T("onRemoteVideoStateChanged: uid=%u, state=%d, reason=%d"), uid, state, reason);
-        std::string userId = "";
-        {
-            std::lock_guard<std::mutex> lock(m_rteManager->m_mutex);
-            if (m_rteManager->m_uid_to_user_id.count(uid)) {
-                userId = m_rteManager->m_uid_to_user_id[uid];
-            }
-        }
-        if (m_rteManager->m_eventHandler && !userId.empty()) {
-            m_rteManager->m_eventHandler->OnRemoteVideoStateChanged(userId, (int)state);
-        }
-    }
-
-    void onError(int err, const char* msg) override {
-        LOG_ERROR_FMT(_T("onError: err=%d, msg=%hs"), err, msg);
-        if (m_rteManager->m_eventHandler) {
-            m_rteManager->m_eventHandler->OnError(err);
+    void OnStreamRemoved(rte::Channel* channel, rte::RemoteUser* user, rte::RemoteStream* stream) override {
+        LOG_INFO_FMT("OnStreamRemoved: userId=%hs", user->GetUserId().c_str());
+        if (m_rteManager->m_eventHandler && stream->HasAudio()) {
+            m_rteManager->m_eventHandler->OnRemoteAudioStateChanged(user->GetUserId(), 0); // REMOTE_AUDIO_STATE_STOPPED
         }
     }
 };
 
-RteManager::RteManager() : m_rtcEngine(nullptr), m_eventHandler(nullptr) {
-    LOG_INFO(_T("RteManager created."));
-    m_sdkEventHandler = std::make_shared<RteManagerEventHandler>(this);
+RteManager::RteManager() : m_eventHandler(nullptr) {
+    LOG_INFO("RteManager created.");
 }
 
 RteManager::~RteManager() {
-    LOG_INFO(_T("RteManager destroyed."));
+    LOG_INFO("RteManager destroyed.");
     Destroy();
 }
 
 void RteManager::SetEventHandler(IRteManagerEventHandler* handler) {
-    LOG_INFO(_T("SetEventHandler called."));
+    LOG_INFO("SetEventHandler called.");
     m_eventHandler = handler;
 }
 
 bool RteManager::Initialize(const RteManagerConfig& config) {
-    LOG_INFO_FMT(_T("Initialize: appId=%hs, userId=%hs"), config.appId.c_str(), config.userId.c_str());
+    LOG_INFO_FMT("Initialize: appId=%hs, userId=%hs", config.appId.c_str(), config.userId.c_str());
     m_appId = config.appId;
     m_userId = config.userId;
 
-    agora::rtc::RtcEngineContext context;
-    context.appId = m_appId.c_str();
-    context.eventHandler = m_sdkEventHandler.get();
+    rte::Error err;
     
-    m_rtcEngine = static_cast<agora::rtc::IRtcEngine*>(createAgoraRtcEngine());
-    if (!m_rtcEngine) {
-        LOG_ERROR(_T("Initialize failed: createAgoraRtcEngine returned null."));
+    // Create RTE instance
+    m_rte = std::make_shared<rte::Rte>();
+    
+    // Configure RTE
+    rte::Config rteConfig;
+    rteConfig.SetAppId(m_appId.c_str(), &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("Initialize failed: SetAppId error=%d", err.Code());
         return false;
     }
 
-    if (m_rtcEngine->initialize(context) != 0) {
-        LOG_ERROR(_T("Initialize failed: m_rtcEngine->initialize failed."));
-        Destroy();
+    m_rte->SetConfigs(&rteConfig, &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("Initialize failed: SetConfigs error=%d", err.Code());
         return false;
     }
 
-    m_rtcEngine->enableVideo();
-    m_rtcEngine->enableAudio();
-    m_rtcEngine->setChannelProfile(agora::CHANNEL_PROFILE_TYPE::CHANNEL_PROFILE_LIVE_BROADCASTING);
-    m_rtcEngine->setClientRole(agora::rtc::CLIENT_ROLE_BROADCASTER);
+    // Initialize media engine
+    bool initSuccess = false;
+    m_rte->InitMediaEngine([&initSuccess, this](rte::Error* err) {
+        if (err && err->Code() == rte::kRteOk) {
+            initSuccess = true;
+            LOG_INFO("Media engine initialized successfully");
+        } else {
+            LOG_ERROR_FMT("Media engine initialization failed: error=%d", err ? err->Code() : -1);
+        }
+    }, nullptr);
 
-    LOG_INFO(_T("Initialize successful."));
+    // Wait for initialization (simple blocking approach)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    
+    if (!initSuccess) {
+        LOG_ERROR("Initialize failed: Media engine initialization timeout or error");
+        return false;
+    }
+
+    // Create local user
+    m_localUser = std::make_shared<rte::LocalUser>(m_rte.get());
+    
+    rte::LocalUserConfig localUserConfig;
+    localUserConfig.SetUserId(m_userId);
+    
+    m_localUser->SetConfigs(&localUserConfig, &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("Initialize failed: LocalUser SetConfigs error=%d", err.Code());
+        return false;
+    }
+
+    // Create media tracks
+    m_micAudioTrack = std::make_shared<rte::MicAudioTrack>(m_rte.get());
+    rte::MicAudioTrackConfig micConfig;
+    m_micAudioTrack->SetConfigs(&micConfig, &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
+        return false;
+    }
+
+    m_cameraVideoTrack = std::make_shared<rte::CameraVideoTrack>(m_rte.get());
+    rte::CameraVideoTrackConfig cameraConfig;
+    m_cameraVideoTrack->SetConfigs(&cameraConfig, &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("Initialize failed: CameraVideoTrack SetConfigs error=%d", err.Code());
+        return false;
+    }
+
+    LOG_INFO("Initialize successful.");
     return true;
 }
 
 void RteManager::Destroy() {
-    LOG_INFO(_T("Destroy called."));
-    if (m_rtcEngine) {
-        m_rtcEngine->release();
-        m_rtcEngine = nullptr;
-        LOG_INFO(_T("RTC Engine released."));
+    LOG_INFO("Destroy called.");
+    
+    // Leave channel if connected
+    if (m_channel) {
+        LeaveChannel();
+    }
+    
+    // Stop and release media tracks
+    if (m_micAudioTrack) {
+        m_micAudioTrack->Stop(nullptr);
+        m_micAudioTrack.reset();
+    }
+    
+    if (m_cameraVideoTrack) {
+        m_cameraVideoTrack->Stop(nullptr);
+        m_cameraVideoTrack.reset();
+    }
+    
+    // Release local stream and user
+    if (m_localStream) {
+        m_localStream.reset();
+    }
+    
+    if (m_localUser) {
+        m_localUser.reset();
+    }
+    
+    // Release RTE
+    if (m_rte) {
+        m_rte->Destroy();
+        m_rte.reset();
+        LOG_INFO("RTE destroyed.");
     }
 }
 
 bool RteManager::JoinChannel(const std::string& channelId, const std::string& token) {
-    LOG_INFO_FMT(_T("JoinChannel: channelId=%hs"), channelId.c_str());
+    LOG_INFO_FMT("JoinChannel: channelId=%hs", channelId.c_str());
     m_channelId = channelId;
-    if (m_rtcEngine) {
-        int result = m_rtcEngine->joinChannelWithUserAccount(token.c_str(), channelId.c_str(), m_userId.c_str());
-        if (result != 0) {
-            LOG_ERROR_FMT(_T("JoinChannel failed with error code: %d"), result);
-        }
-        return result == 0;
+    
+    if (!m_rte || !m_localUser) {
+        LOG_ERROR("JoinChannel failed: RTE or LocalUser not initialized");
+        return false;
     }
-    LOG_ERROR(_T("JoinChannel failed: RTC engine not available."));
-    return false;
+    
+    rte::Error err;
+    
+    // Update user token if provided
+    if (!token.empty()) {
+        rte::LocalUserConfig localUserConfig;
+        m_localUser->GetConfigs(&localUserConfig, &err);
+        localUserConfig.SetUserToken(token);
+        m_localUser->SetConfigs(&localUserConfig, &err);
+        if (err.Code() != rte::kRteOk) {
+            LOG_ERROR_FMT("JoinChannel failed: SetUserToken error=%d", err.Code());
+            return false;
+        }
+    }
+    
+    // Connect local user
+    bool connectSuccess = false;
+    m_localUser->Connect([&connectSuccess, this](rte::Error* err) {
+        if (err && err->Code() == rte::kRteOk) {
+            connectSuccess = true;
+            LOG_INFO("Local user connected successfully");
+        } else {
+            LOG_ERROR_FMT("Local user connection failed: error=%d", err ? err->Code() : -1);
+        }
+    });
+    
+    // Wait for connection
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    
+    if (!connectSuccess) {
+        LOG_ERROR("JoinChannel failed: Local user connection timeout");
+        return false;
+    }
+    
+    // Create and configure channel
+    m_channel = std::make_shared<rte::Channel>(m_rte.get());
+    m_channelObserver = std::make_shared<RteManagerEventObserver>(this);
+    
+    rte::ChannelConfig channelConfig;
+    channelConfig.SetChannelId(channelId);
+    
+    m_channel->SetConfigs(&channelConfig, &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("JoinChannel failed: Channel SetConfigs error=%d", err.Code());
+        return false;
+    }
+    
+    m_channel->RegisterObserver(m_channelObserver.get(), &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("JoinChannel failed: RegisterObserver error=%d", err.Code());
+        return false;
+    }
+    
+    // Join channel
+    bool joinSuccess = false;
+    m_channel->Connect(m_localUser.get(), [&joinSuccess, this](rte::Error* err) {
+        if (err && err->Code() == rte::kRteOk) {
+            joinSuccess = true;
+            LOG_INFO("Channel joined successfully");
+        } else {
+            LOG_ERROR_FMT("Channel join failed: error=%d", err ? err->Code() : -1);
+        }
+    });
+    
+    // Wait for join
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    
+    if (!joinSuccess) {
+        LOG_ERROR("JoinChannel failed: Channel join timeout");
+        return false;
+    }
+    
+    // Create and publish local stream
+    m_localStream = std::make_shared<rte::LocalRealTimeStream>(m_rte.get());
+    
+    // Add tracks to stream
+    m_localStream->AddAudioTrack(m_micAudioTrack.get(), &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("JoinChannel warning: AddAudioTrack error=%d", err.Code());
+    }
+    
+    m_localStream->AddVideoTrack(m_cameraVideoTrack.get(), &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("JoinChannel warning: AddVideoTrack error=%d", err.Code());
+    }
+    
+    // Publish stream to channel
+    m_channel->PublishLocalStream(m_localStream.get(), &err);
+    if (err.Code() != rte::kRteOk) {
+        LOG_ERROR_FMT("JoinChannel warning: PublishLocalStream error=%d", err.Code());
+    }
+    
+    LOG_INFO("JoinChannel successful");
+    return true;
 }
 
 void RteManager::LeaveChannel() {
-    LOG_INFO_FMT(_T("LeaveChannel: channelId=%hs"), m_channelId.c_str());
-    if (m_rtcEngine) {
-        m_rtcEngine->leaveChannel();
+    LOG_INFO_FMT("LeaveChannel: channelId=%hs", m_channelId.c_str());
+    
+    if (m_channel) {
+        rte::Error err;
+        
+        // Unpublish local stream
+        if (m_localStream) {
+            m_channel->UnpublishLocalStream(m_localStream.get(), &err);
+            m_localStream.reset();
+        }
+        
+        // Disconnect from channel
+        m_channel->Disconnect(&err);
+        
+        // Unregister observer
+        if (m_channelObserver) {
+            m_channel->UnregisterObserver(m_channelObserver.get(), &err);
+            m_channelObserver.reset();
+        }
+        
+        m_channel.reset();
+        LOG_INFO("Channel left successfully");
+    }
+    
+    // Disconnect local user
+    if (m_localUser) {
+        rte::Error err;
+        m_localUser->Disconnect(&err);
+    }
+    
+    // Clear remote user data
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_remoteUsers.clear();
+        m_remoteUserCanvases.clear();
+        m_viewToUserMap.clear();
     }
 }
 
-void RteManager::RenewToken(const std::string& token)
-{
-    LOG_INFO(_T("RenewToken called."));
-    if (m_rtcEngine) {
-        m_rtcEngine->renewToken(token.c_str());
+void RteManager::RenewToken(const std::string& token) {
+    LOG_INFO("RenewToken called.");
+    if (m_localUser) {
+        rte::Error err;
+        rte::LocalUserConfig localUserConfig;
+        m_localUser->GetConfigs(&localUserConfig, &err);
+        localUserConfig.SetUserToken(token);
+        m_localUser->SetConfigs(&localUserConfig, &err);
+        if (err.Code() != rte::kRteOk) {
+            LOG_ERROR_FMT("RenewToken failed: error=%d", err.Code());
+        }
     }
 }
 
 void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
-    LOG_INFO_FMT(_T("SetLocalAudioCaptureEnabled: enabled=%d"), enabled);
-    if (m_rtcEngine) {
-        m_rtcEngine->enableLocalAudio(enabled);
+    LOG_INFO_FMT("SetLocalAudioCaptureEnabled: enabled=%d", enabled);
+    if (m_micAudioTrack) {
+        if (enabled) {
+            m_micAudioTrack->Start(nullptr);
+        } else {
+            m_micAudioTrack->Stop(nullptr);
+        }
+        if (m_eventHandler) {
+            int state = enabled ? 1 : 0; // Corresponds to LOCAL_AUDIO_STREAM_STATE_RECORDING and LOCAL_AUDIO_STREAM_STATE_STOPPED
+            m_eventHandler->OnLocalAudioStateChanged(state);
+        }
     }
 }
 
 void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
-    LOG_INFO_FMT(_T("SetLocalVideoCaptureEnabled: enabled=%d"), enabled);
-    if (m_rtcEngine) {
-        m_rtcEngine->enableLocalVideo(enabled);
+    LOG_INFO_FMT("SetLocalVideoCaptureEnabled: enabled=%d", enabled);
+    if (m_cameraVideoTrack) {
+        if (enabled) {
+            m_cameraVideoTrack->Start(nullptr);
+        } else {
+            m_cameraVideoTrack->Stop(nullptr);
+        }
     }
-}
-
-void RteManager::SubscribeRemoteVideo(const std::string& userId) {
-    LOG_INFO_FMT(_T("SubscribeRemoteVideo: userId=%hs"), userId.c_str());
-    std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
-        agora::rtc::uid_t uid = m_user_id_to_uid[userId];
-        m_rtcEngine->muteRemoteVideoStream(uid, false);
-    }
-}
-
-void RteManager::UnsubscribeRemoteVideo(const std::string& userId) {
-    LOG_INFO_FMT(_T("UnsubscribeRemoteVideo: userId=%hs"), userId.c_str());
-    std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
-        agora::rtc::uid_t uid = m_user_id_to_uid[userId];
-        m_rtcEngine->muteRemoteVideoStream(uid, true);
-    }
-}
-
-void RteManager::SubscribeRemoteAudio(const std::string& userId) {
-    LOG_INFO_FMT(_T("SubscribeRemoteAudio: userId=%hs"), userId.c_str());
-    std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
-        agora::rtc::uid_t uid = m_user_id_to_uid[userId];
-        m_rtcEngine->muteRemoteAudioStream(uid, false);
-    }
-}
-
-void RteManager::UnsubscribeRemoteAudio(const std::string& userId) {
-    LOG_INFO_FMT(_T("UnsubscribeRemoteAudio: userId=%hs"), userId.c_str());
-    std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
-        agora::rtc::uid_t uid = m_user_id_to_uid[userId];
-        m_rtcEngine->muteRemoteAudioStream(uid, true);
-    }
-}
-
-void RteManager::SetSubscribedUsers(const std::vector<std::string>& userIds) {
-    LOG_INFO(_T("SetSubscribedUsers called."));
-    std::lock_guard<std::mutex> lock(m_mutex);
-    std::vector<std::string> to_subscribe;
-    std::vector<std::string> to_unsubscribe;
-
-    std::vector<std::string> sorted_subscribedUsers = m_subscribedUsers;
-    std::sort(sorted_subscribedUsers.begin(), sorted_subscribedUsers.end());
-    std::vector<std::string> sorted_userIds = userIds;
-    std::sort(sorted_userIds.begin(), sorted_userIds.end());
-
-    std::set_difference(sorted_userIds.begin(), sorted_userIds.end(),
-                        sorted_subscribedUsers.begin(), sorted_subscribedUsers.end(),
-                        std::back_inserter(to_subscribe));
-
-    std::set_difference(sorted_subscribedUsers.begin(), sorted_subscribedUsers.end(),
-                        sorted_userIds.begin(), sorted_userIds.end(),
-                        std::back_inserter(to_unsubscribe));
-
-    for (const auto& user : to_subscribe) {
-        LOG_INFO_FMT(_T("Subscribing to user: %hs"), user.c_str());
-        SubscribeRemoteVideo(user);
-        SubscribeRemoteAudio(user);
-    }
-
-    for (const auto& user : to_unsubscribe) {
-        LOG_INFO_FMT(_T("Unsubscribing from user: %hs"), user.c_str());
-        UnsubscribeRemoteVideo(user);
-        UnsubscribeRemoteAudio(user);
-    }
-
-    m_subscribedUsers = userIds;
 }
 
 void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap) {
-    LOG_INFO(_T("SetViewUserBindings called."));
+    LOG_INFO("SetViewUserBindings called.");
     std::lock_guard<std::mutex> lock(m_mutex);
+    
+    // Clear existing canvases for views that are no longer bound
     for (const auto& pair : m_viewToUserMap) {
         void* view = pair.first;
         const std::string& userId = pair.second;
         if (viewToUserMap.find(view) == viewToUserMap.end() || viewToUserMap.at(view) != userId) {
-             if (m_user_id_to_uid.count(userId)) {
-                LOG_INFO_FMT(_T("Unbinding view for user: %hs"), userId.c_str());
-                agora::rtc::uid_t uid = m_user_id_to_uid[userId];
-                agora::rtc::VideoCanvas canvas;
-                canvas.uid = uid;
-                canvas.view = nullptr;
-                m_rtcEngine->setupRemoteVideo(canvas);
+            LOG_INFO_FMT("Unbinding view for user: %hs", userId.c_str());
+            if (m_remoteUserCanvases.count(userId)) {
+                m_remoteUserCanvases.erase(userId);
             }
         }
     }
-
+    
+    // Create new canvases for new view bindings
     for (const auto& pair : viewToUserMap) {
         void* view = pair.first;
         const std::string& userId = pair.second;
-        if (m_user_id_to_uid.count(userId)) {
-            LOG_INFO_FMT(_T("Binding view for user: %hs"), userId.c_str());
-            agora::rtc::uid_t uid = m_user_id_to_uid[userId];
-            agora::rtc::VideoCanvas canvas;
-            canvas.uid = uid;
-            canvas.view = (agora::media::base::view_t)view;
-            m_rtcEngine->setupRemoteVideo(canvas);
+        if (m_viewToUserMap.find(view) == m_viewToUserMap.end() || m_viewToUserMap.at(view) != userId) {
+            LOG_INFO_FMT("Binding view for user: %hs", userId.c_str());
+            if (m_rte) {
+                auto canvas = std::make_shared<rte::Canvas>(m_rte.get());
+                rte::Error err;
+                rte::View rteView = reinterpret_cast<rte::View>(view);
+                rte::ViewConfig viewConfig;
+                canvas->AddView(&rteView, &viewConfig, &err);
+                if (err.Code() == rte::kRteOk) {
+                    m_remoteUserCanvases[userId] = canvas;
+                } else {
+                    LOG_ERROR_FMT("Failed to create canvas for user %hs: error=%d", userId.c_str(), err.Code());
+                }
+            }
         }
     }
+    
     m_viewToUserMap = viewToUserMap;
 }
 
-int RteManager::SetupRemoteVideo(const std::string& userId, HWND view)
-{
-    LOG_INFO_FMT(_T("SetupRemoteVideo for user: %hs"), userId.c_str());
+int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
+    LOG_INFO_FMT("SetupRemoteVideo for user: %hs", userId.c_str());
     std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
-        agora::rtc::uid_t uid = m_user_id_to_uid[userId];
-        agora::rtc::VideoCanvas canvas;
-        canvas.uid = uid;
-        canvas.view = (agora::media::base::view_t)view;
-        canvas.renderMode = agora::rtc::RENDER_MODE_TYPE::RENDER_MODE_FIT;
-        return m_rtcEngine->setupRemoteVideo(canvas);
+    
+    if (!m_rte) {
+        LOG_ERROR("SetupRemoteVideo failed: RTE not initialized");
+        return -1;
     }
-    LOG_ERROR_FMT(_T("SetupRemoteVideo failed for user: %hs. User not found or engine not ready."), userId.c_str());
+    
+    if (!view) {
+        // Remove canvas for user
+        if (m_remoteUserCanvases.count(userId)) {
+            m_remoteUserCanvases.erase(userId);
+            LOG_INFO_FMT("Removed canvas for user: %hs", userId.c_str());
+        }
+        return 0;
+    }
+    
+    // Create canvas for user
+    auto canvas = std::make_shared<rte::Canvas>(m_rte.get());
+    rte::Error err;
+    rte::View rteView = reinterpret_cast<rte::View>(view);
+    rte::ViewConfig viewConfig;
+    canvas->AddView(&rteView, &viewConfig, &err);
+    
+    if (err.Code() == rte::kRteOk) {
+        rte::CanvasConfig canvasConfig;
+        canvasConfig.SetRenderMode(rte::VideoRenderMode::kRteVideoRenderModeFit);
+        canvas->SetConfigs(&canvasConfig, &err);
+        
+        if (err.Code() == rte::kRteOk) {
+            m_remoteUserCanvases[userId] = canvas;
+            LOG_INFO_FMT("Created canvas for user: %hs", userId.c_str());
+            return 0;
+        }
+    }
+    
+    LOG_ERROR_FMT("SetupRemoteVideo failed for user: %hs, error=%d", userId.c_str(), err.Code());
     return -1;
+}
+
+void RteManager::OnRemoteUserJoined(const std::string& userId) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_remoteUsers.push_back(userId);
+    LOG_INFO_FMT("Remote user joined: %hs", userId.c_str());
+}
+
+void RteManager::OnRemoteUserLeft(const std::string& userId) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    auto it = std::find(m_remoteUsers.begin(), m_remoteUsers.end(), userId);
+    if (it != m_remoteUsers.end()) {
+        m_remoteUsers.erase(it);
+    }
+    
+    // Clean up canvas for this user
+    if (m_remoteUserCanvases.count(userId)) {
+        m_remoteUserCanvases.erase(userId);
+    }
+    
+    LOG_INFO_FMT("Remote user left: %hs", userId.c_str());
 }

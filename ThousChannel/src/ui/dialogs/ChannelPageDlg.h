@@ -1,15 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include <afxcoll.h> // For CMap
 #include "afxdialogex.h"
 #include "resource.h"
 #include "HomePageDlg.h"
 #include "VideoGridCell.h"
-#include "../../core/RteManager.h"  // 替换RTC为RTE
-#include "IAgoraRtcEngine.h"
-
-using namespace agora;
-using namespace agora::rtc;
+#include "../../core/IRteManagerEventHandler.h"
+class RteManager;
 
 // Custom Windows Messages for RTE events
 #define WM_USER_RTE_JOIN_CHANNEL_SUCCESS        (WM_USER + 201)
@@ -19,6 +16,8 @@ using namespace agora::rtc;
 #define WM_USER_RTE_LOCAL_VIDEO_STATE_CHANGED   (WM_USER + 205)
 #define WM_USER_RTE_ERROR                       (WM_USER + 206)
 #define WM_USER_RTE_USER_LIST_CHANGED           (WM_USER + 207)
+#define WM_USER_RTE_REMOTE_AUDIO_STATE_CHANGED  (WM_USER + 208)
+#define WM_USER_RTE_LOCAL_AUDIO_STATE_CHANGED   (WM_USER + 209)
 
 // ChannelUser类定义，简化为纯数据结构
 class ChannelUser {
@@ -93,6 +92,8 @@ protected:
     afx_msg LRESULT OnRteLocalVideoStateChanged(WPARAM wParam, LPARAM lParam);
     afx_msg LRESULT OnRteError(WPARAM wParam, LPARAM lParam);
     afx_msg LRESULT OnRteUserListChanged(WPARAM wParam, LPARAM lParam);
+    afx_msg LRESULT OnRteRemoteAudioStateChanged(WPARAM wParam, LPARAM lParam);
+    afx_msg LRESULT OnRteLocalAudioStateChanged(WPARAM wParam, LPARAM lParam);
 
 private:
     // UI Controls
@@ -158,7 +159,7 @@ private:
     void OnUserJoined(const std::string& userId) override;
     void OnUserLeft(const std::string& userId) override;
     void OnLocalAudioStateChanged(int state) override;
-        void OnLocalVideoStateChanged(agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason) override;
+    void OnLocalVideoStateChanged(int state, int reason) override;
     void OnRemoteAudioStateChanged(const std::string& userId, int state) override;
     void OnRemoteVideoStateChanged(const std::string& userId, int state) override;
     void OnError(int error) override;

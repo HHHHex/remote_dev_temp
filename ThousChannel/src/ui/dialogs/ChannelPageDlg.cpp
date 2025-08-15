@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ThousChannel.h"
 #include "ChannelPageDlg.h"
 #include "Logger.h"
@@ -47,6 +47,8 @@ BEGIN_MESSAGE_MAP(CChannelPageDlg, CDialogEx)
     ON_MESSAGE(WM_USER_RTE_LOCAL_VIDEO_STATE_CHANGED, &CChannelPageDlg::OnRteLocalVideoStateChanged)
     ON_MESSAGE(WM_USER_RTE_ERROR, &CChannelPageDlg::OnRteError)
     ON_MESSAGE(WM_USER_RTE_USER_LIST_CHANGED, &CChannelPageDlg::OnRteUserListChanged)
+    ON_MESSAGE(WM_USER_RTE_REMOTE_AUDIO_STATE_CHANGED, &CChannelPageDlg::OnRteRemoteAudioStateChanged)
+    ON_MESSAGE(WM_USER_RTE_LOCAL_AUDIO_STATE_CHANGED, &CChannelPageDlg::OnRteLocalAudioStateChanged)
 END_MESSAGE_MAP()
 
 //===========================================================================
@@ -262,20 +264,20 @@ void CChannelPageDlg::OnUserLeft(const std::string& userId)
 void CChannelPageDlg::OnLocalAudioStateChanged(int state)
 {
     // Post message to UI thread
-    PostMessage(WM_USER_RTE_LOCAL_VIDEO_STATE_CHANGED, state, 0);
+    PostMessage(WM_USER_RTE_LOCAL_AUDIO_STATE_CHANGED, state, 0);
 }
 
-void CChannelPageDlg::OnLocalVideoStateChanged(agora::rtc::LOCAL_VIDEO_STREAM_STATE state, agora::rtc::LOCAL_VIDEO_STREAM_REASON reason)
+void CChannelPageDlg::OnLocalVideoStateChanged(int state, int reason)
 {
     // Post message to UI thread
-    PostMessage(WM_USER_RTE_LOCAL_VIDEO_STATE_CHANGED, (WPARAM)state, (LPARAM)reason);
+    PostMessage(WM_USER_RTE_LOCAL_VIDEO_STATE_CHANGED, MAKEWPARAM(state, reason), 0);
 }
 
 void CChannelPageDlg::OnRemoteAudioStateChanged(const std::string& userId, int state)
 {
     // Convert std::string to CString and post it
     CString* uidStr = new CString(userId.c_str());
-    PostMessage(WM_USER_RTE_REMOTE_VIDEO_STATE_CHANGED, (WPARAM)uidStr, state);
+    PostMessage(WM_USER_RTE_REMOTE_AUDIO_STATE_CHANGED, (WPARAM)uidStr, state);
 }
 
 void CChannelPageDlg::OnRemoteVideoStateChanged(const std::string& userId, int state)
@@ -442,14 +444,32 @@ LRESULT CChannelPageDlg::OnRteRemoteVideoStateChanged(WPARAM wParam, LPARAM lPar
 
 LRESULT CChannelPageDlg::OnRteLocalVideoStateChanged(WPARAM wParam, LPARAM lParam)
 {
-    // Placeholder implementation
-    int source = LOWORD(wParam);
-    int state = HIWORD(wParam);
-    int reason = (int)lParam;
+    int state = LOWORD(wParam);
+    int reason = HIWORD(wParam);
     LOG_INFO_FMT(_T("Local video state changed, state=%d, reason=%d"), state, reason);
 
     // You can update the local user's UI based on the state
     // e.g., show a "camera off" icon
+    return 0;
+}
+
+LRESULT CChannelPageDlg::OnRteRemoteAudioStateChanged(WPARAM wParam, LPARAM lParam)
+{
+    CString* uidPtr = (CString*)wParam;
+    CString uid = *uidPtr;
+    delete uidPtr;
+
+    int state = (int)lParam;
+    LOG_INFO_FMT(_T("Remote audio state changed for user %s, state=%d"), uid, state);
+
+    return 0;
+}
+
+LRESULT CChannelPageDlg::OnRteLocalAudioStateChanged(WPARAM wParam, LPARAM lParam)
+{
+    int state = (int)wParam;
+    LOG_INFO_FMT(_T("Local audio state changed, state=%d"), state);
+
     return 0;
 }
 
@@ -552,8 +572,6 @@ void CChannelPageDlg::ReleaseRteEngine()
     }
 }
 
-
-
 BOOL CChannelPageDlg::JoinRteChannel()
 {
     if (!m_rteManager || m_joinParams.token.IsEmpty()) {
@@ -572,9 +590,7 @@ BOOL CChannelPageDlg::JoinRteChannel()
 void CChannelPageDlg::LeaveRteChannel()
 {
     if (m_rteManager && m_isChannelJoined) {
-        // LeaveChannel was renamed or removed in RteManager.
-        // Assuming Destroy also handles leaving the channel.
-        m_rteManager->Destroy(); 
+        m_rteManager->LeaveChannel();
         m_isChannelJoined = FALSE;
     }
 }
