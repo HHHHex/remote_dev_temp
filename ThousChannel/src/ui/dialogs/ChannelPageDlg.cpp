@@ -971,9 +971,9 @@ void CChannelPageDlg::UpdateViewUserBindings()
         if (userIndex < m_pageState.userList.GetSize()) {
             ChannelUser* user = m_pageState.userList[userIndex];
             if (user && user->isConnected) {
-                // GetCanvasContainer is not a member of CVideoGridCell, using the window handle directly.
-                HWND canvasWnd = m_videoWindows[i]->GetSafeHwnd();
-                if (canvasWnd) {
+                HWND canvasWnd = NULL;
+                // Look up the correct canvas window from the map.
+                if (m_userCanvasMap.Lookup(user->GetUID(), canvasWnd) && canvasWnd) {
                     std::string userIdStr(CT2A(user->GetUID()));
                     viewToUserMap[canvasWnd] = userIdStr;
                 }

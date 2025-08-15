@@ -9,6 +9,7 @@ struct ChannelJoinParams {
 	CString appId;           // AppID
 	CString appCertificate;  // App证书
 	CString channelId;       // 频道ID
+	CString userId;          // 用户ID
 	CString audioPullMode;   // 音频拉流方式
 	CString token;           // RTC Token
 	BOOL enableCamera;       // 是否开启摄像头
@@ -85,6 +86,7 @@ private:
 
 	// Token生成相关
 	void GenerateToken();
+	CString GenerateRandomUserId();
 	void OnTokenGenerated(const CString& token, bool success, const CString& errorMsg);
 	void UpdateTokenStatus(const CString& status, BOOL isError = FALSE);
 
@@ -96,5 +98,5 @@ private:
 	afx_msg void OnCbnSelchangeAudioPull();
 	// 证书输入框已移除 - afx_msg void OnEnChangeAppCertificate();
 	afx_msg LRESULT OnTokenGenerated(WPARAM wParam, LPARAM lParam);
-}; 
+};
 

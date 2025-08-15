@@ -38,7 +38,7 @@ public:
     void UnsubscribeRemoteAudio(const std::string& userId);
 
     void SetSubscribedUsers(const std::vector<std::string>& userIds);
-    void SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap);
+    int SetupRemoteVideo(const std::string& userId, void* view);
 
     friend class RteManagerEventHandler;
 

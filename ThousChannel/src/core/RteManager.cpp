@@ -278,3 +278,18 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
     }
     m_viewToUserMap = viewToUserMap;
 }
+
+int RteManager::SetupRemoteVideo(const std::string& userId, HWND view)
+{
+    LOG_INFO_FMT(_T("SetupRemoteVideo for user: %hs"), userId.c_str());
+    if (m_rtcEngine && m_user_id_to_uid.count(userId)) {
+        agora::rtc::uid_t uid = m_user_id_to_uid[userId];
+        agora::rtc::VideoCanvas canvas;
+        canvas.uid = uid;
+        canvas.view = (agora::media::base::view_t)view;
+        canvas.renderMode = agora::rtc::RENDER_MODE_FIT;
+        return m_rtcEngine->setupRemoteVideo(canvas);
+    }
+    LOG_ERROR_FMT(_T("SetupRemoteVideo failed for user: %hs. User not found or engine not ready."), userId.c_str());
+    return -1;
+}

@@ -6,29 +6,29 @@
 #include <atlstr.h>
 #include <thread>
 
-// Token鑾峰彇鍥炶皟鍑芥暟绫诲瀷
+// Token retrieval callback function type
 typedef std::function<void(const CString& token, bool success, const CString& errorMsg)> TokenCallback;
 
-// Token鐢熸垚鍙傛暟缁撴瀯
+// Token generation parameter structure
 struct TokenGenerateParams {
-    CString appId;              // 搴旂敤ID
-    CString appCertificate;     // 搴旂敤璇佷功
-    CString channelName;        // 棰戦亾鍚嶇О
-    CString uid;                // 鐢ㄦ埛ID
-    int expire;                 // 杩囨湡鏃堕棿锛堢锛?
-    int type;                   // Token绫诲瀷锛?: RTC Token, 2: RTM Token锛?
-    CString src;                // 鏉ユ簮鏍囪瘑
+    CString appId;              // Application ID
+    CString appCertificate;     // Application certificate
+    CString channelName;        // Channel name
+    CString userId;             // User ID
+    int expire;                 // Expiration time (seconds)
+    int type;                   // Token type (1: RTC Token, 2: RTM Token)
+    CString src;                // Source identifier
 
     TokenGenerateParams() {
-        expire = 900;           // 榛樿15鍒嗛挓
-        type = 1;               // 榛樿RTC Token
+        expire = 900;           // Default 15 minutes
+        type = 1;               // Default RTC Token
         src = _T("Windows");
     }
 };
 
 /**
- * Token绠＄悊鍣?
- * 璐熻矗浠嶢gora鏈嶅姟绔幏鍙朢TC Token
+ * Token Manager
+ * Responsible for obtaining RTC Token from Agora server
  */
 class CTokenManager
 {
@@ -41,35 +41,35 @@ public:
     CTokenManager();
     virtual ~CTokenManager();
 
-    // 璁剧疆Token鏈嶅姟鍣║RL
+    // Set Token server URL
     void SetServerUrl(const CString& serverUrl);
 
-    // 璁剧疆璇锋眰瓒呮椂鏃堕棿
+    // Set request timeout
     void SetTimeout(DWORD timeoutMs);
 
-    // 寮傛鐢熸垚Token
+    // Asynchronously generate Token
     void GenerateTokenAsync(const TokenGenerateParams& params, TokenCallback callback);
 
-    // 鍚屾鐢熸垚Token锛堥樆濉炶皟鐢級
+    // Synchronously generate Token (blocking call)
     bool GenerateTokenSync(const TokenGenerateParams& params, CString& token, CString& errorMsg);
 
 private:
-    // 鏋勫缓璇锋眰JSON
+    // Build request JSON
     CString BuildRequestJson(const TokenGenerateParams& params);
 
-    // 瑙ｆ瀽鍝嶅簲JSON
+    // Parse response JSON
     bool ParseResponseJson(const CString& jsonResponse, CString& token, CString& errorMsg);
 
-    // 鎵цHTTP POST璇锋眰
+    // Execute HTTP POST request
     bool ExecuteHttpRequest(const CString& url, const CString& postData, 
                            CString& response, CString& errorMsg);
 
-    // 寮傛璇锋眰绾跨▼鍑芥暟
+    // Asynchronous request thread function
     static void AsyncRequestThread(CTokenManager* pManager, TokenGenerateParams params, TokenCallback callback);
 
-    // URL缂栫爜
+    // URL encode
     CString UrlEncode(const CString& text);
 
-    // 鑾峰彇褰撳墠鏃堕棿鎴筹紙姣锛?
+    // Get current timestamp (milliseconds)
     CString GetCurrentTimestamp();
-}; 
+};

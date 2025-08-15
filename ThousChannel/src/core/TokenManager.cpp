@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "TokenManager.h"
 #include "Logger.h"
 #include <winhttp.h>
@@ -78,7 +78,7 @@ CString CTokenManager::BuildRequestJson(const TokenGenerateParams& params)
             params.appId,
             params.appCertificate,
             params.channelName,
-            params.uid,
+            params.userId,
             params.expire,
             params.type,
             params.src,
@@ -90,7 +90,7 @@ CString CTokenManager::BuildRequestJson(const TokenGenerateParams& params)
     catch (const std::exception& e) {
         CStringA whatStr(e.what());
         CString errorMsg;
-        errorMsg.Format(_T("构建JSON失败: %s"), CString(whatStr));
+        errorMsg.Format(_T("Failed to build JSON: %s"), CString(whatStr));
         OutputDebugString(errorMsg);
         return _T("");
     }
@@ -330,5 +330,5 @@ CString CTokenManager::GetCurrentTimestamp()
     CString timestampStr;
     timestampStr.Format(_T("%lld"), timestamp);
     return timestampStr;
-} 
+}
 

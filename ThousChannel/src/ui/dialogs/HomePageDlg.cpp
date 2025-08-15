@@ -241,7 +241,7 @@ void CHomePageDlg::GenerateToken()
 	tokenParams.appCertificate = m_joinParams.appCertificate;
 	tokenParams.channelName = m_joinParams.channelId;
 	tokenParams.uid = _T("0");  // 使用0作为UID，让SDK自动分配
-	tokenParams.expire = 900;  // 15分钟过期
+	tokenParams.expire = 24 * 60 * 60 ;  // 24小时过期
 	tokenParams.type = 1;      // RTC Token
 	tokenParams.src = _T("Windows");
 
