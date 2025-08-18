@@ -74,16 +74,16 @@ public:
 };
 
 RteManager::RteManager() : m_eventHandler(nullptr) {
-    LOG_INFO("RteManager created."");
+    LOG_INFO("RteManager created.");
 }
 
 RteManager::~RteManager() {
-    LOG_INFO("RteManager destroyed."");
+    LOG_INFO("RteManager destroyed.");
     Destroy();
 }
 
 void RteManager::SetEventHandler(IRteManagerEventHandler* handler) {
-    LOG_INFO("SetEventHandler called."");
+    LOG_INFO("SetEventHandler called.");
     m_eventHandler = handler;
 }
 
@@ -126,7 +126,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     
     if (!initSuccess) {
-        LOG_ERROR("Initialize failed: Media engine initialization timeout or error"");
+        LOG_ERROR("Initialize failed: Media engine initialization timeout or error");
         return false;
     }
 
@@ -159,12 +159,12 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
         return false;
     }
 
-    LOG_INFO("Initialize successful."");
+    LOG_INFO("Initialize successful.");
     return true;
 }
 
 void RteManager::Destroy() {
-    LOG_INFO("Destroy called."");
+    LOG_INFO("Destroy called.");
     
     // Leave channel if connected
     if (m_channel) {
@@ -207,7 +207,7 @@ void RteManager::Destroy() {
     if (m_rte) {
         m_rte->Destroy();
         m_rte.reset();
-        LOG_INFO("RTE destroyed."");
+        LOG_INFO("RTE destroyed.");
     }
 }
 
@@ -216,7 +216,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     m_channelId = channelId;
     
     if (!m_rte || !m_localUser) {
-        LOG_ERROR("JoinChannel failed: RTE or LocalUser not initialized"");
+        LOG_ERROR("JoinChannel failed: RTE or LocalUser not initialized");
         return false;
     }
     
@@ -239,7 +239,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     m_localUser->Connect([&connectSuccess, this](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             connectSuccess = true;
-            LOG_INFO("Local user connected successfully"");
+            LOG_INFO("Local user connected successfully");
         } else {
             LOG_ERROR_FMT("Local user connection failed: error=%d", err ? err->Code() : -1);
         }
@@ -249,7 +249,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     
     if (!connectSuccess) {
-        LOG_ERROR("JoinChannel failed: Local user connection timeout"");
+        LOG_ERROR("JoinChannel failed: Local user connection timeout");
         return false;
     }
     
@@ -279,7 +279,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
         return false;
     }
     
-    LOG_INFO("Channel joined successfully"");
+    LOG_INFO("Channel joined successfully");
     
     // Create and publish local stream
     m_localStream = std::make_shared<rte::LocalRealTimeStream>(m_rte.get());
@@ -298,13 +298,13 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     // Publish stream to channel
     m_channel->PublishStream(m_localUser.get(), m_localStream.get(), [this](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
-            LOG_INFO("Local stream published successfully"");
+            LOG_INFO("Local stream published successfully");
         } else {
             LOG_ERROR_FMT("Publish stream failed: error=%d", err ? err->Code() : -1);
         }
     });
     
-    LOG_INFO("JoinChannel successful"");
+    LOG_INFO("JoinChannel successful");
     return true;
 }
 
@@ -318,7 +318,7 @@ void RteManager::LeaveChannel() {
         if (m_localStream) {
             m_channel->UnpublishStream(m_localStream.get(), [this](rte::Error* err) {
                 if (err && err->Code() == kRteOk) {
-                    LOG_INFO("Local stream unpublished successfully"");
+                    LOG_INFO("Local stream unpublished successfully");
                 } else {
                     LOG_ERROR_FMT("Unpublish stream failed: error=%d", err ? err->Code() : -1);
                 }
@@ -336,7 +336,7 @@ void RteManager::LeaveChannel() {
         }
         
         m_channel.reset();
-        LOG_INFO("Channel left successfully"");
+        LOG_INFO("Channel left successfully");
     }
     
     // Disconnect local user
@@ -360,7 +360,7 @@ void RteManager::LeaveChannel() {
 }
 
 void RteManager::RenewToken(const std::string& token) {
-    LOG_INFO("RenewToken called."");
+    LOG_INFO("RenewToken called.");
     if (m_localUser) {
         rte::Error err;
         rte::LocalUserConfig localUserConfig;
@@ -424,7 +424,7 @@ void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
 }
 
 void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap) {
-    LOG_INFO("SetViewUserBindings called."");
+    LOG_INFO("SetViewUserBindings called.");
     std::lock_guard<std::mutex> lock(m_mutex);
     
     // Clear existing canvases for views that are no longer bound
@@ -468,7 +468,7 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_rte) {
-        LOG_ERROR("SetupRemoteVideo failed: RTE not initialized"");
+        LOG_ERROR("SetupRemoteVideo failed: RTE not initialized");
         return -1;
     }
     

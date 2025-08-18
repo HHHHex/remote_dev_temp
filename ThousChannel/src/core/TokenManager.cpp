@@ -92,7 +92,7 @@ CString CTokenManager::BuildRequestJson(const TokenGenerateParams& params)
         CString errorMsg;
         errorMsg.Format(_T("Failed to build JSON: %s"), CString(whatStr));
         OutputDebugString(errorMsg);
-        return _T("");
+        return _T(");
     }
 }
 

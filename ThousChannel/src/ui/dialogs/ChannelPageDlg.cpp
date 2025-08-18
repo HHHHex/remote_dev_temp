@@ -154,7 +154,7 @@ BOOL CChannelPageDlg::OnInitDialog()
     localUser->isLocal = TRUE;
     localUser->isConnected = TRUE;
     localUser->userName = m_pageState.currentUserId;
-    localUser->uid = _T(""); // Will be updated onJoinChannelSuccess
+    localUser->uid = _T("); // Will be updated onJoinChannelSuccess
     m_pageState.userList.InsertAt(0, localUser);
     
     // Enable local audio/video based on join params

@@ -63,7 +63,7 @@ class Error {
 
   void Set(ErrorCode code, const char *message) { 
     if(c_error != nullptr){
-      RteErrorSet(c_error, code, "%s", message ? message : "");
+      RteErrorSet(c_error, code, "%s", message ? message : ");
     }
   }
 
