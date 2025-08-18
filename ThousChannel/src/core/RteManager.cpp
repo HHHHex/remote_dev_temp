@@ -15,10 +15,12 @@ public:
 
     // Override the correct virtual functions from ChannelObserver
     void OnRemoteUsersJoined(const std::vector<rte::RemoteUser>& new_users, const std::vector<rte::RemoteUserInfo>& new_users_info) override {
-        LOG_INFO("OnRemoteUsersJoined");
+        LOG_INFO(_T("OnRemoteUsersJoined"));
         for (const auto& user : new_users) {
-            std::string userId = user.GetUserId();
-            LOG_INFO_FMT("OnUserJoined: userId=%hs", userId.c_str());
+            rte::UserInfo userInfo;
+            user.GetInfo(&userInfo, nullptr);
+            std::string userId = userInfo.UserId();
+            LOG_INFO_FMT(_T("OnUserJoined: userId=%hs"), userId.c_str());
             
             m_rteManager->OnRemoteUserJoined(userId);
             
@@ -30,10 +32,12 @@ public:
     }
 
     void OnRemoteUsersLeft(const std::vector<rte::RemoteUser>& removed_users, const std::vector<rte::RemoteUserInfo>& removed_users_info) override {
-        LOG_INFO("OnRemoteUsersLeft");
+        LOG_INFO(_T("OnRemoteUsersLeft"));
         for (const auto& user : removed_users) {
-            std::string userId = user.GetUserId();
-            LOG_INFO_FMT("OnUserLeft: userId=%hs", userId.c_str());
+            rte::UserInfo userInfo;
+            user.GetInfo(&userInfo, nullptr);
+            std::string userId = userInfo.UserId();
+            LOG_INFO_FMT(_T("OnUserLeft: userId=%hs"), userId.c_str());
             
             m_rteManager->OnRemoteUserLeft(userId);
             
@@ -45,7 +49,7 @@ public:
     }
 
     void OnRemoteStreamsAdded(const std::vector<rte::RemoteStream>& new_streams, const std::vector<rte::RemoteStreamInfo>& new_streams_info) override {
-        LOG_INFO("OnRemoteStreamsAdded");
+        LOG_INFO(_T("OnRemoteStreamsAdded"));
         for (const auto& stream : new_streams) {
             rte::RemoteStreamInfo streamInfo;
             stream.GetInfo(&streamInfo, nullptr);
@@ -58,7 +62,7 @@ public:
     }
 
     void OnRemoteStreamsRemoved(const std::vector<rte::RemoteStream>& removed_streams, const std::vector<rte::RemoteStreamInfo>& removed_streams_info) override {
-        LOG_INFO("OnRemoteStreamsRemoved");
+        LOG_INFO(_T("OnRemoteStreamsRemoved"));
         for (const auto& stream : removed_streams) {
             rte::RemoteStreamInfo streamInfo;
             stream.GetInfo(&streamInfo, nullptr);
