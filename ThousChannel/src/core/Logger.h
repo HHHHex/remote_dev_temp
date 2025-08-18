@@ -63,16 +63,16 @@ private:
     void WriteToDebug(const CString& message);
 };
 
-// Macro definitions for easy use
-#define LOG_DEBUG(msg) CLogger::GetInstance().Debug(msg)
-#define LOG_INFO(msg) CLogger::GetInstance().Info(msg)
-#define LOG_WARNING(msg) CLogger::GetInstance().Warning(msg)
-#define LOG_ERROR(msg) CLogger::GetInstance().Error(msg)
-#define LOG_FATAL(msg) CLogger::GetInstance().Fatal(msg)
+// Macro definitions for easy use - automatically handle _T() conversion
+#define LOG_DEBUG(msg) CLogger::GetInstance().Debug(_T(msg))
+#define LOG_INFO(msg) CLogger::GetInstance().Info(_T(msg))
+#define LOG_WARNING(msg) CLogger::GetInstance().Warning(_T(msg))
+#define LOG_ERROR(msg) CLogger::GetInstance().Error(_T(msg))
+#define LOG_FATAL(msg) CLogger::GetInstance().Fatal(_T(msg))
 
-#define LOG_DEBUG_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_DEBUG, fmt, ##__VA_ARGS__)
-#define LOG_INFO_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_INFO, fmt, ##__VA_ARGS__)
-#define LOG_WARNING_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_WARNING, fmt, ##__VA_ARGS__)
-#define LOG_ERROR_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_ERROR, fmt, ##__VA_ARGS__)
-#define LOG_FATAL_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_FATAL, fmt, ##__VA_ARGS__)
+#define LOG_DEBUG_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_DEBUG, _T(fmt), ##__VA_ARGS__)
+#define LOG_INFO_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_INFO, _T(fmt), ##__VA_ARGS__)
+#define LOG_WARNING_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_WARNING, _T(fmt), ##__VA_ARGS__)
+#define LOG_ERROR_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_ERROR, _T(fmt), ##__VA_ARGS__)
+#define LOG_FATAL_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_FATAL, _T(fmt), ##__VA_ARGS__)
 
