@@ -26,11 +26,11 @@ CHomePageDlg::CHomePageDlg(CWnd* pParent /*=nullptr*/)
 	, m_isGeneratingToken(FALSE)
 {
 	// 初始化参数
-	m_joinParams.appId = _T(");
-	m_joinParams.appCertificate = _T(");
-	m_joinParams.channelId = _T(");
-	m_joinParams.audioPullMode = _T(");
-	m_joinParams.token = _T(");
+	m_joinParams.appId = _T("");
+	m_joinParams.appCertificate = _T("");
+	m_joinParams.channelId = _T("");
+	m_joinParams.audioPullMode = _T("");
+	m_joinParams.token = _T("");
 	m_joinParams.enableCamera = TRUE;  // 默认开启摄像头
 	m_joinParams.enableMic = TRUE;     // 默认开启麦克风
 }
@@ -212,8 +212,8 @@ void CHomePageDlg::GenerateToken()
 		m_joinParams.appId = m_appIdList[appIdSel].appId;  // 使用真实的AppID
 		m_joinParams.appCertificate = m_appIdList[appIdSel].certificate;  // 使用对应的证书
 	} else {
-		m_joinParams.appId = _T(");
-		m_joinParams.appCertificate = _T(");
+		m_joinParams.appId = _T("");
+		m_joinParams.appCertificate = _T("");
 	}
 
 	// 获取频道ID
@@ -364,7 +364,7 @@ void CHomePageDlg::OnEnChangeChannelId()
 	DEBUG("Channel ID input changed");
 	// 清空token状态
 	if (!m_joinParams.token.IsEmpty()) {
-		m_joinParams.token = _T(");
+		m_joinParams.token = _T("");
 		UpdateTokenStatus(_T("频道信息已更改，需要重新生成Token"), FALSE);
 	}
 }
@@ -382,7 +382,7 @@ void CHomePageDlg::OnCbnSelchangeAppid()
 	
 	// 清空token状态
 	if (!m_joinParams.token.IsEmpty()) {
-		m_joinParams.token = _T(");
+		m_joinParams.token = _T("");
 		UpdateTokenStatus(_T("AppID已更改，需要重新生成Token"), FALSE);
 	}
 }
