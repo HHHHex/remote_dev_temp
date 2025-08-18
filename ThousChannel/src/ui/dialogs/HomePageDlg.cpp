@@ -158,7 +158,7 @@ BOOL CHomePageDlg::ValidateInput()
 	if (appIdSel < 0)
 	{
 		strMessage.LoadString(IDS_MSG_SELECT_APPID);
-		WARNING("User tried to join without selecting AppID");
+		        LOG_WARNING("User tried to join without selecting AppID");
 		AfxMessageBox(strMessage);
 		m_comboAppId.SetFocus();
 		return FALSE;
@@ -173,7 +173,7 @@ BOOL CHomePageDlg::ValidateInput()
 	if (channelId.IsEmpty())
 	{
 		strMessage.LoadString(IDS_MSG_ENTER_CHANNEL);
-		WARNING("User tried to join without entering channel ID");
+		        LOG_WARNING("User tried to join without entering channel ID");
 		AfxMessageBox(strMessage);
 		m_editChannelId.SetFocus();
 		return FALSE;
@@ -186,7 +186,7 @@ BOOL CHomePageDlg::ValidateInput()
 	if (audioPullSel <= 0)
 	{
 		strMessage.LoadString(IDS_MSG_SELECT_AUDIO);
-		WARNING("User tried to join without selecting audio pull mode");
+		        LOG_WARNING("User tried to join without selecting audio pull mode");
 		AfxMessageBox(strMessage);
 		m_comboAudioPull.SetFocus();
 		return FALSE;
@@ -199,7 +199,7 @@ BOOL CHomePageDlg::ValidateInput()
 void CHomePageDlg::GenerateToken()
 {
 	if (m_isGeneratingToken) {
-		WARNING("Token generation already in progress");
+		        LOG_WARNING("Token generation already in progress");
 		return;
 	}
 
