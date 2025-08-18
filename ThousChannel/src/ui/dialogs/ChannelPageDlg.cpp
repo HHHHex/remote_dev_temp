@@ -562,8 +562,9 @@ BOOL CChannelPageDlg::InitializeRteEngine()
 
     // Initialize RTE with config
     RteManagerConfig config;
-    config.appId = std::string(CW2A(m_joinParams.appId, CP_UTF8));
-    config.userId = std::string(CW2A(m_pageState.currentUserId, CP_UTF8));
+    // Use direct string conversion to avoid encoding issues
+    config.appId = std::string(m_joinParams.appId.GetString());
+    config.userId = std::string(m_pageState.currentUserId.GetString());
     // userToken is not a member of RteManagerConfig
     // Token should be passed separately to JoinChannel method
 
@@ -590,8 +591,8 @@ BOOL CChannelPageDlg::JoinRteChannel()
         return FALSE;
     }
 
-    std::string channelId = std::string(CW2A(m_joinParams.channelId, CP_UTF8));
-    std::string token = std::string(CW2A(m_joinParams.token, CP_UTF8));
+    std::string channelId = std::string(m_joinParams.channelId.GetString());
+    std::string token = std::string(m_joinParams.token.GetString());
 
     BOOL result = m_rteManager->JoinChannel(channelId, token);
 
@@ -976,7 +977,7 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
         if (user && !user->isLocal && user->isConnected && user->isVideoSubscribed) {
-            subscribedUserIds.push_back(std::string(CW2A(user->GetUID(), CP_UTF8)));
+            subscribedUserIds.push_back(std::string(user->GetUID().GetString()));
         }
     }
 
@@ -999,7 +1000,7 @@ void CChannelPageDlg::UpdateViewUserBindings()
                 HWND canvasWnd = NULL;
                 // Look up the correct canvas window from the map.
                 if (m_userCanvasMap.Lookup(user->GetUID(), canvasWnd) && canvasWnd) {
-                    std::string userIdStr(CW2A(user->GetUID(), CP_UTF8));
+                    std::string userIdStr(user->GetUID().GetString());
                     viewToUserMap[canvasWnd] = userIdStr;
                 }
             }

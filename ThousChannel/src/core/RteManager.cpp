@@ -147,6 +147,8 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     rte::MicAudioTrackConfig micConfig;
     // Set recording volume to ensure proper audio capture
     micConfig.SetRecordingVolume(100);
+    // Add JSON parameter to configure audio device
+    micConfig.SetJsonParameter("{\"audio_device_id\":\"default\"}");
     m_micAudioTrack->SetConfigs(&micConfig, &err);
     if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
@@ -380,15 +382,29 @@ void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
     if (m_micAudioTrack) {
         if (enabled) {
             // Add delay to ensure RTE is fully initialized
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             
-            m_micAudioTrack->Start([](rte::Error* err) {
-                if (err && err->Code() != kRteOk) {
-                    LOG_ERROR_FMT("MicAudioTrack Start failed: error=%d", err->Code());
-                } else {
-                    LOG_INFO("MicAudioTrack started successfully");
-                }
-            });
+            // Try to start audio track with retry mechanism
+            int retryCount = 0;
+            const int maxRetries = 3;
+            
+            auto startAudioTrack = [this, &retryCount, maxRetries]() {
+                m_micAudioTrack->Start([this, &retryCount, maxRetries](rte::Error* err) {
+                    if (err && err->Code() != kRteOk) {
+                        LOG_ERROR_FMT("MicAudioTrack Start failed: error=%d", err->Code());
+                        if (retryCount < maxRetries) {
+                            retryCount++;
+                            LOG_INFO_FMT("Retrying audio track start, attempt %d/%d", retryCount, maxRetries);
+                            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                            startAudioTrack();
+                        }
+                    } else {
+                        LOG_INFO("MicAudioTrack started successfully");
+                    }
+                });
+            };
+            
+            startAudioTrack();
         } else {
             m_micAudioTrack->Stop([](rte::Error* err) {
                 if (err && err->Code() != kRteOk) {
