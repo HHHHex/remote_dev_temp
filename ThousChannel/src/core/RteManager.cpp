@@ -124,7 +124,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     
     if (!initSuccess) {
-        LOG_ERROR("Initialize failed: Media engine initialization timeout or error");
+        LOG_ERROR(_T("Initialize failed: Media engine initialization timeout or error");
         return false;
     }
 
@@ -202,7 +202,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     m_channelId = channelId;
     
     if (!m_rte || !m_localUser) {
-        LOG_ERROR("JoinChannel failed: RTE or LocalUser not initialized");
+        LOG_ERROR(_T("JoinChannel failed: RTE or LocalUser not initialized");
         return false;
     }
     
@@ -235,7 +235,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     
     if (!connectSuccess) {
-        LOG_ERROR("JoinChannel failed: Local user connection timeout");
+        LOG_ERROR(_T("JoinChannel failed: Local user connection timeout");
         return false;
     }
     
@@ -425,7 +425,7 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_rte) {
-        LOG_ERROR("SetupRemoteVideo failed: RTE not initialized");
+        LOG_ERROR(_T("SetupRemoteVideo failed: RTE not initialized");
         return -1;
     }
     
