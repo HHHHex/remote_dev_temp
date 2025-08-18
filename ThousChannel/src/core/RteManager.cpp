@@ -15,10 +15,10 @@ public:
 
     // Override the correct virtual functions from ChannelObserver
     void OnRemoteUsersJoined(const std::vector<rte::RemoteUser>& new_users, const std::vector<rte::RemoteUserInfo>& new_users_info) override {
-        LOG_INFO("OnRemoteUsersJoined"));
+        INFO("OnRemoteUsersJoined");
         for (size_t i = 0; i < new_users.size(); ++i) {
             std::string userId = new_users_info[i].UserId();
-            LOG_INFO_FMT("OnUserJoined: userId=%s"), userId.c_str());
+            LOG_INFO_FMT("OnUserJoined: userId=%s", userId.c_str());
             
             m_rteManager->OnRemoteUserJoined(userId);
             
@@ -30,10 +30,10 @@ public:
     }
 
     void OnRemoteUsersLeft(const std::vector<rte::RemoteUser>& removed_users, const std::vector<rte::RemoteUserInfo>& removed_users_info) override {
-        LOG_INFO("OnRemoteUsersLeft"));
+        INFO("OnRemoteUsersLeft");
         for (size_t i = 0; i < removed_users.size(); ++i) {
             std::string userId = removed_users_info[i].UserId();
-            LOG_INFO_FMT("OnUserLeft: userId=%s"), userId.c_str());
+            LOG_INFO_FMT("OnUserLeft: userId=%s", userId.c_str());
             
             m_rteManager->OnRemoteUserLeft(userId);
             
@@ -45,7 +45,7 @@ public:
     }
 
     void OnRemoteStreamsAdded(const std::vector<rte::RemoteStream>& new_streams, const std::vector<rte::RemoteStreamInfo>& new_streams_info) override {
-        LOG_INFO("OnRemoteStreamsAdded"));
+        INFO("OnRemoteStreamsAdded");
         for (size_t i = 0; i < new_streams.size(); ++i) {
             if (m_rteManager->m_eventHandler && new_streams_info[i].HasAudio()) {
                 // Note: We need to get the user ID from the stream info or context
@@ -56,7 +56,7 @@ public:
     }
 
     void OnRemoteStreamsRemoved(const std::vector<rte::RemoteStream>& removed_streams, const std::vector<rte::RemoteStreamInfo>& removed_streams_info) override {
-        LOG_INFO("OnRemoteStreamsRemoved"));
+        INFO("OnRemoteStreamsRemoved");
         for (size_t i = 0; i < removed_streams.size(); ++i) {
             if (m_rteManager->m_eventHandler && removed_streams_info[i].HasAudio()) {
                 // Note: We need to get the user ID from the stream info or context
@@ -72,21 +72,21 @@ public:
 };
 
 RteManager::RteManager() : m_eventHandler(nullptr) {
-    LOG_INFO("RteManager created.");
+    LOG_INFO("RteManager created."");
 }
 
 RteManager::~RteManager() {
-    LOG_INFO("RteManager destroyed.");
+    LOG_INFO("RteManager destroyed."");
     Destroy();
 }
 
 void RteManager::SetEventHandler(IRteManagerEventHandler* handler) {
-    LOG_INFO("SetEventHandler called.");
+    LOG_INFO("SetEventHandler called."");
     m_eventHandler = handler;
 }
 
 bool RteManager::Initialize(const RteManagerConfig& config) {
-    LOG_INFO_FMT("Initialize: appId=%s, userId=%s"), config.appId.c_str(), config.userId.c_str());
+    LOG_INFO_FMT("Initialize: appId=%s, userId=%s", config.appId.c_str(), config.userId.c_str());
     m_appId = config.appId;
     m_userId = config.userId;
 
@@ -114,7 +114,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     m_rte->InitMediaEngine([&initSuccess, this](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             initSuccess = true;
-            LOG_INFO("Media engine initialized successfully");
+            LOG_INFO("Media engine initialized successfully"");
         } else {
             LOG_ERROR_FMT("Media engine initialization failed: error=%d", err ? err->Code() : -1);
         }
@@ -124,7 +124,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     
     if (!initSuccess) {
-        LOG_ERROR("Initialize failed: Media engine initialization timeout or error");
+        LOG_ERROR("Initialize failed: Media engine initialization timeout or error"");
         return false;
     }
 
@@ -157,12 +157,12 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
         return false;
     }
 
-    LOG_INFO("Initialize successful.");
+    LOG_INFO("Initialize successful."");
     return true;
 }
 
 void RteManager::Destroy() {
-    LOG_INFO("Destroy called.");
+    LOG_INFO("Destroy called."");
     
     // Leave channel if connected
     if (m_channel) {
@@ -193,7 +193,7 @@ void RteManager::Destroy() {
     if (m_rte) {
         m_rte->Destroy();
         m_rte.reset();
-        LOG_INFO("RTE destroyed.");
+        LOG_INFO("RTE destroyed."");
     }
 }
 
@@ -202,7 +202,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     m_channelId = channelId;
     
     if (!m_rte || !m_localUser) {
-        LOG_ERROR("JoinChannel failed: RTE or LocalUser not initialized");
+        LOG_ERROR("JoinChannel failed: RTE or LocalUser not initialized"");
         return false;
     }
     
@@ -225,7 +225,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     m_localUser->Connect([&connectSuccess, this](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             connectSuccess = true;
-            LOG_INFO("Local user connected successfully");
+            LOG_INFO("Local user connected successfully"");
         } else {
             LOG_ERROR_FMT("Local user connection failed: error=%d", err ? err->Code() : -1);
         }
@@ -235,7 +235,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     
     if (!connectSuccess) {
-        LOG_ERROR("JoinChannel failed: Local user connection timeout");
+        LOG_ERROR("JoinChannel failed: Local user connection timeout"");
         return false;
     }
     
@@ -265,7 +265,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
         return false;
     }
     
-    LOG_INFO("Channel joined successfully");
+    LOG_INFO("Channel joined successfully"");
     
     // Create and publish local stream
     m_localStream = std::make_shared<rte::LocalRealTimeStream>(m_rte.get());
@@ -284,13 +284,13 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     // Publish stream to channel
     m_channel->PublishStream(m_localUser.get(), m_localStream.get(), [this](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
-            LOG_INFO("Local stream published successfully");
+            LOG_INFO("Local stream published successfully"");
         } else {
             LOG_ERROR_FMT("Publish stream failed: error=%d", err ? err->Code() : -1);
         }
     });
     
-    LOG_INFO("JoinChannel successful");
+    LOG_INFO("JoinChannel successful"");
     return true;
 }
 
@@ -304,7 +304,7 @@ void RteManager::LeaveChannel() {
         if (m_localStream) {
             m_channel->UnpublishStream(m_localStream.get(), [this](rte::Error* err) {
                 if (err && err->Code() == kRteOk) {
-                    LOG_INFO("Local stream unpublished successfully");
+                    LOG_INFO("Local stream unpublished successfully"");
                 } else {
                     LOG_ERROR_FMT("Unpublish stream failed: error=%d", err ? err->Code() : -1);
                 }
@@ -322,7 +322,7 @@ void RteManager::LeaveChannel() {
         }
         
         m_channel.reset();
-        LOG_INFO("Channel left successfully");
+        LOG_INFO("Channel left successfully"");
     }
     
     // Disconnect local user
@@ -341,7 +341,7 @@ void RteManager::LeaveChannel() {
 }
 
 void RteManager::RenewToken(const std::string& token) {
-    LOG_INFO("RenewToken called.");
+    LOG_INFO("RenewToken called."");
     if (m_localUser) {
         rte::Error err;
         rte::LocalUserConfig localUserConfig;
@@ -355,7 +355,7 @@ void RteManager::RenewToken(const std::string& token) {
 }
 
 void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
-    LOG_INFO_FMT("SetLocalAudioCaptureEnabled: enabled=%d"), enabled);
+    LOG_INFO_FMT("SetLocalAudioCaptureEnabled: enabled=%d", enabled);
     if (m_micAudioTrack) {
         if (enabled) {
             m_micAudioTrack->Start(nullptr);
@@ -370,7 +370,7 @@ void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
 }
 
 void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
-    LOG_INFO_FMT("SetLocalVideoCaptureEnabled: enabled=%d"), enabled);
+    LOG_INFO_FMT("SetLocalVideoCaptureEnabled: enabled=%d", enabled);
     if (m_cameraVideoTrack) {
         if (enabled) {
             m_cameraVideoTrack->Start(nullptr);
@@ -381,7 +381,7 @@ void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
 }
 
 void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap) {
-    LOG_INFO("SetViewUserBindings called.");
+    LOG_INFO("SetViewUserBindings called."");
     std::lock_guard<std::mutex> lock(m_mutex);
     
     // Clear existing canvases for views that are no longer bound
@@ -425,7 +425,7 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_rte) {
-        LOG_ERROR("SetupRemoteVideo failed: RTE not initialized");
+        LOG_ERROR("SetupRemoteVideo failed: RTE not initialized"");
         return -1;
     }
     

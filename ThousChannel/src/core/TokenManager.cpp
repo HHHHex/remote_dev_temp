@@ -16,12 +16,12 @@
 CTokenManager::CTokenManager()
     : m_timeoutMs(30000)  // 默认30秒超时
 {
-    LOG_INFO("Token Manager created"));
+    INFO("Token Manager created");
 }
 
 CTokenManager::~CTokenManager()
 {
-    LOG_INFO("Token Manager destroyed"));
+    INFO("Token Manager destroyed");
 }
 
 void CTokenManager::SetTimeout(DWORD timeoutMs)
@@ -115,7 +115,7 @@ bool CTokenManager::ParseResponseJson(const CString& jsonResponse, CString& toke
                 int code = _ttoi(codeStr);
                 
                 // 输出服务器返回内容用于调试
-                LOG_INFO_FMT("服务器返回内容: %s"), response);
+                LOG_INFO_FMT("服务器返回内容: %s", response);
                 
                 if (code != 0) {
                     // 查找msg字段

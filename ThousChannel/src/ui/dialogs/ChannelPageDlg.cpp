@@ -85,7 +85,7 @@ CChannelPageDlg::CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pPar
 
 CChannelPageDlg::~CChannelPageDlg()
 {
-    LOG_INFO("Channel page dialog destroyed"));
+    INFO("Channel page dialog destroyed");
     
     LeaveRteChannel();
     ReleaseRteEngine();
@@ -133,7 +133,7 @@ BOOL CChannelPageDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();
 
-    LOG_INFO_FMT("Channel page dialog initialized for channel: %s"), m_pageState.channelId);
+    LOG_INFO_FMT("Channel page dialog initialized for channel: %s", m_pageState.channelId);
 
     InitializeFonts();
     InitializeControls();
@@ -143,7 +143,7 @@ BOOL CChannelPageDlg::OnInitDialog()
     UpdateGridLayout();
 
     if (!InitializeRteEngine()) {
-        LOG_ERROR("Failed to initialize RTE engine"));
+        ERROR("Failed to initialize RTE engine");
         AfxMessageBox(_T("Failed to initialize RTE engine."));
         EndDialog(IDCANCEL);
         return FALSE;
@@ -164,7 +164,7 @@ BOOL CChannelPageDlg::OnInitDialog()
     }
     
     if (!JoinRteChannel()) {
-        LOG_ERROR("Failed to join RTE channel"));
+        ERROR("Failed to join RTE channel");
     }
 
     return TRUE;
@@ -363,7 +363,7 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     if (m_rteManager) {
         std::string userIdStr = CT2A(uid);
         m_rteManager->SubscribeRemoteVideo(userIdStr);
-        LOG_INFO_FMT("Subscribing to remote video for user: %s"), uid);
+        LOG_INFO_FMT("Subscribing to remote video for user: %s", uid);
         // m_rteManager->SubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
     }
     int userIndex = FindUserIndex(uid);
@@ -394,7 +394,7 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
         if (m_rteManager && !userInfo->isLocal) {
             std::string userIdStr = CT2A(uid);
              m_rteManager->UnsubscribeRemoteVideo(userIdStr);
-             LOG_INFO_FMT("Unsubscribing from remote video for user: %s"), uid);
+             LOG_INFO_FMT("Unsubscribing from remote video for user: %s", uid);
             // m_rteManager->UnsubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
         }
         
@@ -434,7 +434,7 @@ LRESULT CChannelPageDlg::OnRteRemoteVideoStateChanged(WPARAM wParam, LPARAM lPar
 
     int state = LOWORD(lParam);
     int reason = HIWORD(lParam);
-    LOG_INFO_FMT("Remote video state changed for user %s, state=%d, reason=%d"), uid, state, reason);
+    LOG_INFO_FMT("Remote video state changed for user %s, state=%d, reason=%d", uid, state, reason);
 
     // You might want to update the UI for this user
     // For example, show an icon if their video is disabled
@@ -446,7 +446,7 @@ LRESULT CChannelPageDlg::OnRteLocalVideoStateChanged(WPARAM wParam, LPARAM lPara
 {
     int state = LOWORD(wParam);
     int reason = HIWORD(wParam);
-    LOG_INFO_FMT("Local video state changed, state=%d, reason=%d"), state, reason);
+    LOG_INFO_FMT("Local video state changed, state=%d, reason=%d", state, reason);
 
     // You can update the local user's UI based on the state
     // e.g., show a "camera off" icon
@@ -460,7 +460,7 @@ LRESULT CChannelPageDlg::OnRteRemoteAudioStateChanged(WPARAM wParam, LPARAM lPar
     delete uidPtr;
 
     int state = (int)lParam;
-    LOG_INFO_FMT("Remote audio state changed for user %s, state=%d"), uid, state);
+    LOG_INFO_FMT("Remote audio state changed for user %s, state=%d", uid, state);
 
     return 0;
 }
@@ -468,7 +468,7 @@ LRESULT CChannelPageDlg::OnRteRemoteAudioStateChanged(WPARAM wParam, LPARAM lPar
 LRESULT CChannelPageDlg::OnRteLocalAudioStateChanged(WPARAM wParam, LPARAM lParam)
 {
     int state = (int)wParam;
-    LOG_INFO_FMT("Local audio state changed, state=%d"), state);
+    LOG_INFO_FMT("Local audio state changed, state=%d", state);
 
     return 0;
 }
@@ -477,7 +477,7 @@ LRESULT CChannelPageDlg::OnRteError(WPARAM wParam, LPARAM lParam)
 {
     // Placeholder implementation
     int error_code = (int)wParam;
-    LOG_ERROR_FMT("RTE Engine Error: %d"), error_code);
+    LOG_ERROR_FMT("RTE Engine Error: %d", error_code);
     
     // Display an error message to the user
     CString errorMsg;
@@ -556,7 +556,7 @@ BOOL CChannelPageDlg::InitializeRteEngine()
     config.userToken = CT2A(m_joinParams.token);
 
     if (!m_rteManager->Initialize(config)) {
-        LOG_ERROR("Failed to initialize RteManager"));
+        ERROR("Failed to initialize RteManager");
         return FALSE;
     }
 
@@ -809,7 +809,7 @@ HWND CChannelPageDlg::GetOrCreateUserCanvas(LPCTSTR uid)
         ::GetDesktopWindow(), NULL, AfxGetInstanceHandle(), NULL);
 
     if (canvas) {
-        LOG_INFO_FMT("Canvas created for UID %s: 0x%p"), uid, canvas);
+        LOG_INFO_FMT("Canvas created for UID %s: 0x%p", uid, canvas);
         m_userCanvasMap.SetAt(uid, canvas);
     }
     else {
