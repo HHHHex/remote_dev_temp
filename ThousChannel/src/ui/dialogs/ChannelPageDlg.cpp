@@ -915,13 +915,10 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
         if (user && !user->isLocal) {
             user->isVideoSubscribed = isVideoSubscribed;
             if (m_rteManager) {
-                std::string userIdStr = CT2A(user->GetUID());
-                if (isVideoSubscribed) {
-                    m_rteManager->SubscribeRemoteVideo(userIdStr);
-                }
-                else {
-                    m_rteManager->UnsubscribeRemoteVideo(userIdStr);
-                }
+                // SubscribeRemoteVideo and UnsubscribeRemoteVideo methods are not implemented in RteManager.
+                // The video subscription logic needs to be updated based on the new RTE SDK API.
+                // For now, we'll just log it.
+                LOG_INFO_FMT("Video subscription for user %s set to %d", user->GetUID(), isVideoSubscribed);
             }
 
             // 更新UI显示状态
