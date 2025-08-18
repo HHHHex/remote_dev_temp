@@ -180,7 +180,7 @@ BOOL CThousChannelApp::InitInstance()
 
 	// 获取用户输入的参数
 	ChannelJoinParams joinParams = homeDlg.GetJoinParams();
-	LOG_INFO_FMT("User joined channel: AppID=%s, ChannelID=%s"), 
+	LOG_INFO_FMT("User joined channel: AppID=%s, ChannelID=%s", 
 		joinParams.appId, joinParams.channelId);
 	
 	// TODO: 这里可以将参数传递给频道页面

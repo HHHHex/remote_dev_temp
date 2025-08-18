@@ -233,7 +233,7 @@ void CHomePageDlg::GenerateToken()
 	m_joinParams.enableMic = (m_checkEnableMic.GetCheck() == BST_CHECKED);
 
 	// 记录日志
-	LOG_INFO_FMT("Join params collected. Channel: %s, UserID: %s, Camera: %d, Mic: %d"), 
+	LOG_INFO_FMT("Join params collected. Channel: %s, UserID: %s, Camera: %d, Mic: %d", 
 		m_joinParams.channelId, m_joinParams.userId, m_joinParams.enableCamera, m_joinParams.enableMic);
 
 	// 构建Token生成参数
@@ -246,7 +246,7 @@ void CHomePageDlg::GenerateToken()
 	tokenParams.type = 1;      // RTC Token
 	tokenParams.src = _T("Windows");
 
-	LOG_INFO_FMT("Generating token for AppID=%s, Channel=%s, UserID=%s"), 
+	LOG_INFO_FMT("Generating token for AppID=%s, Channel=%s, UserID=%s", 
 		tokenParams.appId, tokenParams.channelName, tokenParams.userId);
 
 	// 更新状态
@@ -297,7 +297,7 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 			LOG_INFO("User returned from channel page, showing join dialog again");
 			ShowWindow(SW_SHOW);
 			// 清空token，要求重新生成
-			m_joinParams.token = _T(");
+			m_joinParams.token = _T("");
 			UpdateTokenStatus(_T("请重新生成Token"), FALSE);
 		}
 	} else {
