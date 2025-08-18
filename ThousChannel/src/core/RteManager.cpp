@@ -145,6 +145,9 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     // Create media tracks
     m_micAudioTrack = std::make_shared<rte::MicAudioTrack>(m_rte.get());
     rte::MicAudioTrackConfig micConfig;
+    // Configure audio settings to avoid device initialization issues
+    micConfig.SetAudioProfile(rte::AudioProfile::kRteAudioProfileDefault);
+    micConfig.SetAudioScenario(rte::AudioScenario::kRteAudioScenarioDefault);
     m_micAudioTrack->SetConfigs(&micConfig, &err);
     if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
@@ -153,6 +156,8 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
 
     m_cameraVideoTrack = std::make_shared<rte::CameraVideoTrack>(m_rte.get());
     rte::CameraVideoTrackConfig cameraConfig;
+    // Configure video settings
+    cameraConfig.SetVideoProfile(rte::VideoProfile::kRteVideoProfileDefault);
     m_cameraVideoTrack->SetConfigs(&cameraConfig, &err);
     if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: CameraVideoTrack SetConfigs error=%d", err.Code());
@@ -245,8 +250,8 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
         }
     });
     
-    // Wait for connection
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    // Wait for connection with longer timeout
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     
     if (!connectSuccess) {
         LOG_ERROR("JoinChannel failed: Local user connection timeout");
@@ -377,6 +382,9 @@ void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
     LOG_INFO_FMT("SetLocalAudioCaptureEnabled: enabled=%d", enabled);
     if (m_micAudioTrack) {
         if (enabled) {
+            // Add delay to ensure RTE is fully initialized
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            
             m_micAudioTrack->Start([](rte::Error* err) {
                 if (err && err->Code() != kRteOk) {
                     LOG_ERROR_FMT("MicAudioTrack Start failed: error=%d", err->Code());
