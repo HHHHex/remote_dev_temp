@@ -562,9 +562,9 @@ BOOL CChannelPageDlg::InitializeRteEngine()
 
     // Initialize RTE with config
     RteManagerConfig config;
-    // Use direct string conversion to avoid encoding issues
-    config.appId = std::string(m_joinParams.appId.GetString());
-    config.userId = std::string(m_pageState.currentUserId.GetString());
+    // Convert CString to std::string properly
+    config.appId = std::string(CT2A(m_joinParams.appId));
+    config.userId = std::string(CT2A(m_pageState.currentUserId));
     // userToken is not a member of RteManagerConfig
     // Token should be passed separately to JoinChannel method
 
@@ -591,8 +591,8 @@ BOOL CChannelPageDlg::JoinRteChannel()
         return FALSE;
     }
 
-    std::string channelId = std::string(m_joinParams.channelId.GetString());
-    std::string token = std::string(m_joinParams.token.GetString());
+    std::string channelId = std::string(CT2A(m_joinParams.channelId));
+    std::string token = std::string(CT2A(m_joinParams.token));
 
     BOOL result = m_rteManager->JoinChannel(channelId, token);
 
@@ -977,7 +977,7 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
         if (user && !user->isLocal && user->isConnected && user->isVideoSubscribed) {
-            subscribedUserIds.push_back(std::string(user->GetUID().GetString()));
+            subscribedUserIds.push_back(std::string(CT2A(user->GetUID())));
         }
     }
 
@@ -1000,7 +1000,7 @@ void CChannelPageDlg::UpdateViewUserBindings()
                 HWND canvasWnd = NULL;
                 // Look up the correct canvas window from the map.
                 if (m_userCanvasMap.Lookup(user->GetUID(), canvasWnd) && canvasWnd) {
-                    std::string userIdStr(user->GetUID().GetString());
+                    std::string userIdStr(CT2A(user->GetUID()));
                     viewToUserMap[canvasWnd] = userIdStr;
                 }
             }
