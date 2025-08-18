@@ -933,8 +933,6 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
     }
 }
 
-
-
 void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL isAudioSubscribed)
 {
     int userIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage + cellIndex;
