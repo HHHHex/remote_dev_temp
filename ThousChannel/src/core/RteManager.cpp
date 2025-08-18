@@ -171,12 +171,24 @@ void RteManager::Destroy() {
     
     // Stop and release media tracks
     if (m_micAudioTrack) {
-        m_micAudioTrack->Stop(nullptr);
+        m_micAudioTrack->Stop([](rte::Error* err) {
+            if (err && err->Code() != kRteOk) {
+                LOG_ERROR_FMT("MicAudioTrack Stop failed: error=%d", err->Code());
+            } else {
+                LOG_INFO("MicAudioTrack stopped successfully");
+            }
+        });
         m_micAudioTrack.reset();
     }
     
     if (m_cameraVideoTrack) {
-        m_cameraVideoTrack->Stop(nullptr);
+        m_cameraVideoTrack->Stop([](rte::Error* err) {
+            if (err && err->Code() != kRteOk) {
+                LOG_ERROR_FMT("CameraVideoTrack Stop failed: error=%d", err->Code());
+            } else {
+                LOG_INFO("CameraVideoTrack stopped successfully");
+            }
+        });
         m_cameraVideoTrack.reset();
     }
     
@@ -327,8 +339,13 @@ void RteManager::LeaveChannel() {
     
     // Disconnect local user
     if (m_localUser) {
-        rte::Error err;
-        m_localUser->Disconnect(&err);
+        m_localUser->Disconnect([](rte::Error* err) {
+            if (err && err->Code() != kRteOk) {
+                LOG_ERROR_FMT("LocalUser Disconnect failed: error=%d", err->Code());
+            } else {
+                LOG_INFO("LocalUser disconnected successfully");
+            }
+        });
     }
     
     // Clear remote user data
@@ -358,9 +375,21 @@ void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
     LOG_INFO_FMT("SetLocalAudioCaptureEnabled: enabled=%d", enabled);
     if (m_micAudioTrack) {
         if (enabled) {
-            m_micAudioTrack->Start(nullptr);
+            m_micAudioTrack->Start([](rte::Error* err) {
+                if (err && err->Code() != kRteOk) {
+                    LOG_ERROR_FMT("MicAudioTrack Start failed: error=%d", err->Code());
+                } else {
+                    LOG_INFO("MicAudioTrack started successfully");
+                }
+            });
         } else {
-            m_micAudioTrack->Stop(nullptr);
+            m_micAudioTrack->Stop([](rte::Error* err) {
+                if (err && err->Code() != kRteOk) {
+                    LOG_ERROR_FMT("MicAudioTrack Stop failed: error=%d", err->Code());
+                } else {
+                    LOG_INFO("MicAudioTrack stopped successfully");
+                }
+            });
         }
         if (m_eventHandler) {
             int state = enabled ? 1 : 0; // Corresponds to LOCAL_AUDIO_STREAM_STATE_RECORDING and LOCAL_AUDIO_STREAM_STATE_STOPPED
@@ -373,9 +402,21 @@ void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
     LOG_INFO_FMT("SetLocalVideoCaptureEnabled: enabled=%d", enabled);
     if (m_cameraVideoTrack) {
         if (enabled) {
-            m_cameraVideoTrack->Start(nullptr);
+            m_cameraVideoTrack->Start([](rte::Error* err) {
+                if (err && err->Code() != kRteOk) {
+                    LOG_ERROR_FMT("CameraVideoTrack Start failed: error=%d", err->Code());
+                } else {
+                    LOG_INFO("CameraVideoTrack started successfully");
+                }
+            });
         } else {
-            m_cameraVideoTrack->Stop(nullptr);
+            m_cameraVideoTrack->Stop([](rte::Error* err) {
+                if (err && err->Code() != kRteOk) {
+                    LOG_ERROR_FMT("CameraVideoTrack Stop failed: error=%d", err->Code());
+                } else {
+                    LOG_INFO("CameraVideoTrack stopped successfully");
+                }
+            });
         }
     }
 }
