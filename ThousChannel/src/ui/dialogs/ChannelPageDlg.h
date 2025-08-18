@@ -6,6 +6,8 @@
 #include "HomePageDlg.h"
 #include "VideoGridCell.h"
 #include "../../core/IRteManagerEventHandler.h"
+
+// Forward declarations
 class RteManager;
 
 // Custom Windows Messages for RTE events
@@ -19,17 +21,22 @@ class RteManager;
 #define WM_USER_RTE_REMOTE_AUDIO_STATE_CHANGED  (WM_USER + 208)
 #define WM_USER_RTE_LOCAL_AUDIO_STATE_CHANGED   (WM_USER + 209)
 
-// ChannelUser类定义，简化为纯数据结构
-class ChannelUser {
-
+// ChannelUser class definition
+class ChannelUser 
+{
 public:
-    ChannelUser() : uid(_T("")), isLocal(FALSE), isRobot(FALSE), isConnected(FALSE),
-        isVideoSubscribed(TRUE), isAudioSubscribed(TRUE),
-        isCurrentlyVisible(FALSE), lastVisiblePage(0) {}
+    // Constructor
+    ChannelUser() 
+        : uid(_T("")), isLocal(FALSE), isRobot(FALSE), isConnected(FALSE),
+          isVideoSubscribed(TRUE), isAudioSubscribed(TRUE),
+          isCurrentlyVisible(FALSE), lastVisiblePage(0) 
+    {
+    }
 
+    // Getter method
     CString GetUID() const { return uid; }
 
-public:
+    // Public members
     CString userName;
     CString uid;
     BOOL isLocal;

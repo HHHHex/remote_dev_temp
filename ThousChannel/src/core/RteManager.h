@@ -10,9 +10,6 @@
 
 #include "IRteManagerEventHandler.h"
 
-// Forward declaration
-class RteManager;
-
 // Configuration for RteManager
 struct RteManagerConfig {
     std::string appId;
