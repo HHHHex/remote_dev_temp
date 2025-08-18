@@ -55,6 +55,16 @@ END_MESSAGE_MAP()
 // CChannelPageDlg Constructor & Destructor
 //===========================================================================
 
+CChannelPageDlg::CChannelPageDlg(CWnd* pParent /*=nullptr*/)
+    : CDialogEx(IDD_CHANNEL_PAGE_DLG, pParent)
+{
+    m_pageState.currentGridMode = 2;
+    m_pageState.currentPage = 1;
+    m_pageState.usersPerPage = 4;
+    m_rteManager = nullptr;
+    m_isChannelJoined = FALSE;
+}
+
 CChannelPageDlg::CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pParent /*=nullptr*/)
     : CDialogEx(IDD_CHANNEL_PAGE_DLG, pParent), m_joinParams(joinParams)
 {
@@ -871,7 +881,9 @@ int CChannelPageDlg::GetMaxPages()
     if (m_pageState.usersPerPage <= 0) return 1;
     if (m_pageState.userList.GetSize() == 0) return 1;
     
-    return (int)(m_pageState.userList.GetSize() + m_pageState.usersPerPage - 1) / m_pageState.usersPerPage;
+    size_t totalUsers = m_pageState.userList.GetSize();
+    size_t usersPerPage = static_cast<size_t>(m_pageState.usersPerPage);
+    return static_cast<int>((totalUsers + usersPerPage - 1) / usersPerPage);
 }
 
 
