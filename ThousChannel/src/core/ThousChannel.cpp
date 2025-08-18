@@ -67,7 +67,7 @@ BOOL CThousChannelApp::InitInstance()
 {
 	// 初始化日志系统
 	CLogger::GetInstance().Initialize();
-	LOG_INFO(_T("Application initialization started"));
+	LOG_INFO("Application initialization started"));
 
 	// 如果一个运行在 Windows XP 上的应用程序清单指定要
 	// 使用 ComCtl32.dll 版本 6 或更高版本来启用可视化方式，
@@ -81,17 +81,17 @@ BOOL CThousChannelApp::InitInstance()
 
 	CWinAppEx::InitInstance();
 
-	LOG_INFO(_T("Common controls initialized"));
+	LOG_INFO("Common controls initialized"));
 
 	// 初始化 OLE 库
 	if (!AfxOleInit())
 	{
-		LOG_ERROR(_T("OLE initialization failed"));
+		LOG_ERROR("OLE initialization failed"));
 		AfxMessageBox(IDP_OLE_INIT_FAILED);
 		return FALSE;
 	}
 
-	LOG_INFO(_T("OLE library initialized successfully"));
+	LOG_INFO("OLE library initialized successfully"));
 
 	AfxEnableControlContainer();
 
@@ -110,7 +110,7 @@ BOOL CThousChannelApp::InitInstance()
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
 	LoadStdProfileSettings(4);  // 加载标准 INI 文件选项(包括 MRU)
 
-	LOG_INFO(_T("Registry and profile settings loaded"));
+	LOG_INFO("Registry and profile settings loaded"));
 
 	InitContextMenuManager();
 
@@ -122,7 +122,7 @@ BOOL CThousChannelApp::InitInstance()
 	theApp.GetTooltipManager()->SetTooltipParams(AFX_TOOLTIP_TYPE_ALL,
 		RUNTIME_CLASS(CMFCToolTipCtrl), &ttParams);
 
-	LOG_INFO(_T("UI managers initialized"));
+	LOG_INFO("UI managers initialized"));
 
 	// 注册应用程序的文档模板。  文档模板
 	// 将用作文档、框架窗口和视图之间的连接
@@ -133,54 +133,54 @@ BOOL CThousChannelApp::InitInstance()
 		RUNTIME_CLASS(CThousChannelView));
 	if (!pDocTemplate)
 	{
-		LOG_ERROR(_T("Failed to create document template"));
+		LOG_ERROR("Failed to create document template"));
 		return FALSE;
 	}
 	AddDocTemplate(pDocTemplate);
 
-	LOG_INFO(_T("Document template created and added"));
+	LOG_INFO("Document template created and added"));
 
 	// 创建主 MDI 框架窗口
 	CMainFrame* pMainFrame = new CMainFrame;
 	if (!pMainFrame || !pMainFrame->LoadFrame(IDR_MAINFRAME))
 	{
-		LOG_ERROR(_T("Failed to create main frame window"));
+		LOG_ERROR("Failed to create main frame window"));
 		delete pMainFrame;
 		return FALSE;
 	}
 	m_pMainWnd = pMainFrame;
 
-	LOG_INFO(_T("Main frame window created successfully"));
+	LOG_INFO("Main frame window created successfully"));
 
 	// 分析标准 shell 命令、DDE、打开文件操作的命令行
 	CCommandLineInfo cmdInfo;
 	ParseCommandLine(cmdInfo);
 
-	LOG_INFO_FMT(_T("Command line parsed: %s"), cmdInfo.m_strFileName);
+	LOG_INFO_FMT("Command line parsed: %s"), cmdInfo.m_strFileName);
 
 	// 调度在命令行中指定的命令。  如果
 	// 用 /RegServer、/Register、/Unregserver 或 /Unregister 启动应用程序，则返回 FALSE。
 	if (!ProcessShellCommand(cmdInfo))
 	{
-		LOG_ERROR(_T("Failed to process shell command"));
+		LOG_ERROR("Failed to process shell command"));
 		return FALSE;
 	}
 
-	LOG_INFO(_T("Shell command processed successfully"));
+	LOG_INFO("Shell command processed successfully"));
 
 	// 显示主页对话框
-	LOG_INFO(_T("Showing home page dialog"));
+	LOG_INFO("Showing home page dialog"));
 	CHomePageDlg homeDlg;
 	if (homeDlg.DoModal() != IDOK)
 	{
 		// 用户取消了加入频道，退出应用程序
-		LOG_INFO(_T("User cancelled home page dialog, exiting application"));
+		LOG_INFO("User cancelled home page dialog, exiting application"));
 		return FALSE;
 	}
 
 	// 获取用户输入的参数
 	ChannelJoinParams joinParams = homeDlg.GetJoinParams();
-	LOG_INFO_FMT(_T("User joined channel: AppID=%s, ChannelID=%s"), 
+	LOG_INFO_FMT("User joined channel: AppID=%s, ChannelID=%s"), 
 		joinParams.appId, joinParams.channelId);
 	
 	// TODO: 这里可以将参数传递给频道页面
@@ -190,18 +190,18 @@ BOOL CThousChannelApp::InitInstance()
 	pMainFrame->ShowWindow(m_nCmdShow);
 	pMainFrame->UpdateWindow();
 
-	LOG_INFO(_T("Application initialization completed successfully"));
+	LOG_INFO("Application initialization completed successfully"));
 	return TRUE;
 }
 
 int CThousChannelApp::ExitInstance()
 {
-	LOG_INFO(_T("Application exit started"));
+	LOG_INFO("Application exit started"));
 	
 	//TODO: 处理可能已添加的附加资源
 	AfxOleTerm(FALSE);
 
-	LOG_INFO(_T("Application exit completed"));
+	LOG_INFO("Application exit completed"));
 	return CWinAppEx::ExitInstance();
 }
 

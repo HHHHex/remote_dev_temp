@@ -82,7 +82,7 @@ BOOL CHomePageDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	LOG_INFO(_T("Home page dialog initialized"));
+	LOG_INFO("Home page dialog initialized"));
 
 	try {
 		// 设置对话框标题
@@ -96,10 +96,10 @@ BOOL CHomePageDlg::OnInitDialog()
 		// 初始化控件
 		InitializeControls();
 
-		LOG_INFO(_T("Home page dialog controls initialized"));
+		LOG_INFO("Home page dialog controls initialized"));
 	}
 	catch (...) {
-		LOG_ERROR(_T("Failed to initialize dialog"));
+		LOG_ERROR("Failed to initialize dialog"));
 		// 继续执行，让对话框至少能显示
 	}
 
@@ -158,7 +158,7 @@ BOOL CHomePageDlg::ValidateInput()
 	if (appIdSel < 0)
 	{
 		strMessage.LoadString(IDS_MSG_SELECT_APPID);
-		LOG_WARNING(_T("User tried to join without selecting AppID"));
+		LOG_WARNING("User tried to join without selecting AppID"));
 		AfxMessageBox(strMessage);
 		m_comboAppId.SetFocus();
 		return FALSE;
@@ -173,7 +173,7 @@ BOOL CHomePageDlg::ValidateInput()
 	if (channelId.IsEmpty())
 	{
 		strMessage.LoadString(IDS_MSG_ENTER_CHANNEL);
-		LOG_WARNING(_T("User tried to join without entering channel ID"));
+		LOG_WARNING("User tried to join without entering channel ID"));
 		AfxMessageBox(strMessage);
 		m_editChannelId.SetFocus();
 		return FALSE;
@@ -186,20 +186,20 @@ BOOL CHomePageDlg::ValidateInput()
 	if (audioPullSel <= 0)
 	{
 		strMessage.LoadString(IDS_MSG_SELECT_AUDIO);
-		LOG_WARNING(_T("User tried to join without selecting audio pull mode"));
+		LOG_WARNING("User tried to join without selecting audio pull mode"));
 		AfxMessageBox(strMessage);
 		m_comboAudioPull.SetFocus();
 		return FALSE;
 	}
 
-	LOG_INFO(_T("Input validation passed"));
+	LOG_INFO("Input validation passed"));
 	return TRUE;
 }
 
 void CHomePageDlg::GenerateToken()
 {
 	if (m_isGeneratingToken) {
-		LOG_WARNING(_T("Token generation already in progress"));
+		LOG_WARNING("Token generation already in progress"));
 		return;
 	}
 
@@ -233,7 +233,7 @@ void CHomePageDlg::GenerateToken()
 	m_joinParams.enableMic = (m_checkEnableMic.GetCheck() == BST_CHECKED);
 
 	// 记录日志
-	LOG_INFO_FMT(_T("Join params collected. Channel: %s, UserID: %s, Camera: %d, Mic: %d"), 
+	LOG_INFO_FMT("Join params collected. Channel: %s, UserID: %s, Camera: %d, Mic: %d"), 
 		m_joinParams.channelId, m_joinParams.userId, m_joinParams.enableCamera, m_joinParams.enableMic);
 
 	// 构建Token生成参数
@@ -246,7 +246,7 @@ void CHomePageDlg::GenerateToken()
 	tokenParams.type = 1;      // RTC Token
 	tokenParams.src = _T("Windows");
 
-	LOG_INFO_FMT(_T("Generating token for AppID=%s, Channel=%s, UserID=%s"), 
+	LOG_INFO_FMT("Generating token for AppID=%s, Channel=%s, UserID=%s"), 
 		tokenParams.appId, tokenParams.channelName, tokenParams.userId);
 
 	// 更新状态
@@ -275,10 +275,10 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 		m_joinParams.token = token;
 		UpdateTokenStatus(_T("Token生成成功，可以加入频道"), FALSE);
 		
-		LOG_INFO_FMT(_T("Token generated successfully: %s"), token.Left(20) + _T("..."));
+		LOG_INFO_FMT("Token generated successfully: %s"), token.Left(20) + _T("..."));
 		
 		// 自动跳转到频道页面
-		LOG_INFO(_T("Creating channel page dialog"));
+		LOG_INFO("Creating channel page dialog"));
 		CChannelPageDlg channelPageDlg(m_joinParams, this);
 		
 		// 隐藏当前对话框
@@ -290,11 +290,11 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 		// 根据频道页面的返回结果处理
 		if (result == IDOK) {
 			// 用户从频道页面正常退出，关闭整个应用
-			LOG_INFO(_T("User exited from channel page, closing application"));
+			LOG_INFO("User exited from channel page, closing application"));
 			EndDialog(IDCANCEL); // 通知主程序退出
 		} else {
 			// 用户从频道页面返回，重新显示加入频道对话框
-			LOG_INFO(_T("User returned from channel page, showing join dialog again"));
+			LOG_INFO("User returned from channel page, showing join dialog again"));
 			ShowWindow(SW_SHOW);
 			// 清空token，要求重新生成
 			m_joinParams.token = _T("");
@@ -302,7 +302,7 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 		}
 	} else {
 		UpdateTokenStatus(_T("Token生成失败: ") + errorMsg, TRUE);
-		LOG_ERROR_FMT(_T("Token generation failed: %s"), errorMsg);
+		LOG_ERROR_FMT("Token generation failed: %s"), errorMsg);
 		AfxMessageBox(_T("Token生成失败: ") + errorMsg);
 	}
 }
@@ -319,25 +319,25 @@ void CHomePageDlg::UpdateTokenStatus(const CString& status, BOOL isError)
 		
 		// 记录状态到日志
 		if (isError) {
-			LOG_ERROR_FMT(_T("Token status error: %s"), status);
+			LOG_ERROR_FMT("Token status error: %s"), status);
 		} else {
-			LOG_INFO_FMT(_T("Token status: %s"), status);
+			LOG_INFO_FMT("Token status: %s"), status);
 		}
 	}
 	catch (...) {
-		LOG_ERROR(_T("Failed to update token status display"));
+		LOG_ERROR("Failed to update token status display"));
 		// 即使更新失败也要记录日志
 		if (isError) {
-			LOG_ERROR_FMT(_T("Token status error: %s"), status);
+			LOG_ERROR_FMT("Token status error: %s"), status);
 		} else {
-			LOG_INFO_FMT(_T("Token status: %s"), status);
+			LOG_INFO_FMT("Token status: %s"), status);
 		}
 	}
 }
 
 void CHomePageDlg::OnBnClickedJoinChannel()
 {
-	LOG_INFO(_T("Join channel button clicked"));
+	LOG_INFO("Join channel button clicked"));
 
 	// 验证输入
 	if (!ValidateInput())
@@ -361,7 +361,7 @@ LRESULT CHomePageDlg::OnTokenGenerated(WPARAM wParam, LPARAM lParam)
 void CHomePageDlg::OnEnChangeChannelId()
 {
 	// 频道ID输入变化时的处理
-	LOG_DEBUG(_T("Channel ID input changed"));
+	LOG_DEBUG("Channel ID input changed"));
 	// 清空token状态
 	if (!m_joinParams.token.IsEmpty()) {
 		m_joinParams.token = _T("");
@@ -372,12 +372,12 @@ void CHomePageDlg::OnEnChangeChannelId()
 void CHomePageDlg::OnCbnSelchangeAppid()
 {
 	// AppID选择变化时的处理
-	LOG_DEBUG(_T("AppID selection changed"));
+	LOG_DEBUG("AppID selection changed"));
 	
 	// 获取当前选择的索引
 	int sel = m_comboAppId.GetCurSel();
 	if (sel >= 0 && sel < m_appIdCount) {
-		LOG_INFO_FMT(_T("AppID selected: %s"), m_appIdList[sel].displayName);
+		LOG_INFO_FMT("AppID selected: %s"), m_appIdList[sel].displayName);
 	}
 	
 	// 清空token状态
@@ -390,7 +390,7 @@ void CHomePageDlg::OnCbnSelchangeAppid()
 void CHomePageDlg::OnCbnSelchangeAudioPull()
 {
 	// 音频拉流方式选择变化时的处理
-	LOG_DEBUG(_T("Audio pull mode selection changed"));
+	LOG_DEBUG("Audio pull mode selection changed"));
 }
 
 // 证书输入框已移除，不再需要此函数
@@ -398,7 +398,7 @@ void CHomePageDlg::OnCbnSelchangeAudioPull()
 
 void CHomePageDlg::OnOK()
 {
-	LOG_INFO(_T("Home page dialog OK button pressed"));
+	LOG_INFO("Home page dialog OK button pressed"));
 	OnBnClickedJoinChannel();
 }
 
