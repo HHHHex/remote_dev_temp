@@ -167,14 +167,15 @@ BOOL CChannelPageDlg::OnInitDialog()
     localUser->uid = _T(""); // Will be updated onJoinChannelSuccess
     m_pageState.userList.InsertAt(0, localUser);
     
-    // Enable local audio/video based on join params
+    if (!JoinRteChannel()) {
+        LOG_ERROR("Failed to join RTE channel");
+        return FALSE;
+    }
+    
+    // Enable local audio/video after successful channel join
     if (m_rteManager) {
         m_rteManager->SetLocalAudioCaptureEnabled(m_joinParams.enableMic);
         m_rteManager->SetLocalVideoCaptureEnabled(m_joinParams.enableCamera);
-    }
-    
-    if (!JoinRteChannel()) {
-        LOG_ERROR("Failed to join RTE channel");
     }
 
     return TRUE;
@@ -561,8 +562,8 @@ BOOL CChannelPageDlg::InitializeRteEngine()
 
     // Initialize RTE with config
     RteManagerConfig config;
-    config.appId = CT2A(m_joinParams.appId);
-    config.userId = CT2A(m_pageState.currentUserId);
+    config.appId = CT2A(m_joinParams.appId, CP_UTF8);
+    config.userId = CT2A(m_pageState.currentUserId, CP_UTF8);
     // userToken is not a member of RteManagerConfig
     // Token should be passed separately to JoinChannel method
 
@@ -589,8 +590,8 @@ BOOL CChannelPageDlg::JoinRteChannel()
         return FALSE;
     }
 
-    std::string channelId = CT2A(m_joinParams.channelId);
-    std::string token = CT2A(m_joinParams.token);
+    std::string channelId = CT2A(m_joinParams.channelId, CP_UTF8);
+    std::string token = CT2A(m_joinParams.token, CP_UTF8);
 
     BOOL result = m_rteManager->JoinChannel(channelId, token);
 
@@ -975,7 +976,7 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
         if (user && !user->isLocal && user->isConnected && user->isVideoSubscribed) {
-            subscribedUserIds.push_back(CT2A(user->GetUID()));
+            subscribedUserIds.push_back(CT2A(user->GetUID(), CP_UTF8));
         }
     }
 
@@ -998,7 +999,7 @@ void CChannelPageDlg::UpdateViewUserBindings()
                 HWND canvasWnd = NULL;
                 // Look up the correct canvas window from the map.
                 if (m_userCanvasMap.Lookup(user->GetUID(), canvasWnd) && canvasWnd) {
-                    std::string userIdStr(CT2A(user->GetUID()));
+                    std::string userIdStr(CT2A(user->GetUID(), CP_UTF8));
                     viewToUserMap[canvasWnd] = userIdStr;
                 }
             }
