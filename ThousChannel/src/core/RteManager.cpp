@@ -18,7 +18,7 @@ public:
         LOG_INFO(_T("OnRemoteUsersJoined"));
         for (size_t i = 0; i < new_users.size(); ++i) {
             std::string userId = new_users_info[i].UserId();
-            LOG_INFO_FMT(_T("OnUserJoined: userId=%hs"), userId.c_str());
+            LOG_INFO_FMT(_T("OnUserJoined: userId=%s"), userId.c_str());
             
             m_rteManager->OnRemoteUserJoined(userId);
             
@@ -33,7 +33,7 @@ public:
         LOG_INFO(_T("OnRemoteUsersLeft"));
         for (size_t i = 0; i < removed_users.size(); ++i) {
             std::string userId = removed_users_info[i].UserId();
-            LOG_INFO_FMT(_T("OnUserLeft: userId=%hs"), userId.c_str());
+            LOG_INFO_FMT(_T("OnUserLeft: userId=%s"), userId.c_str());
             
             m_rteManager->OnRemoteUserLeft(userId);
             
@@ -86,7 +86,7 @@ void RteManager::SetEventHandler(IRteManagerEventHandler* handler) {
 }
 
 bool RteManager::Initialize(const RteManagerConfig& config) {
-    LOG_INFO_FMT("Initialize: appId=%hs, userId=%hs", config.appId.c_str(), config.userId.c_str());
+    LOG_INFO_FMT(_T("Initialize: appId=%s, userId=%s"), config.appId.c_str(), config.userId.c_str());
     m_appId = config.appId;
     m_userId = config.userId;
 
@@ -198,7 +198,7 @@ void RteManager::Destroy() {
 }
 
 bool RteManager::JoinChannel(const std::string& channelId, const std::string& token) {
-    LOG_INFO_FMT("JoinChannel: channelId=%hs", channelId.c_str());
+    LOG_INFO_FMT(_T("JoinChannel: channelId=%s"), channelId.c_str());
     m_channelId = channelId;
     
     if (!m_rte || !m_localUser) {
@@ -295,7 +295,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
 }
 
 void RteManager::LeaveChannel() {
-    LOG_INFO_FMT("LeaveChannel: channelId=%hs", m_channelId.c_str());
+    LOG_INFO_FMT(_T("LeaveChannel: channelId=%s"), m_channelId.c_str());
     
     if (m_channel) {
         rte::Error err;
@@ -355,7 +355,7 @@ void RteManager::RenewToken(const std::string& token) {
 }
 
 void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
-    LOG_INFO_FMT("SetLocalAudioCaptureEnabled: enabled=%d", enabled);
+    LOG_INFO_FMT(_T("SetLocalAudioCaptureEnabled: enabled=%d"), enabled);
     if (m_micAudioTrack) {
         if (enabled) {
             m_micAudioTrack->Start(nullptr);
@@ -370,7 +370,7 @@ void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
 }
 
 void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
-    LOG_INFO_FMT("SetLocalVideoCaptureEnabled: enabled=%d", enabled);
+    LOG_INFO_FMT(_T("SetLocalVideoCaptureEnabled: enabled=%d"), enabled);
     if (m_cameraVideoTrack) {
         if (enabled) {
             m_cameraVideoTrack->Start(nullptr);
@@ -389,7 +389,7 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
         void* view = pair.first;
         const std::string& userId = pair.second;
         if (viewToUserMap.find(view) == viewToUserMap.end() || viewToUserMap.at(view) != userId) {
-            LOG_INFO_FMT("Unbinding view for user: %hs", userId.c_str());
+            LOG_INFO_FMT(_T("Unbinding view for user: %s", userId.c_str());
             if (m_remoteUserCanvases.count(userId)) {
                 m_remoteUserCanvases.erase(userId);
             }
@@ -401,7 +401,7 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
         void* view = pair.first;
         const std::string& userId = pair.second;
         if (m_viewToUserMap.find(view) == m_viewToUserMap.end() || m_viewToUserMap.at(view) != userId) {
-            LOG_INFO_FMT("Binding view for user: %hs", userId.c_str());
+            LOG_INFO_FMT(_T("Binding view for user: %s", userId.c_str());
             if (m_rte) {
                 auto canvas = std::make_shared<rte::Canvas>(m_rte.get());
                 rte::Error err;
@@ -411,7 +411,7 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
                 if (err.Code() == kRteOk) {
                     m_remoteUserCanvases[userId] = canvas;
                 } else {
-                    LOG_ERROR_FMT("Failed to create canvas for user %hs: error=%d", userId.c_str(), err.Code());
+                    LOG_ERROR_FMT("Failed to create canvas for user %s: error=%d", userId.c_str(), err.Code());
                 }
             }
         }
@@ -421,7 +421,7 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
 }
 
 int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
-    LOG_INFO_FMT("SetupRemoteVideo for user: %hs", userId.c_str());
+    LOG_INFO_FMT(_T("SetupRemoteVideo for user: %s", userId.c_str());
     std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_rte) {
@@ -433,7 +433,7 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
         // Remove canvas for user
         if (m_remoteUserCanvases.count(userId)) {
             m_remoteUserCanvases.erase(userId);
-            LOG_INFO_FMT("Removed canvas for user: %hs", userId.c_str());
+            LOG_INFO_FMT(_T("Removed canvas for user: %s", userId.c_str());
         }
         return 0;
     }
@@ -452,19 +452,19 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
         
         if (err.Code() == kRteOk) {
             m_remoteUserCanvases[userId] = canvas;
-            LOG_INFO_FMT("Created canvas for user: %hs", userId.c_str());
+            LOG_INFO_FMT(_T("Created canvas for user: %s", userId.c_str());
             return 0;
         }
     }
     
-    LOG_ERROR_FMT("SetupRemoteVideo failed for user: %hs, error=%d", userId.c_str(), err.Code());
+    LOG_ERROR_FMT("SetupRemoteVideo failed for user: %s, error=%d", userId.c_str(), err.Code());
     return -1;
 }
 
 void RteManager::OnRemoteUserJoined(const std::string& userId) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_remoteUsers.push_back(userId);
-    LOG_INFO_FMT("Remote user joined: %hs", userId.c_str());
+    LOG_INFO_FMT(_T("Remote user joined: %s", userId.c_str());
 }
 
 void RteManager::OnRemoteUserLeft(const std::string& userId) {
@@ -479,5 +479,5 @@ void RteManager::OnRemoteUserLeft(const std::string& userId) {
         m_remoteUserCanvases.erase(userId);
     }
     
-    LOG_INFO_FMT("Remote user left: %hs", userId.c_str());
+    LOG_INFO_FMT(_T("Remote user left: %s", userId.c_str());
 }
