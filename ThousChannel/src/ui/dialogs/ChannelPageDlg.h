@@ -48,20 +48,20 @@ public:
     int lastVisiblePage;
 };
 
-// 页面状态管理
+// Page state management
 struct ChannelPageState {
-    CString channelId;              // 当前频道ID
-    CString currentUserId;          // 当前用户ID
-    int currentGridMode;            // 当前宫格模式(2,3,4,5,7)
-    int currentPage;                // 当前页数
-    int usersPerPage;              // 每页用户数
-    CArray<ChannelUser*> userList;          // 用户列表（使用指针避免拷贝）
-    CString audioMode;              // 音频模式
-    BOOL isLocalVideoEnabled;       // 本地视频状态
-    BOOL isLocalAudioEnabled;       // 本地音频模式状态
+    CString channelId;              // Current channel ID
+    CString currentUserId;          // Current user ID
+    int currentGridMode;            // Current grid mode (2,3,4,5,7)
+    int currentPage;                // Current page number
+    int usersPerPage;              // Users per page
+    CArray<ChannelUser*> userList;          // User list (using pointers to avoid copying)
+    CString audioMode;              // Audio mode
+    BOOL isLocalVideoEnabled;       // Local video status
+    BOOL isLocalAudioEnabled;       // Local audio mode status
 };
 
-// 频道页面对话框类
+// Channel page dialog class
 class CChannelPageDlg : public CDialogEx, public IRteManagerEventHandler
 {
     DECLARE_DYNAMIC(CChannelPageDlg)
@@ -71,7 +71,7 @@ public:
     CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pParent = nullptr);
     virtual ~CChannelPageDlg();
 
-    // 对话框数据
+    // Dialog data
 #ifdef AFX_DESIGN_TIME
     enum { IDD = IDD_CHANNEL_PAGE_DLG };
 #endif
