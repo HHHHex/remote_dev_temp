@@ -67,7 +67,7 @@ BOOL CThousChannelApp::InitInstance()
 {
 	// 初始化日志系统
 	CLogger::GetInstance().Initialize();
-	INFO("Application initialization started");
+	LOG_INFO("Application initialization started");
 
 	// 如果一个运行在 Windows XP 上的应用程序清单指定要
 	// 使用 ComCtl32.dll 版本 6 或更高版本来启用可视化方式，
@@ -81,17 +81,17 @@ BOOL CThousChannelApp::InitInstance()
 
 	CWinAppEx::InitInstance();
 
-	INFO("Common controls initialized");
+	LOG_INFO("Common controls initialized");
 
 	// 初始化 OLE 库
 	if (!AfxOleInit())
 	{
-		ERROR("OLE initialization failed");
+		LOG_ERROR("OLE initialization failed");
 		AfxMessageBox(IDP_OLE_INIT_FAILED);
 		return FALSE;
 	}
 
-	INFO("OLE library initialized successfully");
+	LOG_INFO("OLE library initialized successfully");
 
 	AfxEnableControlContainer();
 
@@ -110,7 +110,7 @@ BOOL CThousChannelApp::InitInstance()
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
 	LoadStdProfileSettings(4);  // 加载标准 INI 文件选项(包括 MRU)
 
-	INFO("Registry and profile settings loaded");
+	LOG_INFO("Registry and profile settings loaded");
 
 	InitContextMenuManager();
 
@@ -122,7 +122,7 @@ BOOL CThousChannelApp::InitInstance()
 	theApp.GetTooltipManager()->SetTooltipParams(AFX_TOOLTIP_TYPE_ALL,
 		RUNTIME_CLASS(CMFCToolTipCtrl), &ttParams);
 
-	INFO("UI managers initialized");
+	LOG_INFO("UI managers initialized");
 
 	// 注册应用程序的文档模板。  文档模板
 	// 将用作文档、框架窗口和视图之间的连接
@@ -133,24 +133,24 @@ BOOL CThousChannelApp::InitInstance()
 		RUNTIME_CLASS(CThousChannelView));
 	if (!pDocTemplate)
 	{
-		ERROR("Failed to create document template");
+		LOG_ERROR("Failed to create document template");
 		return FALSE;
 	}
 	AddDocTemplate(pDocTemplate);
 
-	INFO("Document template created and added");
+	LOG_INFO("Document template created and added");
 
 	// 创建主 MDI 框架窗口
 	CMainFrame* pMainFrame = new CMainFrame;
 	if (!pMainFrame || !pMainFrame->LoadFrame(IDR_MAINFRAME))
 	{
-		ERROR("Failed to create main frame window");
+		LOG_ERROR("Failed to create main frame window");
 		delete pMainFrame;
 		return FALSE;
 	}
 	m_pMainWnd = pMainFrame;
 
-	INFO("Main frame window created successfully");
+	LOG_INFO("Main frame window created successfully");
 
 	// 分析标准 shell 命令、DDE、打开文件操作的命令行
 	CCommandLineInfo cmdInfo;
@@ -162,7 +162,7 @@ BOOL CThousChannelApp::InitInstance()
 	// 用 /RegServer、/Register、/Unregserver 或 /Unregister 启动应用程序，则返回 FALSE。
 	if (!ProcessShellCommand(cmdInfo))
 	{
-		ERROR("Failed to process shell command");
+		LOG_ERROR("Failed to process shell command");
 		return FALSE;
 	}
 

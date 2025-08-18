@@ -85,7 +85,7 @@ CChannelPageDlg::CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pPar
 
 CChannelPageDlg::~CChannelPageDlg()
 {
-    INFO("Channel page dialog destroyed");
+    LOG_INFO("Channel page dialog destroyed");
     
     LeaveRteChannel();
     ReleaseRteEngine();
@@ -143,7 +143,7 @@ BOOL CChannelPageDlg::OnInitDialog()
     UpdateGridLayout();
 
     if (!InitializeRteEngine()) {
-        ERROR("Failed to initialize RTE engine");
+        LOG_ERROR("Failed to initialize RTE engine");
         AfxMessageBox(_T("Failed to initialize RTE engine."));
         EndDialog(IDCANCEL);
         return FALSE;
@@ -164,7 +164,7 @@ BOOL CChannelPageDlg::OnInitDialog()
     }
     
     if (!JoinRteChannel()) {
-        ERROR("Failed to join RTE channel");
+        LOG_ERROR("Failed to join RTE channel");
     }
 
     return TRUE;
@@ -556,7 +556,7 @@ BOOL CChannelPageDlg::InitializeRteEngine()
     config.userToken = CT2A(m_joinParams.token);
 
     if (!m_rteManager->Initialize(config)) {
-        ERROR("Failed to initialize RteManager");
+        LOG_ERROR("Failed to initialize RteManager");
         return FALSE;
     }
 
@@ -813,7 +813,7 @@ HWND CChannelPageDlg::GetOrCreateUserCanvas(LPCTSTR uid)
         m_userCanvasMap.SetAt(uid, canvas);
     }
     else {
-        LOG_ERROR_FMT("Canvas creation failed for UID %s: %d"), uid, GetLastError());
+        LOG_ERROR_FMT("Canvas creation failed for UID %s: %d", uid, GetLastError());
     }
 
     return canvas;
@@ -936,7 +936,7 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
                 // SubscribeRemoteAudio and UnsubscribeRemoteAudio were removed or renamed.
                 // The logic for audio subscription needs to be updated based on the new RteManager API.
                 // For now, we'll just log it.
-                LOG_INFO_FMT("Audio subscription for user %s set to %d"), user->GetUID(), isAudioSubscribed);
+                LOG_INFO_FMT("Audio subscription for user %s set to %d", user->GetUID(), isAudioSubscribed);
             }
             
             // 更新UI显示状态

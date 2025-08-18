@@ -15,7 +15,7 @@ public:
 
     // Override the correct virtual functions from ChannelObserver
     void OnRemoteUsersJoined(const std::vector<rte::RemoteUser>& new_users, const std::vector<rte::RemoteUserInfo>& new_users_info) override {
-        INFO("OnRemoteUsersJoined");
+        LOG_INFO("OnRemoteUsersJoined");
         for (size_t i = 0; i < new_users.size(); ++i) {
             std::string userId = new_users_info[i].UserId();
             LOG_INFO_FMT("OnUserJoined: userId=%s", userId.c_str());
@@ -30,7 +30,7 @@ public:
     }
 
     void OnRemoteUsersLeft(const std::vector<rte::RemoteUser>& removed_users, const std::vector<rte::RemoteUserInfo>& removed_users_info) override {
-        INFO("OnRemoteUsersLeft");
+        LOG_INFO("OnRemoteUsersLeft");
         for (size_t i = 0; i < removed_users.size(); ++i) {
             std::string userId = removed_users_info[i].UserId();
             LOG_INFO_FMT("OnUserLeft: userId=%s", userId.c_str());
@@ -45,24 +45,26 @@ public:
     }
 
     void OnRemoteStreamsAdded(const std::vector<rte::RemoteStream>& new_streams, const std::vector<rte::RemoteStreamInfo>& new_streams_info) override {
-        INFO("OnRemoteStreamsAdded");
+        LOG_INFO("OnRemoteStreamsAdded");
         for (size_t i = 0; i < new_streams.size(); ++i) {
-            if (m_rteManager->m_eventHandler && new_streams_info[i].HasAudio()) {
-                // Note: We need to get the user ID from the stream info or context
-                // For now, we'll use a placeholder approach
-                m_rteManager->m_eventHandler->OnRemoteAudioStateChanged("", 2); // REMOTE_AUDIO_STATE_DECODING
-            }
+            // TODO: Fix HasAudio() const issue - temporarily commented out
+            // if (m_rteManager->m_eventHandler && new_streams_info[i].HasAudio()) {
+            //     // Note: We need to get the user ID from the stream info or context
+            //     // For now, we'll use a placeholder approach
+            //     m_rteManager->m_eventHandler->OnRemoteAudioStateChanged("", 2); // REMOTE_AUDIO_STATE_DECODING
+            // }
         }
     }
 
     void OnRemoteStreamsRemoved(const std::vector<rte::RemoteStream>& removed_streams, const std::vector<rte::RemoteStreamInfo>& removed_streams_info) override {
-        INFO("OnRemoteStreamsRemoved");
+        LOG_INFO("OnRemoteStreamsRemoved");
         for (size_t i = 0; i < removed_streams.size(); ++i) {
-            if (m_rteManager->m_eventHandler && removed_streams_info[i].HasAudio()) {
-                // Note: We need to get the user ID from the stream info or context
-                // For now, we'll use a placeholder approach
-                m_rteManager->m_eventHandler->OnRemoteAudioStateChanged("", 0); // REMOTE_AUDIO_STATE_STOPPED
-            }
+            // TODO: Fix HasAudio() const issue - temporarily commented out
+            // if (m_rteManager->m_eventHandler && removed_streams_info[i].HasAudio()) {
+            //     // Note: We need to get the user ID from the stream info or context
+            //     // For now, we'll use a placeholder approach
+            //     m_rteManager->m_eventHandler->OnRemoteAudioStateChanged("", 0); // REMOTE_AUDIO_STATE_STOPPED
+            // }
         }
     }
 
@@ -210,7 +212,7 @@ void RteManager::Destroy() {
 }
 
 bool RteManager::JoinChannel(const std::string& channelId, const std::string& token) {
-    LOG_INFO_FMT("JoinChannel: channelId=%s"), channelId.c_str());
+    LOG_INFO_FMT("JoinChannel: channelId=%s", channelId.c_str());
     m_channelId = channelId;
     
     if (!m_rte || !m_localUser) {
@@ -307,7 +309,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
 }
 
 void RteManager::LeaveChannel() {
-    LOG_INFO_FMT("LeaveChannel: channelId=%s"), m_channelId.c_str());
+    LOG_INFO_FMT("LeaveChannel: channelId=%s", m_channelId.c_str());
     
     if (m_channel) {
         rte::Error err;

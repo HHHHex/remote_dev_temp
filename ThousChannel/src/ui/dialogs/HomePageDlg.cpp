@@ -82,7 +82,7 @@ BOOL CHomePageDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	INFO("Home page dialog initialized");
+	LOG_INFO("Home page dialog initialized");
 
 	try {
 		// 设置对话框标题
@@ -96,10 +96,10 @@ BOOL CHomePageDlg::OnInitDialog()
 		// 初始化控件
 		InitializeControls();
 
-		INFO("Home page dialog controls initialized");
+		LOG_INFO("Home page dialog controls initialized");
 	}
 	catch (...) {
-		ERROR("Failed to initialize dialog");
+		LOG_ERROR("Failed to initialize dialog");
 		// 继续执行，让对话框至少能显示
 	}
 
@@ -192,7 +192,7 @@ BOOL CHomePageDlg::ValidateInput()
 		return FALSE;
 	}
 
-	INFO("Input validation passed");
+	LOG_INFO("Input validation passed");
 	return TRUE;
 }
 
@@ -275,10 +275,10 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 		m_joinParams.token = token;
 		UpdateTokenStatus(_T("Token生成成功，可以加入频道"), FALSE);
 		
-		LOG_INFO_FMT("Token generated successfully: %s"), token.Left(20) + _T("..."));
+		        LOG_INFO_FMT("Token generated successfully: %s", token.Left(20) + _T("..."));
 		
 		// 自动跳转到频道页面
-		INFO("Creating channel page dialog");
+		LOG_INFO("Creating channel page dialog");
 		CChannelPageDlg channelPageDlg(m_joinParams, this);
 		
 		// 隐藏当前对话框
@@ -290,11 +290,11 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 		// 根据频道页面的返回结果处理
 		if (result == IDOK) {
 			// 用户从频道页面正常退出，关闭整个应用
-			INFO("User exited from channel page, closing application");
+			LOG_INFO("User exited from channel page, closing application");
 			EndDialog(IDCANCEL); // 通知主程序退出
 		} else {
 			// 用户从频道页面返回，重新显示加入频道对话框
-			INFO("User returned from channel page, showing join dialog again");
+			LOG_INFO("User returned from channel page, showing join dialog again");
 			ShowWindow(SW_SHOW);
 			// 清空token，要求重新生成
 			m_joinParams.token = _T("");
@@ -325,7 +325,7 @@ void CHomePageDlg::UpdateTokenStatus(const CString& status, BOOL isError)
 		}
 	}
 	catch (...) {
-		ERROR("Failed to update token status display");
+		LOG_ERROR("Failed to update token status display");
 		// 即使更新失败也要记录日志
 		if (isError) {
 			LOG_ERROR_FMT("Token status error: %s", status);
@@ -337,7 +337,7 @@ void CHomePageDlg::UpdateTokenStatus(const CString& status, BOOL isError)
 
 void CHomePageDlg::OnBnClickedJoinChannel()
 {
-	INFO("Join channel button clicked");
+	LOG_INFO("Join channel button clicked");
 
 	// 验证输入
 	if (!ValidateInput())
@@ -398,7 +398,7 @@ void CHomePageDlg::OnCbnSelchangeAudioPull()
 
 void CHomePageDlg::OnOK()
 {
-	INFO("Home page dialog OK button pressed");
+	LOG_INFO("Home page dialog OK button pressed");
 	OnBnClickedJoinChannel();
 }
 

@@ -16,12 +16,12 @@
 CTokenManager::CTokenManager()
     : m_timeoutMs(30000)  // 默认30秒超时
 {
-    INFO("Token Manager created");
+    LOG_INFO("Token Manager created");
 }
 
 CTokenManager::~CTokenManager()
 {
-    INFO("Token Manager destroyed");
+    LOG_INFO("Token Manager destroyed");
 }
 
 void CTokenManager::SetTimeout(DWORD timeoutMs)
