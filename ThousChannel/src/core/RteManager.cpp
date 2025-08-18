@@ -145,9 +145,8 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     // Create media tracks
     m_micAudioTrack = std::make_shared<rte::MicAudioTrack>(m_rte.get());
     rte::MicAudioTrackConfig micConfig;
-    // Configure audio settings to avoid device initialization issues
-    micConfig.SetAudioProfile(rte::AudioProfile::kRteAudioProfileDefault);
-    micConfig.SetAudioScenario(rte::AudioScenario::kRteAudioScenarioDefault);
+    // Set recording volume to ensure proper audio capture
+    micConfig.SetRecordingVolume(100);
     m_micAudioTrack->SetConfigs(&micConfig, &err);
     if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
@@ -156,8 +155,6 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
 
     m_cameraVideoTrack = std::make_shared<rte::CameraVideoTrack>(m_rte.get());
     rte::CameraVideoTrackConfig cameraConfig;
-    // Configure video settings
-    cameraConfig.SetVideoProfile(rte::VideoProfile::kRteVideoProfileDefault);
     m_cameraVideoTrack->SetConfigs(&cameraConfig, &err);
     if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: CameraVideoTrack SetConfigs error=%d", err.Code());
