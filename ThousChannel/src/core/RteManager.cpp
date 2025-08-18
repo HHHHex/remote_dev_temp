@@ -116,7 +116,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     m_rte->InitMediaEngine([&initSuccess, this](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             initSuccess = true;
-            LOG_INFO("Media engine initialized successfully"");
+            LOG_INFO("Media engine initialized successfully");
         } else {
             LOG_ERROR_FMT("Media engine initialization failed: error=%d", err ? err->Code() : -1);
         }
