@@ -4,6 +4,7 @@
 #include <iterator>
 #include <algorithm>
 #include <set>
+#include <atomic>
 
 // RTE Event Observer for channel events
 class RteManagerEventObserver : public rte::ChannelObserver {
@@ -144,24 +145,28 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
 
     // Create media tracks
     m_micAudioTrack = std::make_shared<rte::MicAudioTrack>(m_rte.get());
-    rte::MicAudioTrackConfig micConfig;
-    // Set recording volume to ensure proper audio capture
-    micConfig.SetRecordingVolume(100);
-    // Add JSON parameter to configure audio device
-    micConfig.SetJsonParameter("{\"audio_device_id\":\"default\"}");
-    m_micAudioTrack->SetConfigs(&micConfig, &err);
-    if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
-        return false;
-    }
+    {
+        rte::MicAudioTrackConfig micConfig;
+        // Set recording volume to ensure proper audio capture
+        micConfig.SetRecordingVolume(100);
+        // Add JSON parameter to configure audio device
+        micConfig.SetJsonParameter("{\"audio_device_id\":\"default\"}");
+        m_micAudioTrack->SetConfigs(&micConfig, &err);
+        if (err.Code() != kRteOk) {
+            LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
+            return false;
+        }
+    } // micConfig goes out of scope here and is properly destroyed
 
     m_cameraVideoTrack = std::make_shared<rte::CameraVideoTrack>(m_rte.get());
-    rte::CameraVideoTrackConfig cameraConfig;
-    m_cameraVideoTrack->SetConfigs(&cameraConfig, &err);
-    if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT("Initialize failed: CameraVideoTrack SetConfigs error=%d", err.Code());
-        return false;
-    }
+    {
+        rte::CameraVideoTrackConfig cameraConfig;
+        m_cameraVideoTrack->SetConfigs(&cameraConfig, &err);
+        if (err.Code() != kRteOk) {
+            LOG_ERROR_FMT("Initialize failed: CameraVideoTrack SetConfigs error=%d", err.Code());
+            return false;
+        }
+    } // cameraConfig goes out of scope here and is properly destroyed
 
     LOG_INFO("Initialize successful.");
     return true;
@@ -228,19 +233,21 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     
     // Update user token if provided
     if (!token.empty()) {
-        rte::LocalUserConfig localUserConfig;
-        m_localUser->GetConfigs(&localUserConfig, &err);
-        localUserConfig.SetUserToken(token);
-        m_localUser->SetConfigs(&localUserConfig, &err);
-        if (err.Code() != kRteOk) {
-            LOG_ERROR_FMT("JoinChannel failed: SetUserToken error=%d", err.Code());
-            return false;
-        }
+        {
+            rte::LocalUserConfig localUserConfig;
+            m_localUser->GetConfigs(&localUserConfig, &err);
+            localUserConfig.SetUserToken(token);
+            m_localUser->SetConfigs(&localUserConfig, &err);
+            if (err.Code() != kRteOk) {
+                LOG_ERROR_FMT("JoinChannel failed: SetUserToken error=%d", err.Code());
+                return false;
+            }
+        } // localUserConfig goes out of scope here
     }
     
     // Connect local user
-    bool connectSuccess = false;
-    m_localUser->Connect([&connectSuccess, this](rte::Error* err) {
+    std::atomic<bool> connectSuccess(false);
+    m_localUser->Connect([&connectSuccess](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             connectSuccess = true;
             LOG_INFO("Local user connected successfully");
@@ -252,7 +259,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     // Wait for connection with longer timeout
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     
-    if (!connectSuccess) {
+    if (!connectSuccess.load()) {
         LOG_ERROR("JoinChannel failed: Local user connection timeout");
         return false;
     }
@@ -261,14 +268,16 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     m_channel = std::make_shared<rte::Channel>(m_rte.get());
     m_channelObserver = std::make_shared<RteManagerEventObserver>(this);
     
-    rte::ChannelConfig channelConfig;
-    channelConfig.SetChannelId(channelId);
-    
-    m_channel->SetConfigs(&channelConfig, &err);
-    if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT("JoinChannel failed: Channel SetConfigs error=%d", err.Code());
-        return false;
-    }
+    {
+        rte::ChannelConfig channelConfig;
+        channelConfig.SetChannelId(channelId);
+        
+        m_channel->SetConfigs(&channelConfig, &err);
+        if (err.Code() != kRteOk) {
+            LOG_ERROR_FMT("JoinChannel failed: Channel SetConfigs error=%d", err.Code());
+            return false;
+        }
+    } // channelConfig goes out of scope here
     
     m_channel->RegisterObserver(m_channelObserver.get(), &err);
     if (err.Code() != kRteOk) {
