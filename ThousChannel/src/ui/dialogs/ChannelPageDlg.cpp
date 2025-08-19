@@ -6,6 +6,7 @@
 #include "afxdialogex.h"
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -562,9 +563,23 @@ BOOL CChannelPageDlg::InitializeRteEngine()
 
     // Initialize RTE with config
     RteManagerConfig config;
-    // Convert CString to std::string properly
-    config.appId = std::string(CT2A(m_joinParams.appId));
-    config.userId = std::string(CT2A(m_pageState.currentUserId));
+    // Convert CString to std::string properly using WideCharToMultiByte
+    int appIdLen = WideCharToMultiByte(CP_UTF8, 0, m_joinParams.appId, -1, nullptr, 0, nullptr, nullptr);
+    int userIdLen = WideCharToMultiByte(CP_UTF8, 0, m_pageState.currentUserId, -1, nullptr, 0, nullptr, nullptr);
+    
+    if (appIdLen > 0 && userIdLen > 0) {
+        std::vector<char> appIdBuffer(appIdLen);
+        std::vector<char> userIdBuffer(userIdLen);
+        
+        WideCharToMultiByte(CP_UTF8, 0, m_joinParams.appId, -1, appIdBuffer.data(), appIdLen, nullptr, nullptr);
+        WideCharToMultiByte(CP_UTF8, 0, m_pageState.currentUserId, -1, userIdBuffer.data(), userIdLen, nullptr, nullptr);
+        
+        config.appId = std::string(appIdBuffer.data());
+        config.userId = std::string(userIdBuffer.data());
+    } else {
+        LOG_ERROR("Failed to convert CString to std::string");
+        return FALSE;
+    }
     // userToken is not a member of RteManagerConfig
     // Token should be passed separately to JoinChannel method
 
@@ -591,13 +606,27 @@ BOOL CChannelPageDlg::JoinRteChannel()
         return FALSE;
     }
 
-    std::string channelId = std::string(CT2A(m_joinParams.channelId));
-    std::string token = std::string(CT2A(m_joinParams.token));
-
-    BOOL result = m_rteManager->JoinChannel(channelId, token);
-
-    m_isChannelJoined = result;
-    return result;
+    // Convert CString to std::string properly using WideCharToMultiByte
+    int channelIdLen = WideCharToMultiByte(CP_UTF8, 0, m_joinParams.channelId, -1, nullptr, 0, nullptr, nullptr);
+    int tokenLen = WideCharToMultiByte(CP_UTF8, 0, m_joinParams.token, -1, nullptr, 0, nullptr, nullptr);
+    
+    if (channelIdLen > 0 && tokenLen > 0) {
+        std::vector<char> channelIdBuffer(channelIdLen);
+        std::vector<char> tokenBuffer(tokenLen);
+        
+        WideCharToMultiByte(CP_UTF8, 0, m_joinParams.channelId, -1, channelIdBuffer.data(), channelIdLen, nullptr, nullptr);
+        WideCharToMultiByte(CP_UTF8, 0, m_joinParams.token, -1, tokenBuffer.data(), tokenLen, nullptr, nullptr);
+        
+        std::string channelId = std::string(channelIdBuffer.data());
+        std::string token = std::string(tokenBuffer.data());
+        
+        BOOL result = m_rteManager->JoinChannel(channelId, token);
+        m_isChannelJoined = result;
+        return result;
+    } else {
+        LOG_ERROR("Failed to convert CString to std::string for channel join");
+        return FALSE;
+    }
 }
 
 void CChannelPageDlg::LeaveRteChannel()
@@ -977,7 +1006,8 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
         if (user && !user->isLocal && user->isConnected && user->isVideoSubscribed) {
-            subscribedUserIds.push_back(std::string(CT2A(user->GetUID())));
+            CStringA uidA(user->GetUID());
+            subscribedUserIds.push_back(std::string(uidA.GetString()));
         }
     }
 
@@ -1000,7 +1030,8 @@ void CChannelPageDlg::UpdateViewUserBindings()
                 HWND canvasWnd = NULL;
                 // Look up the correct canvas window from the map.
                 if (m_userCanvasMap.Lookup(user->GetUID(), canvasWnd) && canvasWnd) {
-                    std::string userIdStr(CT2A(user->GetUID()));
+                    CStringA uidA(user->GetUID());
+                    std::string userIdStr(uidA.GetString());
                     viewToUserMap[canvasWnd] = userIdStr;
                 }
             }
