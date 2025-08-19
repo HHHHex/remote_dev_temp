@@ -2,6 +2,7 @@
 #include "Logger.h"
 #include <ctime>
 #include <iomanip>
+#include <vector>
 
 CLogger::CLogger()
     : m_initialized(false)
@@ -154,9 +155,13 @@ void CLogger::WriteToFile(const CString& message)
     if (m_logFile.is_open())
     {
         // Convert to UTF-8 and write to file
-        CT2CA utf8String(message, CP_UTF8);
-        m_logFile << utf8String.m_psz << std::endl;
-        m_logFile.flush();
+        int utf8Len = WideCharToMultiByte(CP_UTF8, 0, message, -1, nullptr, 0, nullptr, nullptr);
+        if (utf8Len > 0) {
+            std::vector<char> utf8Buffer(utf8Len);
+            WideCharToMultiByte(CP_UTF8, 0, message, -1, utf8Buffer.data(), utf8Len, nullptr, nullptr);
+            m_logFile << utf8Buffer.data() << std::endl;
+            m_logFile.flush();
+        }
     }
 }
 

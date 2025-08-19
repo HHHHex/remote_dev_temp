@@ -567,9 +567,9 @@ BOOL CChannelPageDlg::InitializeRteEngine()
     config.appId = std::string(CW2A(m_joinParams.appId, CP_UTF8));
     config.userId = std::string(CW2A(m_pageState.currentUserId, CP_UTF8));
     
-    // Debug: Log the converted values
-    LOG_INFO_FMT("Converted appId: %s", config.appId.c_str());
-    LOG_INFO_FMT("Converted userId: %s", config.userId.c_str());
+    // Debug: Log the converted values using CString to avoid encoding issues
+    LOG_INFO_FMT("Converted appId: %s", CString(config.appId.c_str()));
+    LOG_INFO_FMT("Converted userId: %s", CString(config.userId.c_str()));
     // userToken is not a member of RteManagerConfig
     // Token should be passed separately to JoinChannel method
 
@@ -600,9 +600,9 @@ BOOL CChannelPageDlg::JoinRteChannel()
     std::string channelId = std::string(CW2A(m_joinParams.channelId, CP_UTF8));
     std::string token = std::string(CW2A(m_joinParams.token, CP_UTF8));
     
-    // Debug: Log the converted values
-    LOG_INFO_FMT("Converted channelId: %s", channelId.c_str());
-    LOG_INFO_FMT("Converted token: %s", token.substr(0, 20).c_str());
+    // Debug: Log the converted values using CString to avoid encoding issues
+    LOG_INFO_FMT("Converted channelId: %s", CString(channelId.c_str()));
+    LOG_INFO_FMT("Converted token: %s", CString(token.substr(0, 20).c_str()));
     
     BOOL result = m_rteManager->JoinChannel(channelId, token);
     m_isChannelJoined = result;
