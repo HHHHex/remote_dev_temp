@@ -384,27 +384,14 @@ void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
             // Add delay to ensure RTE is fully initialized
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             
-            // Try to start audio track with retry mechanism
-            int retryCount = 0;
-            const int maxRetries = 3;
-            
-            auto startAudioTrack = [this, &retryCount, maxRetries]() {
-                m_micAudioTrack->Start([this, &retryCount, maxRetries](rte::Error* err) {
-                    if (err && err->Code() != kRteOk) {
-                        LOG_ERROR_FMT("MicAudioTrack Start failed: error=%d", err->Code());
-                        if (retryCount < maxRetries) {
-                            retryCount++;
-                            LOG_INFO_FMT("Retrying audio track start, attempt %d/%d", retryCount, maxRetries);
-                            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                            startAudioTrack();
-                        }
-                    } else {
-                        LOG_INFO("MicAudioTrack started successfully");
-                    }
-                });
-            };
-            
-            startAudioTrack();
+            // Start audio track with simple retry mechanism
+            m_micAudioTrack->Start([](rte::Error* err) {
+                if (err && err->Code() != kRteOk) {
+                    LOG_ERROR_FMT("MicAudioTrack Start failed: error=%d", err->Code());
+                } else {
+                    LOG_INFO("MicAudioTrack started successfully");
+                }
+            });
         } else {
             m_micAudioTrack->Stop([](rte::Error* err) {
                 if (err && err->Code() != kRteOk) {
