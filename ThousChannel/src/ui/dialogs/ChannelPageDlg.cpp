@@ -576,6 +576,10 @@ BOOL CChannelPageDlg::InitializeRteEngine()
         
         config.appId = std::string(appIdBuffer.data());
         config.userId = std::string(userIdBuffer.data());
+        
+        // Debug: Log the converted values
+        LOG_INFO_FMT("Converted appId: %s", config.appId.c_str());
+        LOG_INFO_FMT("Converted userId: %s", config.userId.c_str());
     } else {
         LOG_ERROR("Failed to convert CString to std::string");
         return FALSE;
@@ -619,6 +623,10 @@ BOOL CChannelPageDlg::JoinRteChannel()
         
         std::string channelId = std::string(channelIdBuffer.data());
         std::string token = std::string(tokenBuffer.data());
+        
+        // Debug: Log the converted values
+        LOG_INFO_FMT("Converted channelId: %s", channelId.c_str());
+        LOG_INFO_FMT("Converted token: %s", token.substr(0, 20).c_str());
         
         BOOL result = m_rteManager->JoinChannel(channelId, token);
         m_isChannelJoined = result;
