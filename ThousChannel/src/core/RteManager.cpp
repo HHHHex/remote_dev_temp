@@ -89,7 +89,7 @@ void RteManager::SetEventHandler(IRteManagerEventHandler* handler) {
 }
 
 bool RteManager::Initialize(const RteManagerConfig& config) {
-    LOG_INFO_FMT("Initialize: appId=%s, userId=%s", config.appId.c_str(), config.userId.c_str());
+    LOG_INFO_FMT("Initialize: appId=%s, userId=%s", CString(config.appId.c_str()), CString(config.userId.c_str()));
     m_appId = config.appId;
     m_userId = config.userId;
 
@@ -147,10 +147,9 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     m_micAudioTrack = std::make_shared<rte::MicAudioTrack>(m_rte.get());
     {
         rte::MicAudioTrackConfig micConfig;
-        // Set recording volume to ensure proper audio capture
-        micConfig.SetRecordingVolume(100);
-        // Add JSON parameter to configure audio device
-        micConfig.SetJsonParameter("{\"audio_device_id\":\"default\"}");
+        // Use minimal configuration to avoid audio device issues
+        micConfig.SetRecordingVolume(50);  // Reduced volume
+        // Remove JSON parameter to use system default
         m_micAudioTrack->SetConfigs(&micConfig, &err);
         if (err.Code() != kRteOk) {
             LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
