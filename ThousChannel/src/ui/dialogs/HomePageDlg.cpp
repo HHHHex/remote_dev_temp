@@ -121,14 +121,12 @@ void CHomePageDlg::InitializeControls()
 			m_comboAppId.SetCurSel(0);
 		}
 
-		// 初始化音频拉流方式下拉框
-		strText.LoadString(IDS_SELECT_AUDIO_PULL);
-		m_comboAudioPull.AddString(strText);
+		// 初始化音频拉流方式下拉框 - 只添加两个有效选项，没有占位选项
 		strText.LoadString(IDS_AUDIO_PULL_UID);
 		m_comboAudioPull.AddString(strText);
 		strText.LoadString(IDS_AUDIO_PULL_TOPN);
 		m_comboAudioPull.AddString(strText);
-		m_comboAudioPull.SetCurSel(1);  // 选择第一个实际的音频拉流方式（索引1）
+		m_comboAudioPull.SetCurSel(0);  // 选择第一个选项（索引0）
 
 		// 设置复选框默认状态
 		m_checkEnableCamera.SetCheck(BST_CHECKED);
@@ -144,7 +142,8 @@ void CHomePageDlg::InitializeControls()
 	catch (...) {
 		// 如果初始化失败，至少设置基本状态
 		m_comboAppId.AddString(_T("选择AppID"));
-		m_comboAudioPull.AddString(_T("选择音频拉流方式"));
+		m_comboAudioPull.AddString(_T("UID"));
+		m_comboAudioPull.AddString(_T("TOPN"));
 		m_btnJoinChannel.SetWindowText(_T("加入频道"));
 	}
 }
@@ -183,7 +182,7 @@ BOOL CHomePageDlg::ValidateInput()
 
 	// 检查音频拉流方式选择
 	int audioPullSel = m_comboAudioPull.GetCurSel();
-	if (audioPullSel <= 0)
+	if (audioPullSel < 0)
 	{
 		strMessage.LoadString(IDS_MSG_SELECT_AUDIO);
 		        LOG_WARNING("User tried to join without selecting audio pull mode");
