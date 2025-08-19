@@ -563,27 +563,13 @@ BOOL CChannelPageDlg::InitializeRteEngine()
 
     // Initialize RTE with config
     RteManagerConfig config;
-    // Convert CString to std::string properly using WideCharToMultiByte
-    int appIdLen = WideCharToMultiByte(CP_UTF8, 0, m_joinParams.appId, -1, nullptr, 0, nullptr, nullptr);
-    int userIdLen = WideCharToMultiByte(CP_UTF8, 0, m_pageState.currentUserId, -1, nullptr, 0, nullptr, nullptr);
+    // Convert CString to std::string directly - CString is already Unicode in Unicode builds
+    config.appId = std::string(CW2A(m_joinParams.appId, CP_UTF8));
+    config.userId = std::string(CW2A(m_pageState.currentUserId, CP_UTF8));
     
-    if (appIdLen > 0 && userIdLen > 0) {
-        std::vector<char> appIdBuffer(appIdLen);
-        std::vector<char> userIdBuffer(userIdLen);
-        
-        WideCharToMultiByte(CP_UTF8, 0, m_joinParams.appId, -1, appIdBuffer.data(), appIdLen, nullptr, nullptr);
-        WideCharToMultiByte(CP_UTF8, 0, m_pageState.currentUserId, -1, userIdBuffer.data(), userIdLen, nullptr, nullptr);
-        
-        config.appId = std::string(appIdBuffer.data());
-        config.userId = std::string(userIdBuffer.data());
-        
-        // Debug: Log the converted values
-        LOG_INFO_FMT("Converted appId: %s", config.appId.c_str());
-        LOG_INFO_FMT("Converted userId: %s", config.userId.c_str());
-    } else {
-        LOG_ERROR("Failed to convert CString to std::string");
-        return FALSE;
-    }
+    // Debug: Log the converted values
+    LOG_INFO_FMT("Converted appId: %s", config.appId.c_str());
+    LOG_INFO_FMT("Converted userId: %s", config.userId.c_str());
     // userToken is not a member of RteManagerConfig
     // Token should be passed separately to JoinChannel method
 
@@ -610,31 +596,17 @@ BOOL CChannelPageDlg::JoinRteChannel()
         return FALSE;
     }
 
-    // Convert CString to std::string properly using WideCharToMultiByte
-    int channelIdLen = WideCharToMultiByte(CP_UTF8, 0, m_joinParams.channelId, -1, nullptr, 0, nullptr, nullptr);
-    int tokenLen = WideCharToMultiByte(CP_UTF8, 0, m_joinParams.token, -1, nullptr, 0, nullptr, nullptr);
+    // Convert CString to std::string directly - CString is already Unicode in Unicode builds
+    std::string channelId = std::string(CW2A(m_joinParams.channelId, CP_UTF8));
+    std::string token = std::string(CW2A(m_joinParams.token, CP_UTF8));
     
-    if (channelIdLen > 0 && tokenLen > 0) {
-        std::vector<char> channelIdBuffer(channelIdLen);
-        std::vector<char> tokenBuffer(tokenLen);
-        
-        WideCharToMultiByte(CP_UTF8, 0, m_joinParams.channelId, -1, channelIdBuffer.data(), channelIdLen, nullptr, nullptr);
-        WideCharToMultiByte(CP_UTF8, 0, m_joinParams.token, -1, tokenBuffer.data(), tokenLen, nullptr, nullptr);
-        
-        std::string channelId = std::string(channelIdBuffer.data());
-        std::string token = std::string(tokenBuffer.data());
-        
-        // Debug: Log the converted values
-        LOG_INFO_FMT("Converted channelId: %s", channelId.c_str());
-        LOG_INFO_FMT("Converted token: %s", token.substr(0, 20).c_str());
-        
-        BOOL result = m_rteManager->JoinChannel(channelId, token);
-        m_isChannelJoined = result;
-        return result;
-    } else {
-        LOG_ERROR("Failed to convert CString to std::string for channel join");
-        return FALSE;
-    }
+    // Debug: Log the converted values
+    LOG_INFO_FMT("Converted channelId: %s", channelId.c_str());
+    LOG_INFO_FMT("Converted token: %s", token.substr(0, 20).c_str());
+    
+    BOOL result = m_rteManager->JoinChannel(channelId, token);
+    m_isChannelJoined = result;
+    return result;
 }
 
 void CChannelPageDlg::LeaveRteChannel()

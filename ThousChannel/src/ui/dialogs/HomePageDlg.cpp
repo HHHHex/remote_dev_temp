@@ -9,9 +9,9 @@
 #define new DEBUG_NEW
 #endif
 
-// AppID数据源定义
+// AppID数据源定义 - 使用ASCII字符串避免编码问题
 const AppIdInfo CHomePageDlg::m_appIdList[] = {
-	{ _T("38fdab08081e4dd7975aa430b35690ab"), _T("c2fab1d528db43cdb52482490bf2e1b2"), _T("38fdab***90ab") }
+	{ L"38fdab08081e4dd7975aa430b35690ab", L"c2fab1d528db43cdb52482490bf2e1b2", L"38fdab***90ab" }
 };
 
 const int CHomePageDlg::m_appIdCount = 1;
