@@ -9,8 +9,7 @@
 #include <windows.h>
 #endif
 
-std::string ModernLogger::formatMessage(LogLevel level, const std::string& message, 
-                                       const std::source_location& location) {
+std::string ModernLogger::formatMessage(LogLevel level, const std::string& message) {
     std::ostringstream oss;
     
     // Timestamp
@@ -18,10 +17,6 @@ std::string ModernLogger::formatMessage(LogLevel level, const std::string& messa
     
     // Log level
     oss << "[" << getLevelString(level) << "] ";
-    
-    // Source location (file:line:function)
-    oss << "[" << std::filesystem::path(location.file_name()).filename().string() 
-        << ":" << location.line() << ":" << location.function_name() << "] ";
     
     // Message
     oss << message;

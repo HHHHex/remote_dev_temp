@@ -3,7 +3,8 @@
 #include "HomePageDlg.h"
 #include "ChannelPageDlg.h"
 #include "ModernLogger.h"
-#include <format>
+#include <sstream>
+#include <iomanip>
 #include "afxdialogex.h"
 
 #ifdef _DEBUG
@@ -233,7 +234,7 @@ void CHomePageDlg::GenerateToken()
 	m_joinParams.enableMic = (m_checkEnableMic.GetCheck() == BST_CHECKED);
 
 	// 记录日志
-	LOG_INFO("Join params collected. Channel: {}, UserID: {}, Camera: {}, Mic: {}", 
+		LOG_INFO_FMT("Join params collected. Channel: {}, UserID: {}, Camera: {}, Mic: {}",
 		m_joinParams.channelId, m_joinParams.userId, m_joinParams.enableCamera, m_joinParams.enableMic);
 
 	// 构建Token生成参数
@@ -246,7 +247,7 @@ void CHomePageDlg::GenerateToken()
 	tokenParams.type = 1;      // RTC Token
 	tokenParams.src = "Windows";
 
-	LOG_INFO("Generating token for AppID={}, Channel={}, UserID={}", 
+		LOG_INFO_FMT("Generating token for AppID={}, Channel={}, UserID={}",
 		tokenParams.appId, tokenParams.channelName, tokenParams.userId);
 
 	// 更新状态
@@ -275,7 +276,7 @@ void CHomePageDlg::OnTokenGenerated(const std::string& token, bool success, cons
 		m_joinParams.token = token;
 		UpdateTokenStatus("Token生成成功，可以加入频道", false);
 		
-		LOG_INFO("Token generated successfully: {}", token.substr(0, 20) + "...");
+		LOG_INFO_FMT("Token generated successfully: {}", token.substr(0, 20) + "...");
 		
 		// 自动跳转到频道页面
 		LOG_INFO("Creating channel page dialog");
@@ -302,7 +303,7 @@ void CHomePageDlg::OnTokenGenerated(const std::string& token, bool success, cons
 		}
 	} else {
 		UpdateTokenStatus("Token生成失败: " + errorMsg, true);
-		LOG_ERROR("Token generation failed: {}", errorMsg);
+		LOG_ERROR_FMT("Token generation failed: {}", errorMsg);
 		AfxMessageBox("Token生成失败: " + CString(errorMsg.c_str()));
 	}
 }
@@ -377,7 +378,7 @@ void CHomePageDlg::OnCbnSelchangeAppid()
 	// 获取当前选择的索引
 	int sel = m_comboAppId.GetCurSel();
 	if (sel >= 0 && sel < static_cast<int>(m_appIdList.size())) {
-		LOG_INFO("AppID selected: {}", m_appIdList[sel].displayName);
+		LOG_INFO_FMT("AppID selected: {}", m_appIdList[sel].displayName);
 	}
 	
 	// 清空token状态
@@ -422,6 +423,9 @@ std::string CHomePageDlg::GenerateRandomUserId()
 	
 	// 使用3位随机数和时间戳的后4位组合
 	// 格式：YYYXXXX，其中YYY是3位随机数, XXXX是时间戳后4位
-	return std::format("{:03d}{:04d}", random, static_cast<int>(timestamp % 10000));
+	std::ostringstream oss;
+	oss << std::setfill('0') << std::setw(3) << random 
+	    << std::setfill('0') << std::setw(4) << static_cast<int>(timestamp % 10000);
+	return oss.str();
 }
 
