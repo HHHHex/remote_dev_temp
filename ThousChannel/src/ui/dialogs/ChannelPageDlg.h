@@ -149,7 +149,6 @@ private:
 
     // User & Page Management
     int FindUserIndex(LPCTSTR uid);
-    void SortUserList();
     void UpdatePageDisplay();
     int GetMaxPages();
     

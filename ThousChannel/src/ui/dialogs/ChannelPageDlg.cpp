@@ -12,27 +12,6 @@
 #define new DEBUG_NEW
 #endif
 
-// Helper function to sort users.
-// Rules: 1. Local user always first. 2. Real users before robots. 3. Sort by UID.
-static int CompareUsers(const void* a, const void* b)
-{
-    ChannelUser* userA = *(ChannelUser**)a;
-    ChannelUser* userB = *(ChannelUser**)b;
-
-    if (userA->isLocal) return -1;
-    if (userB->isLocal) return 1;
-
-    if (!userA->isRobot && userB->isRobot) return -1;
-    if (userA->isRobot && !userB->isRobot) return 1;
-
-    // Use std::string comparison
-    int result = userA->GetUID().compare(userB->GetUID());
-    if (result < 0) return -1;
-    if (result > 0) return 1;
-
-    return 0;
-}
-
 IMPLEMENT_DYNAMIC(CChannelPageDlg, CDialogEx)
 
 BEGIN_MESSAGE_MAP(CChannelPageDlg, CDialogEx)
@@ -396,7 +375,6 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     }
 
     // 更新UI状态
-    SortUserList();
     UpdateVideoLayout();
     UpdatePageDisplay();
     UpdateSubscribedUsers();
@@ -443,7 +421,6 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
     }
 
     // 更新UI状态
-    SortUserList();
     UpdateVideoLayout();
     UpdatePageDisplay();
     UpdateSubscribedUsers();
@@ -518,7 +495,6 @@ LRESULT CChannelPageDlg::OnRteUserListChanged(WPARAM wParam, LPARAM lParam)
     // Placeholder implementation
     // This message is sent when the user list changes, e.g., when a user joins or leaves.
     // You might need to re-sort or update the UI based on the new user list.
-    SortUserList();
     UpdateVideoLayout();
     UpdatePageDisplay();
     UpdateSubscribedUsers();
@@ -820,7 +796,7 @@ void CChannelPageDlg::AttachVisibleUsersToDisplay()
         {
             ChannelUser* userInfo = m_pageState.userList[userIndex];
             HWND displayWindow = m_videoWindows[i]->GetSafeHwnd();
-            HWND canvas = GetOrCreateUserCanvas(CString(userInfo->GetUID().c_str()));
+            HWND canvas = GetOrCreateUserCanvas(CString(userInfo->GetUserId().c_str()));
 
             if (displayWindow && ::IsWindow(displayWindow) && canvas && ::IsWindow(canvas))
             {
@@ -877,20 +853,12 @@ int CChannelPageDlg::FindUserIndex(LPCTSTR uid)
 {
     for (int i = 0; i < m_pageState.userList.GetSize(); i++)
     {
-        if (m_pageState.userList[i]->GetUID() == std::string(CW2A(uid, CP_UTF8)))
+        if (m_pageState.userList[i]->GetUserId() == std::string(CT2A(uid)))
         {
             return i;
         }
     }
     return -1;
-}
-
-void CChannelPageDlg::SortUserList()
-{
-    if (m_pageState.userList.GetSize() > 1)
-    {
-        qsort(m_pageState.userList.GetData(), m_pageState.userList.GetSize(), sizeof(ChannelUser*), CompareUsers);
-    }
 }
 
 void CChannelPageDlg::UpdatePageDisplay()
@@ -946,7 +914,7 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
                 // SubscribeRemoteVideo and UnsubscribeRemoteVideo methods are not implemented in RteManager.
                 // The video subscription logic needs to be updated based on the new RTE SDK API.
                 // For now, we'll just log it.
-                LOG_INFO("Video subscription for user {} set to {}", user->GetUID(), isVideoSubscribed);
+                LOG_INFO("Video subscription for user {} set to {}", user->GetUserId(), isVideoSubscribed);
             }
 
             // 更新UI显示状态
@@ -971,7 +939,7 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
                 // SubscribeRemoteAudio and UnsubscribeRemoteAudio were removed or renamed.
                 // The logic for audio subscription needs to be updated based on the new RteManager API.
                 // For now, we'll just log it.
-                LOG_INFO("Audio subscription for user {} set to {}", user->GetUID(), isAudioSubscribed);
+                LOG_INFO("Audio subscription for user {} set to {}", user->GetUserId(), isAudioSubscribed);
             }
             
             // 更新UI显示状态
@@ -1002,7 +970,7 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
         if (user && !user->isLocal && user->isConnected && user->isVideoSubscribed) {
-            CStringA uidA(user->GetUID());
+            CStringA uidA(user->GetUserId());
             subscribedUserIds.push_back(std::string(uidA.GetString()));
         }
     }
@@ -1025,8 +993,8 @@ void CChannelPageDlg::UpdateViewUserBindings()
             if (user && user->isConnected) {
                 HWND canvasWnd = NULL;
                 // Look up the correct canvas window from the map.
-                if (m_userCanvasMap.Lookup(CString(user->GetUID().c_str()), canvasWnd) && canvasWnd) {
-                    std::string userIdStr = user->GetUID();
+                        if (m_userCanvasMap.Lookup(CString(user->GetUserId().c_str()), canvasWnd) && canvasWnd) {
+            std::string userIdStr = user->GetUserId();
                     viewToUserMap[canvasWnd] = userIdStr;
                 }
             }
