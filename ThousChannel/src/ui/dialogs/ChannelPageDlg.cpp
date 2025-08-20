@@ -79,20 +79,6 @@ CChannelPageDlg::~CChannelPageDlg()
     ReleaseRteEngine();
     DestroyVideoWindows();
     
-    // Clean up all user canvases
-    CString uidKey;
-    HWND canvas;
-    POSITION pos = m_userCanvasMap.GetStartPosition();
-    while (pos != NULL)
-    {
-        m_userCanvasMap.GetNextAssoc(pos, uidKey, canvas);
-        if (::IsWindow(canvas))
-        {
-            ::DestroyWindow(canvas);
-        }
-    }
-    m_userCanvasMap.RemoveAll();
-
     // Clean up user list
     for (int i = 0; i < m_pageState.userList.GetSize(); i++) {
         delete m_pageState.userList[i];
@@ -201,7 +187,6 @@ void CChannelPageDlg::OnBnClickedPrevPage()
 {
     if (m_pageState.currentPage > 1)
     {
-        DetachAllUsersFromDisplay();
         m_pageState.currentPage--;
         UpdateVideoLayout();
         UpdatePageDisplay();
@@ -214,7 +199,6 @@ void CChannelPageDlg::OnBnClickedNextPage()
 {
     if (m_pageState.currentPage < GetMaxPages())
     {
-        DetachAllUsersFromDisplay();
         m_pageState.currentPage++;
         UpdateVideoLayout();
         UpdatePageDisplay();
@@ -302,12 +286,6 @@ LRESULT CChannelPageDlg::OnRteJoinChannelSuccess(WPARAM wParam, LPARAM lParam)
             localUser->userId = realUserId;
             LOG_INFO_FMT("Updated local user ID to: {}", realUserId);
 
-            HWND canvas = NULL;
-            if (m_userCanvasMap.Lookup(_T(""), canvas)) {
-                m_userCanvasMap.RemoveKey(_T(""));
-                m_userCanvasMap.SetAt(localUserId, canvas);
-            }
-
             UpdateVideoLayout();
 
             CString strChannelInfo;
@@ -360,7 +338,15 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     }
 
     // 4. 画布绑定状态更新
-    GetOrCreateUserCanvas(uid);
+    // 直接绑定用户到可用窗口（如果用户已连接）
+    if (m_rteManager) {
+        // 找到可用的窗口进行绑定
+        int availableWindowIndex = FindAvailableWindow();
+        if (availableWindowIndex >= 0 && availableWindowIndex < m_videoWindows.GetSize()) {
+            m_rteManager->BindUserToView(std::string(CT2A(uid)), 
+                                       m_videoWindows[availableWindowIndex]->GetSafeHwnd());
+        }
+    }
 
     // 5. 订阅状态更新
     if (m_rteManager) {
@@ -412,7 +398,10 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
     }
 
     // 4. 画布绑定状态更新
-    DestroyUserCanvas(uid);
+    // 直接解除用户绑定（如果用户已连接）
+    if (m_rteManager && userInfo->isConnected) {
+        m_rteManager->UnbindUserFromView(userInfo->GetUserId());
+    }
 
     // 5. 订阅状态更新
     if (m_rteManager && !userInfo->isLocal) {
@@ -699,6 +688,11 @@ void CChannelPageDlg::UpdateVideoLayout()
             ChannelUser* userInfo = m_pageState.userList[userIndex];
             if (pVideoWnd && userInfo) {
                 pVideoWnd->SetUserInfo(CString(userInfo->userId.c_str()), CString(userInfo->userId.c_str()), userInfo->isConnected);
+                
+                // 直接绑定用户到窗口（如果用户已连接）
+                if (userInfo->isConnected && m_rteManager) {
+                    m_rteManager->BindUserToView(userInfo->GetUserId(), pVideoWnd->GetSafeHwnd());
+                }
             }
             pVideoWnd->SetVideoSubscription(userInfo->isVideoSubscribed);
             pVideoWnd->SetAudioSubscription(userInfo->isAudioSubscribed);
@@ -710,16 +704,12 @@ void CChannelPageDlg::UpdateVideoLayout()
             pVideoWnd->ShowWindow(SW_HIDE);
         }
     }
-    
-    AttachVisibleUsersToDisplay();
 }
 
 void CChannelPageDlg::SetGridMode(int gridMode)
 {
     if (gridMode != m_pageState.currentGridMode)
     {
-        DetachAllUsersFromDisplay();
-        
         m_pageState.currentGridMode = gridMode;
         m_pageState.currentPage = 1;
         
@@ -765,87 +755,6 @@ void CChannelPageDlg::CalculateGridLayout(int gridMode, CRect containerRect, CAr
 
 
 //===========================================================================
-// Video Canvas Management
-//===========================================================================
-
-void CChannelPageDlg::DetachAllUsersFromDisplay()
-{
-    CString uidKey;
-    HWND canvas;
-    POSITION pos = m_userCanvasMap.GetStartPosition();
-    while (pos != NULL)
-    {
-        m_userCanvasMap.GetNextAssoc(pos, uidKey, canvas);
-        if (canvas && ::IsWindow(canvas))
-        {
-            ::ShowWindow(canvas, SW_HIDE);
-            // Detach from the display grid and attach to desktop to keep it alive but invisible
-            ::SetParent(canvas, ::GetDesktopWindow());
-        }
-    }
-}
-
-void CChannelPageDlg::AttachVisibleUsersToDisplay()
-{
-    int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
-    
-    for (int i = 0; i < m_videoWindows.GetSize(); i++)
-    {
-        int userIndex = startUserIndex + i;
-        if (userIndex < m_pageState.userList.GetSize())
-        {
-            ChannelUser* userInfo = m_pageState.userList[userIndex];
-            HWND displayWindow = m_videoWindows[i]->GetSafeHwnd();
-            HWND canvas = GetOrCreateUserCanvas(CString(userInfo->GetUserId().c_str()));
-
-            if (displayWindow && ::IsWindow(displayWindow) && canvas && ::IsWindow(canvas))
-            {
-                ::SetParent(canvas, displayWindow);
-                CRect displayRect;
-                ::GetClientRect(displayWindow, &displayRect);
-                ::SetWindowPos(canvas, HWND_BOTTOM, 0, 0, displayRect.Width(), displayRect.Height(), SWP_SHOWWINDOW);
-            }
-        }
-    }
-}
-
-HWND CChannelPageDlg::GetOrCreateUserCanvas(LPCTSTR uid)
-{
-    HWND canvas = NULL;
-    if (m_userCanvasMap.Lookup(uid, canvas)) {
-        return canvas;
-    }
-
-    // Create a simple static window to host the video frame
-    canvas = ::CreateWindowEx(0, _T("STATIC"), _T(""),
-        WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-        0, 0, 1, 1, // Initial size doesn't matter, will be resized
-        ::GetDesktopWindow(), NULL, AfxGetInstanceHandle(), NULL);
-
-    if (canvas) {
-        LOG_INFO("Canvas created for UID {}: 0x{:08X}", uid, (unsigned int)(uintptr_t)canvas);
-        m_userCanvasMap.SetAt(uid, canvas);
-    }
-    else {
-        LOG_ERROR("Canvas creation failed for UID {}: {}", uid, GetLastError());
-    }
-
-    return canvas;
-}
-
-void CChannelPageDlg::DestroyUserCanvas(LPCTSTR uid)
-{
-    HWND canvas = NULL;
-    if (m_userCanvasMap.Lookup(uid, canvas)) {
-        if (::IsWindow(canvas)) {
-            ::DestroyWindow(canvas);
-        }
-        m_userCanvasMap.RemoveKey(uid);
-    }
-}
-
-
-//===========================================================================
 // User & Page Management
 //===========================================================================
 
@@ -858,6 +767,29 @@ int CChannelPageDlg::FindUserIndex(LPCTSTR uid)
             return i;
         }
     }
+    return -1;
+}
+
+int CChannelPageDlg::FindAvailableWindow()
+{
+    // 找到第一个没有绑定用户的窗口
+    int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
+    
+    for (int i = 0; i < m_videoWindows.GetSize(); i++) {
+        int userIndex = startUserIndex + i;
+        if (userIndex >= m_pageState.userList.GetSize()) {
+            // 超出用户列表范围，说明这个窗口可用
+            return i;
+        }
+        
+        ChannelUser* user = m_pageState.userList[userIndex];
+        if (!user || !user->isConnected) {
+            // 用户不存在或未连接，窗口可用
+            return i;
+        }
+    }
+    
+    // 没有找到可用窗口
     return -1;
 }
 
@@ -991,11 +923,10 @@ void CChannelPageDlg::UpdateViewUserBindings()
         if (userIndex < m_pageState.userList.GetSize()) {
             ChannelUser* user = m_pageState.userList[userIndex];
             if (user && user->isConnected) {
-                HWND canvasWnd = NULL;
-                // Look up the correct canvas window from the map.
-                        if (m_userCanvasMap.Lookup(CString(user->GetUserId().c_str()), canvasWnd) && canvasWnd) {
-            std::string userIdStr = user->GetUserId();
-                    viewToUserMap[canvasWnd] = userIdStr;
+                // 直接使用视频窗口句柄
+                HWND videoWindow = m_videoWindows[i]->GetSafeHwnd();
+                if (videoWindow) {
+                    viewToUserMap[videoWindow] = user->GetUserId();
                 }
             }
         }

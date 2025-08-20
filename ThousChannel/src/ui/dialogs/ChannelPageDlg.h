@@ -120,7 +120,6 @@ private:
     ChannelPageState m_pageState;
     RteManager* m_rteManager;
     BOOL m_isChannelJoined;
-    CMap<CString, LPCTSTR, HWND, HWND> m_userCanvasMap;
 
     // Initialization
     void InitializeControls();
@@ -141,14 +140,9 @@ private:
     int GetGridSize(int gridMode);
     void CalculateGridLayout(int gridMode, CRect containerRect, CArray<CRect>& windowRects);
 
-    // Video Canvas Management (for RTE rendering)
-    void DetachAllUsersFromDisplay();
-    void AttachVisibleUsersToDisplay();
-    HWND GetOrCreateUserCanvas(LPCTSTR uid);
-    void DestroyUserCanvas(LPCTSTR uid);
-
     // User & Page Management
     int FindUserIndex(LPCTSTR uid);
+    int FindAvailableWindow();
     void UpdatePageDisplay();
     int GetMaxPages();
     
