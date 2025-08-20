@@ -100,19 +100,22 @@ private:
     
     // Writes a message to the debug output
     void WriteToDebug(const std::string& message);
+    
+    // Helper function for converting _T() strings to UTF-8 std::string
+    static std::string CStringToUTF8(LPCTSTR wideStr);
 };
 
 // Unified logging macros - all use std::string internally for better encoding stability
-#define LOG_DEBUG(msg) CLogger::GetInstance().Debug(std::string(_T(msg)))
-#define LOG_INFO(msg) CLogger::GetInstance().Info(std::string(_T(msg)))
-#define LOG_WARNING(msg) CLogger::GetInstance().Warning(std::string(_T(msg)))
-#define LOG_ERROR(msg) CLogger::GetInstance().Error(std::string(_T(msg)))
-#define LOG_FATAL(msg) CLogger::GetInstance().Fatal(std::string(_T(msg)))
+#define LOG_DEBUG(msg) CLogger::GetInstance().Debug(CStringToUTF8(_T(msg)))
+#define LOG_INFO(msg) CLogger::GetInstance().Info(CStringToUTF8(_T(msg)))
+#define LOG_WARNING(msg) CLogger::GetInstance().Warning(CStringToUTF8(_T(msg)))
+#define LOG_ERROR(msg) CLogger::GetInstance().Error(CStringToUTF8(_T(msg)))
+#define LOG_FATAL(msg) CLogger::GetInstance().Fatal(CStringToUTF8(_T(msg)))
 
 // C++ style formatting macros - use {} placeholders
-#define LOG_DEBUG_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_DEBUG, std::string(_T(fmt)), ##__VA_ARGS__)
-#define LOG_INFO_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_INFO, std::string(_T(fmt)), ##__VA_ARGS__)
-#define LOG_WARNING_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_WARNING, std::string(_T(fmt)), ##__VA_ARGS__)
-#define LOG_ERROR_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_ERROR, std::string(_T(fmt)), ##__VA_ARGS__)
-#define LOG_FATAL_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_FATAL, std::string(_T(fmt)), ##__VA_ARGS__)
+#define LOG_DEBUG_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_DEBUG, CStringToUTF8(_T(fmt)), ##__VA_ARGS__)
+#define LOG_INFO_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_INFO, CStringToUTF8(_T(fmt)), ##__VA_ARGS__)
+#define LOG_WARNING_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_WARNING, CStringToUTF8(_T(fmt)), ##__VA_ARGS__)
+#define LOG_ERROR_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_ERROR, CStringToUTF8(_T(fmt)), ##__VA_ARGS__)
+#define LOG_FATAL_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_FATAL, CStringToUTF8(_T(fmt)), ##__VA_ARGS__)
 
