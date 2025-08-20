@@ -175,7 +175,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     
     rte::LocalUserConfig localUserConfig;
     localUserConfig.SetUserId(m_userId.c_str());
-    
+    LOG_INFO_FMT("localUserConfig.SetUserId: {}", m_userId);
     m_localUser->SetConfigs(&localUserConfig, &err);
     if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("Initialize failed: LocalUser SetConfigs error={}", err.Code());
