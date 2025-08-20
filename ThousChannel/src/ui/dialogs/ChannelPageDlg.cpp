@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "ThousChannel.h"
 #include "ChannelPageDlg.h"
-#include "Logger.h"
+#include "ModernLogger.h"
 #include "RteManager.h"
 #include "afxdialogex.h"
 #include <algorithm>
@@ -144,7 +144,7 @@ BOOL CChannelPageDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();
 
-    LOG_INFO("Channel page dialog initialized for channel: %s", m_pageState.channelId);
+    LOG_INFO("Channel page dialog initialized for channel: {}", m_pageState.channelId);
 
     InitializeFonts();
     InitializeControls();
@@ -375,7 +375,7 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     if (m_rteManager) {
         // SubscribeRemoteVideo method is not implemented in RteManager.
         // The video subscription logic needs to be updated based on the new RTE SDK API.
-        LOG_INFO("Subscribing to remote video for user: %s", uid);
+        LOG_INFO("Subscribing to remote video for user: {}", uid);
         // m_rteManager->SubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
     }
     int userIndex = FindUserIndex(uid);
@@ -406,7 +406,7 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
         if (m_rteManager && !userInfo->isLocal) {
             // UnsubscribeRemoteVideo method is not implemented in RteManager.
             // The video subscription logic needs to be updated based on the new RTE SDK API.
-            LOG_INFO("Unsubscribing from remote video for user: %s", uid);
+            LOG_INFO("Unsubscribing from remote video for user: {}", uid);
             // m_rteManager->UnsubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
         }
         
@@ -446,7 +446,7 @@ LRESULT CChannelPageDlg::OnRteRemoteVideoStateChanged(WPARAM wParam, LPARAM lPar
 
     int state = LOWORD(lParam);
     int reason = HIWORD(lParam);
-    LOG_INFO("Remote video state changed for user %s, state=%d, reason=%d", uid, state, reason);
+    LOG_INFO("Remote video state changed for user {}, state={}, reason={}", uid, state, reason);
 
     // You might want to update the UI for this user
     // For example, show an icon if their video is disabled
@@ -458,7 +458,7 @@ LRESULT CChannelPageDlg::OnRteLocalVideoStateChanged(WPARAM wParam, LPARAM lPara
 {
     int state = LOWORD(wParam);
     int reason = HIWORD(wParam);
-    LOG_INFO("Local video state changed, state=%d, reason=%d", state, reason);
+    LOG_INFO("Local video state changed, state={}, reason={}", state, reason);
 
     // You can update the local user's UI based on the state
     // e.g., show a "camera off" icon
@@ -472,7 +472,7 @@ LRESULT CChannelPageDlg::OnRteRemoteAudioStateChanged(WPARAM wParam, LPARAM lPar
     delete uidPtr;
 
     int state = (int)lParam;
-    LOG_INFO("Remote audio state changed for user %s, state=%d", uid, state);
+    LOG_INFO("Remote audio state changed for user {}, state={}", uid, state);
 
     return 0;
 }
@@ -480,7 +480,7 @@ LRESULT CChannelPageDlg::OnRteRemoteAudioStateChanged(WPARAM wParam, LPARAM lPar
 LRESULT CChannelPageDlg::OnRteLocalAudioStateChanged(WPARAM wParam, LPARAM lParam)
 {
     int state = (int)wParam;
-    LOG_INFO("Local audio state changed, state=%d", state);
+    LOG_INFO("Local audio state changed, state={}", state);
 
     return 0;
 }
@@ -489,7 +489,7 @@ LRESULT CChannelPageDlg::OnRteError(WPARAM wParam, LPARAM lParam)
 {
     // Placeholder implementation
     int error_code = (int)wParam;
-    LOG_ERROR("RTE Engine Error: %d", error_code);
+    LOG_ERROR("RTE Engine Error: {}", error_code);
     
     // Display an error message to the user
     CString errorMsg;
@@ -568,8 +568,8 @@ BOOL CChannelPageDlg::InitializeRteEngine()
     config.userId = std::string(CW2A(m_pageState.currentUserId, CP_UTF8));
     
     // Debug: Log the converted values using CString to avoid encoding issues
-    LOG_INFO("Converted appId: %s", CString(config.appId.c_str()));
-    LOG_INFO("Converted userId: %s", CString(config.userId.c_str()));
+    LOG_INFO("Converted appId: {}", CString(config.appId.c_str()));
+    LOG_INFO("Converted userId: {}", CString(config.userId.c_str()));
     // userToken is not a member of RteManagerConfig
     // Token should be passed separately to JoinChannel method
 
@@ -601,8 +601,8 @@ BOOL CChannelPageDlg::JoinRteChannel()
     std::string token = std::string(CW2A(m_joinParams.token, CP_UTF8));
     
     // Debug: Log the converted values using CString to avoid encoding issues
-    LOG_INFO("Converted channelId: %s", CString(channelId.c_str()));
-    LOG_INFO("Converted token: %s", CString(token.substr(0, 20).c_str()));
+    LOG_INFO("Converted channelId: {}", CString(channelId.c_str()));
+    LOG_INFO("Converted token: {}", CString(token.substr(0, 20).c_str()));
     
     BOOL result = m_rteManager->JoinChannel(channelId, token);
     m_isChannelJoined = result;
@@ -831,11 +831,11 @@ HWND CChannelPageDlg::GetOrCreateUserCanvas(LPCTSTR uid)
         ::GetDesktopWindow(), NULL, AfxGetInstanceHandle(), NULL);
 
     if (canvas) {
-        LOG_INFO("Canvas created for UID %s: 0x%08X", uid, (unsigned int)(uintptr_t)canvas);
+        LOG_INFO("Canvas created for UID {}: 0x{:08X}", uid, (unsigned int)(uintptr_t)canvas);
         m_userCanvasMap.SetAt(uid, canvas);
     }
     else {
-        LOG_ERROR("Canvas creation failed for UID %s: %d", uid, GetLastError());
+        LOG_ERROR("Canvas creation failed for UID {}: {}", uid, GetLastError());
     }
 
     return canvas;
@@ -930,7 +930,7 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
                 // SubscribeRemoteVideo and UnsubscribeRemoteVideo methods are not implemented in RteManager.
                 // The video subscription logic needs to be updated based on the new RTE SDK API.
                 // For now, we'll just log it.
-                LOG_INFO("Video subscription for user %s set to %d", user->GetUID(), isVideoSubscribed);
+                LOG_INFO("Video subscription for user {} set to {}", user->GetUID(), isVideoSubscribed);
             }
 
             // 更新UI显示状态
@@ -955,7 +955,7 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
                 // SubscribeRemoteAudio and UnsubscribeRemoteAudio were removed or renamed.
                 // The logic for audio subscription needs to be updated based on the new RteManager API.
                 // For now, we'll just log it.
-                LOG_INFO("Audio subscription for user %s set to %d", user->GetUID(), isAudioSubscribed);
+                LOG_INFO("Audio subscription for user {} set to {}", user->GetUID(), isAudioSubscribed);
             }
             
             // 更新UI显示状态

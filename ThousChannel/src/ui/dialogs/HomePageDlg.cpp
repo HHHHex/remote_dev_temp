@@ -2,7 +2,7 @@
 #include "ThousChannel.h"
 #include "HomePageDlg.h"
 #include "ChannelPageDlg.h"
-#include "Logger.h"
+#include "ModernLogger.h"
 #include "afxdialogex.h"
 
 #ifdef _DEBUG
@@ -157,7 +157,7 @@ BOOL CHomePageDlg::ValidateInput()
 	if (appIdSel < 0)
 	{
 		strMessage.LoadString(IDS_MSG_SELECT_APPID);
-		        LOG_WARNING("User tried to join without selecting AppID");
+		        		LOG_WARN("User tried to join without selecting AppID");
 		AfxMessageBox(strMessage);
 		m_comboAppId.SetFocus();
 		return FALSE;
@@ -172,7 +172,7 @@ BOOL CHomePageDlg::ValidateInput()
 	if (channelId.IsEmpty())
 	{
 		strMessage.LoadString(IDS_MSG_ENTER_CHANNEL);
-		        LOG_WARNING("User tried to join without entering channel ID");
+		        		LOG_WARN("User tried to join without entering channel ID");
 		AfxMessageBox(strMessage);
 		m_editChannelId.SetFocus();
 		return FALSE;
@@ -185,7 +185,7 @@ BOOL CHomePageDlg::ValidateInput()
 	if (audioPullSel < 0)
 	{
 		strMessage.LoadString(IDS_MSG_SELECT_AUDIO);
-		        LOG_WARNING("User tried to join without selecting audio pull mode");
+		        		LOG_WARN("User tried to join without selecting audio pull mode");
 		AfxMessageBox(strMessage);
 		m_comboAudioPull.SetFocus();
 		return FALSE;
@@ -232,7 +232,7 @@ void CHomePageDlg::GenerateToken()
 	m_joinParams.enableMic = (m_checkEnableMic.GetCheck() == BST_CHECKED);
 
 	// 记录日志
-	LOG_INFO("Join params collected. Channel: %s, UserID: %s, Camera: %d, Mic: %d", 
+	LOG_INFO("Join params collected. Channel: {}, UserID: {}, Camera: {}, Mic: {}", 
 		m_joinParams.channelId, m_joinParams.userId, m_joinParams.enableCamera, m_joinParams.enableMic);
 
 	// 构建Token生成参数
@@ -245,7 +245,7 @@ void CHomePageDlg::GenerateToken()
 	tokenParams.type = 1;      // RTC Token
 	tokenParams.src = _T("Windows");
 
-	LOG_INFO("Generating token for AppID=%s, Channel=%s, UserID=%s", 
+	LOG_INFO("Generating token for AppID={}, Channel={}, UserID={}", 
 		tokenParams.appId, tokenParams.channelName, tokenParams.userId);
 
 	// 更新状态
@@ -274,7 +274,7 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 		m_joinParams.token = token;
 		UpdateTokenStatus(_T("Token生成成功，可以加入频道"), FALSE);
 		
-		        LOG_INFO("Token generated successfully: %s", token.Left(20) + _T("..."));
+		        		LOG_INFO("Token generated successfully: {}", token.Left(20) + _T("..."));
 		
 		// 自动跳转到频道页面
 		LOG_INFO("Creating channel page dialog");
@@ -301,7 +301,7 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 		}
 	} else {
 		UpdateTokenStatus(_T("Token生成失败: ") + errorMsg, TRUE);
-		LOG_ERROR("Token generation failed: %s", errorMsg);
+		LOG_ERROR("Token generation failed: {}", errorMsg);
 		AfxMessageBox(_T("Token生成失败: ") + errorMsg);
 	}
 }
@@ -376,7 +376,7 @@ void CHomePageDlg::OnCbnSelchangeAppid()
 	// 获取当前选择的索引
 	int sel = m_comboAppId.GetCurSel();
 	if (sel >= 0 && sel < m_appIdCount) {
-		LOG_INFO("AppID selected: %s", m_appIdList[sel].displayName);
+		LOG_INFO("AppID selected: {}", m_appIdList[sel].displayName);
 	}
 	
 	// 清空token状态

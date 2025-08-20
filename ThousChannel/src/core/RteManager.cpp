@@ -141,13 +141,13 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     rte::Config rteConfig;
     rteConfig.SetAppId(m_appId.c_str(), &err);
     if (err.Code() != kRteOk) {
-                        LOG_ERROR("Initialize failed: SetAppId error=%d", err.Code());
+                        LOG_ERROR("Initialize failed: SetAppId error={}", err.Code());
         return false;
     }
 
     m_rte->SetConfigs(&rteConfig, &err);
     if (err.Code() != kRteOk) {
-        LOG_ERROR("Initialize failed: SetConfigs error=%d", err.Code());
+        LOG_ERROR("Initialize failed: SetConfigs error={}", err.Code());
         return false;
     }
 
@@ -158,7 +158,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
             initSuccess = true;
             LOG_INFO("Media engine initialized successfully");
         } else {
-            LOG_ERROR("Media engine initialization failed: error=%d", err ? err->Code() : -1);
+            LOG_ERROR("Media engine initialization failed: error={}", err ? err->Code() : -1);
         }
     }, nullptr);
 
@@ -259,7 +259,7 @@ void RteManager::Destroy() {
 }
 
 bool RteManager::JoinChannel(const std::string& channelId, const std::string& token) {
-    LOG_INFO("JoinChannel: channelId=%s", channelId.c_str());
+    LOG_INFO("JoinChannel: channelId={}", channelId);
     m_channelId = channelId;
     
     if (!m_rte || !m_localUser) {
@@ -346,7 +346,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
                 LOG_INFO("MicAudioTrack started successfully");
             } else {
                 mic_audio_track_start_result->SetResult(false);
-                LOG_ERROR("MicAudioTrack start failed: error=%d", err ? err->Code() : -1);
+                LOG_ERROR("MicAudioTrack start failed: error={}", err ? err->Code() : -1);
             }
         });
 
@@ -366,7 +366,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
                 LOG_INFO("CameraVideoTrack started successfully");
             } else {
                 camera_video_track_start_result->SetResult(false);
-                LOG_ERROR("CameraVideoTrack start failed: error=%d", err ? err->Code() : -1);
+                LOG_ERROR("CameraVideoTrack start failed: error={}", err ? err->Code() : -1);
             }
         });
 
@@ -413,7 +413,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
 }
 
 void RteManager::LeaveChannel() {
-    LOG_INFO("LeaveChannel: channelId=%s", m_channelId.c_str());
+    LOG_INFO("LeaveChannel: channelId={}", m_channelId);
     
     if (m_channel) {
         rte::Error err;
