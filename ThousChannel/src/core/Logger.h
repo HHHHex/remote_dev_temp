@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
+#include <algorithm>
 
 // Enum for log levels
 enum LogLevel {
@@ -27,6 +29,42 @@ public:
     // New std::string interface for better encoding stability
     void Log(LogLevel level, const std::string& message);
     void Log(LogLevel level, const char* format, ...);
+    
+    // C++ style formatting with variadic templates
+    template<typename... Args>
+    void Log(LogLevel level, const std::string& format, Args&&... args) {
+        if (!m_initialized) {
+            Initialize();
+        }
+        
+        // Simple {} replacement implementation
+        std::string result = format;
+        std::vector<std::string> values;
+        
+        // Convert arguments to strings using fold expression
+        (values.push_back([&]() {
+            std::ostringstream oss;
+            oss << std::forward<Args>(args);
+            return oss.str();
+        }()), ...);
+        
+        // Replace {} placeholders with values
+        size_t placeholderPos = 0;
+        for (const auto& value : values) {
+            size_t pos = result.find("{}", placeholderPos);
+            if (pos != std::string::npos) {
+                result.replace(pos, 2, value);
+                placeholderPos = pos + value.length();
+            }
+        }
+        
+        std::string formattedMessage = FormatLogMessage(level, result);
+        
+        EnterCriticalSection(&m_cs);
+        WriteToFile(formattedMessage);
+        WriteToDebug(formattedMessage);
+        LeaveCriticalSection(&m_cs);
+    }
     
     // New convenience methods using std::string
     void Debug(const std::string& message);
@@ -64,30 +102,17 @@ private:
     void WriteToDebug(const std::string& message);
 };
 
-// Legacy macro definitions for backward compatibility - automatically handle _T() conversion
+// Unified logging macros - all use std::string internally for better encoding stability
 #define LOG_DEBUG(msg) CLogger::GetInstance().Debug(std::string(_T(msg)))
 #define LOG_INFO(msg) CLogger::GetInstance().Info(std::string(_T(msg)))
 #define LOG_WARNING(msg) CLogger::GetInstance().Warning(std::string(_T(msg)))
 #define LOG_ERROR(msg) CLogger::GetInstance().Error(std::string(_T(msg)))
 #define LOG_FATAL(msg) CLogger::GetInstance().Fatal(std::string(_T(msg)))
 
-#define LOG_DEBUG_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_DEBUG, _T(fmt), ##__VA_ARGS__)
-#define LOG_INFO_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_INFO, _T(fmt), ##__VA_ARGS__)
-#define LOG_WARNING_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_WARNING, _T(fmt), ##__VA_ARGS__)
-#define LOG_ERROR_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_ERROR, _T(fmt), ##__VA_ARGS__)
-#define LOG_FATAL_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_FATAL, _T(fmt), ##__VA_ARGS__)
-
-// New modern macro definitions supporting std::string and multiple types
-#define LOG_DEBUG_STR(msg) CLogger::GetInstance().Debug(std::string(msg))
-#define LOG_INFO_STR(msg) CLogger::GetInstance().Info(std::string(msg))
-#define LOG_WARNING_STR(msg) CLogger::GetInstance().Warning(std::string(msg))
-#define LOG_ERROR_STR(msg) CLogger::GetInstance().Error(std::string(msg))
-#define LOG_FATAL_STR(msg) CLogger::GetInstance().Fatal(std::string(msg))
-
-// Modern formatting macros using {} style - supports std::string, int, float, etc.
-#define LOG_DEBUG_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_DEBUG, fmt, ##__VA_ARGS__)
-#define LOG_INFO_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_INFO, fmt, ##__VA_ARGS__)
-#define LOG_WARNING_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_WARNING, fmt, ##__VA_ARGS__)
-#define LOG_ERROR_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_ERROR, fmt, ##__VA_ARGS__)
-#define LOG_FATAL_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_FATAL, fmt, ##__VA_ARGS__)
+// C++ style formatting macros - use {} placeholders
+#define LOG_DEBUG_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_DEBUG, std::string(_T(fmt)), ##__VA_ARGS__)
+#define LOG_INFO_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_INFO, std::string(_T(fmt)), ##__VA_ARGS__)
+#define LOG_WARNING_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_WARNING, std::string(_T(fmt)), ##__VA_ARGS__)
+#define LOG_ERROR_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_ERROR, std::string(_T(fmt)), ##__VA_ARGS__)
+#define LOG_FATAL_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_FATAL, std::string(_T(fmt)), ##__VA_ARGS__)
 

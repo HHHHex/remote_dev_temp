@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <vector>
 #include <cstdarg>
+#include <sstream>
+#include <regex>
 
 CLogger::CLogger()
     : m_initialized(false)
