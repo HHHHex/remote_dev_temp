@@ -1,4 +1,4 @@
-#include "ModernLogger.h"
+#include "Logger.h"
 #include <iostream>
 #include <filesystem>
 #include <chrono>
@@ -9,7 +9,7 @@
 #include <windows.h>
 #endif
 
-std::string ModernLogger::formatMessage(LogLevel level, const std::string& message) {
+std::string Logger::formatMessage(LogLevel level, const std::string& message) {
     std::ostringstream oss;
     
     // Timestamp
@@ -24,7 +24,7 @@ std::string ModernLogger::formatMessage(LogLevel level, const std::string& messa
     return oss.str();
 }
 
-void ModernLogger::writeToFile(const std::string& message) {
+void Logger::writeToFile(const std::string& message) {
     // Ensure log directory exists
     auto logDir = std::filesystem::path(m_logPath).parent_path();
     if (!logDir.empty()) {
@@ -46,7 +46,7 @@ void ModernLogger::writeToFile(const std::string& message) {
     }
 }
 
-void ModernLogger::writeToDebug(const std::string& message) {
+void Logger::writeToDebug(const std::string& message) {
 #ifdef _DEBUG
 #ifdef _WIN32
     // Windows debug output
@@ -58,7 +58,7 @@ void ModernLogger::writeToDebug(const std::string& message) {
 #endif
 }
 
-std::string ModernLogger::getCurrentTime() {
+std::string Logger::getCurrentTime() {
     auto now = std::chrono::system_clock::now();
     auto time_t = std::chrono::system_clock::to_time_t(now);
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -71,7 +71,7 @@ std::string ModernLogger::getCurrentTime() {
     return oss.str();
 }
 
-std::string ModernLogger::getLevelString(LogLevel level) {
+std::string Logger::getLevelString(LogLevel level) {
     switch (level) {
         case LogLevel::Trace: return "TRACE";
         case LogLevel::Debug: return "DEBUG";

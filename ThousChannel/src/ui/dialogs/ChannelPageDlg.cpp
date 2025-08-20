@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "ThousChannel.h"
 #include "ChannelPageDlg.h"
-#include "ModernLogger.h"
+#include "Logger.h"
 #include "RteManager.h"
 #include "afxdialogex.h"
 #include <algorithm>

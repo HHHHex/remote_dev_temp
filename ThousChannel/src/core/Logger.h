@@ -121,10 +121,10 @@ enum class LogLevel : uint8_t {
 };
 
 // Thread-safe singleton logger
-class ModernLogger {
+class Logger {
 public:
-    static ModernLogger& instance() {
-        static ModernLogger logger;
+    static Logger& instance() {
+        static Logger logger;
         return logger;
     }
 
@@ -156,10 +156,10 @@ public:
     void setLogFile(const std::string& path) { m_logPath = path; }
 
 private:
-    ModernLogger() = default;
-    ~ModernLogger() = default;
-    ModernLogger(const ModernLogger&) = delete;
-    ModernLogger& operator=(const ModernLogger&) = delete;
+    Logger() = default;
+    ~Logger() = default;
+    Logger(const Logger&) = delete;
+    Logger& operator=(const Logger&) = delete;
 
     std::string formatMessage(LogLevel level, const std::string& message);
     void writeToFile(const std::string& message);
@@ -174,20 +174,20 @@ private:
 };
 
 // Simple macro definitions for C++17 compatibility
-#define LOG_TRACE(msg) ModernLogger::instance().trace(msg)
-#define LOG_DEBUG(msg) ModernLogger::instance().debug(msg)
-#define LOG_INFO(msg)  ModernLogger::instance().info(msg)
-#define LOG_WARN(msg)  ModernLogger::instance().warn(msg)
-#define LOG_ERROR(msg) ModernLogger::instance().error(msg)
-#define LOG_FATAL(msg) ModernLogger::instance().fatal(msg)
+#define LOG_TRACE(msg) Logger::instance().trace(msg)
+#define LOG_DEBUG(msg) Logger::instance().debug(msg)
+#define LOG_INFO(msg)  Logger::instance().info(msg)
+#define LOG_WARN(msg)  Logger::instance().warn(msg)
+#define LOG_ERROR(msg) Logger::instance().error(msg)
+#define LOG_FATAL(msg) Logger::instance().fatal(msg)
 
 // Formatted logging macros
-#define LOG_TRACE_FMT(fmt, ...) ModernLogger::instance().trace(StringFormat::format(fmt, __VA_ARGS__))
-#define LOG_DEBUG_FMT(fmt, ...) ModernLogger::instance().debug(StringFormat::format(fmt, __VA_ARGS__))
-#define LOG_INFO_FMT(fmt, ...)  ModernLogger::instance().info(StringFormat::format(fmt, __VA_ARGS__))
-#define LOG_WARN_FMT(fmt, ...)  ModernLogger::instance().warn(StringFormat::format(fmt, __VA_ARGS__))
-#define LOG_ERROR_FMT(fmt, ...) ModernLogger::instance().error(StringFormat::format(fmt, __VA_ARGS__))
-#define LOG_FATAL_FMT(fmt, ...) ModernLogger::instance().fatal(StringFormat::format(fmt, __VA_ARGS__))
+#define LOG_TRACE_FMT(fmt, ...) Logger::instance().trace(StringFormat::format(fmt, __VA_ARGS__))
+#define LOG_DEBUG_FMT(fmt, ...) Logger::instance().debug(StringFormat::format(fmt, __VA_ARGS__))
+#define LOG_INFO_FMT(fmt, ...)  Logger::instance().info(StringFormat::format(fmt, __VA_ARGS__))
+#define LOG_WARN_FMT(fmt, ...)  Logger::instance().warn(StringFormat::format(fmt, __VA_ARGS__))
+#define LOG_ERROR_FMT(fmt, ...) Logger::instance().error(StringFormat::format(fmt, __VA_ARGS__))
+#define LOG_FATAL_FMT(fmt, ...) Logger::instance().fatal(StringFormat::format(fmt, __VA_ARGS__))
 
 // Conditional logging macros
 #define LOG_DEBUG_IF(condition, msg) \

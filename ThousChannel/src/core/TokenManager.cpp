@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 #include "TokenManager.h"
-#include "ModernLogger.h"
+#include "Logger.h"
 #include <winhttp.h>
 #include <vector>
 #include <string>

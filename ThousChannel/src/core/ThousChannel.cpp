@@ -66,7 +66,7 @@ CThousChannelApp theApp;
 BOOL CThousChannelApp::InitInstance()
 {
 	// 初始化现代日志系统
-	auto& logger = ModernLogger::instance();
+	auto& logger = Logger::instance();
 	logger.setLogLevel(LogLevel::Debug);  // 开发时使用Debug级别
 	logger.setLogFile("logs/ThousChannel.log");
 

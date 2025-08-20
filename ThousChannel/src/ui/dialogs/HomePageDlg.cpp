@@ -2,7 +2,7 @@
 #include "ThousChannel.h"
 #include "HomePageDlg.h"
 #include "ChannelPageDlg.h"
-#include "ModernLogger.h"
+#include "Logger.h"
 #include <sstream>
 #include <iomanip>
 #include "afxdialogex.h"
