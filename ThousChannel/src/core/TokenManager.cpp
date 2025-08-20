@@ -109,13 +109,13 @@ bool CTokenManager::ParseResponseJson(const std::string& jsonResponse, std::stri
                 int code = std::stoi(codeStr);
                 
                 // 输出服务器返回内容用于调试
-                LOG_INFO("服务器返回内容: {}", response);
+                LOG_INFO_FMT("服务器返回内容: {}", response);
                 
                 if (code != 0) {
                     // 查找msg字段
                     size_t msgPos = response.find("\"msg\":");
                     if (msgPos != std::string::npos) {
-                        size_t msgStart = response.find("\"", msgPos + 6) + 1; // "msg": 的长度
+                        size_t msgStart = response.find("\"", msgPos + 6) + 1;
                         size_t msgEnd = response.find("\"", msgStart);
                         if (msgEnd != std::string::npos) {
                             std::string message = response.substr(msgStart, msgEnd - msgStart);

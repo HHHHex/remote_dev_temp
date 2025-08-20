@@ -17,7 +17,7 @@ std::string Logger::formatMessage(LogLevel level, const std::string& message) {
     oss << "[" << getCurrentTime() << "] ";
     
     // Application prefix tag
-    oss << "[ThousChannel]";
+    oss << "[ThousChannel] ";
     
     // Log level (fixed spacing - no extra space after level)
     oss << "[" << getLevelString(level) << "] ";

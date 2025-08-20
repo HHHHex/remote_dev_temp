@@ -598,9 +598,9 @@ BOOL CChannelPageDlg::JoinRteChannel()
     std::string channelId = m_joinParams.channelId;
     std::string token = m_joinParams.token;
     
-    // Debug: Log the converted values using CString to avoid encoding issues
-    LOG_INFO_FMT("Converted channelId: {}", CString(channelId.c_str()));
-    LOG_INFO_FMT("Converted token: {}", CString(token.substr(0, 20).c_str()));
+    // Debug: Log the values directly using std::string
+    LOG_INFO_FMT("Converted channelId: {}", channelId);
+    LOG_INFO_FMT("Converted token: {}", token.substr(0, 20));
     
     bool result = m_rteManager->JoinChannel(channelId, token);
     m_isChannelJoined = result;
