@@ -54,7 +54,7 @@ public:
         LOG_INFO_STR("OnRemoteUsersJoined");
         for (size_t i = 0; i < new_users.size(); ++i) {
             std::string userId = new_users_info[i].UserId();
-            LOG_INFO_FMT_STR("OnUserJoined: userId={}", userId);
+            LOG_INFO_FMT_STR("OnUserJoined: userId=%s", userId.c_str());
             
             m_rteManager->OnRemoteUserJoined(userId);
             
@@ -128,7 +128,7 @@ void RteManager::SetEventHandler(IRteManagerEventHandler* handler) {
 }
 
 bool RteManager::Initialize(const RteManagerConfig& config) {
-    LOG_INFO_FMT_STR("Initialize: appId={}, userId={}", config.appId, config.userId);
+    LOG_INFO_FMT_STR("Initialize: appId=%s, userId=%s", config.appId.c_str(), config.userId.c_str());
     m_appId = config.appId;
     m_userId = config.userId;
 
@@ -141,13 +141,13 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     rte::Config rteConfig;
     rteConfig.SetAppId(m_appId.c_str(), &err);
     if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT_STR("Initialize failed: SetAppId error={}", err.Code());
+                        LOG_ERROR_FMT_STR("Initialize failed: SetAppId error=%d", err.Code());
         return false;
     }
 
     m_rte->SetConfigs(&rteConfig, &err);
     if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT_STR("Initialize failed: SetConfigs error={}", err.Code());
+        LOG_ERROR_FMT_STR("Initialize failed: SetConfigs error=%d", err.Code());
         return false;
     }
 
@@ -158,7 +158,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
             initSuccess = true;
             LOG_INFO_STR("Media engine initialized successfully");
         } else {
-            LOG_ERROR_FMT_STR("Media engine initialization failed: error={}", err ? err->Code() : -1);
+            LOG_ERROR_FMT_STR("Media engine initialization failed: error=%d", err ? err->Code() : -1);
         }
     }, nullptr);
 
@@ -259,7 +259,7 @@ void RteManager::Destroy() {
 }
 
 bool RteManager::JoinChannel(const std::string& channelId, const std::string& token) {
-    LOG_INFO_FMT_STR("JoinChannel: channelId={}", channelId);
+    LOG_INFO_FMT_STR("JoinChannel: channelId=%s", channelId.c_str());
     m_channelId = channelId;
     
     if (!m_rte || !m_localUser) {
@@ -339,14 +339,14 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     // Start mic audio track first
     {
         std::shared_ptr<AsyncResult<bool>> mic_audio_track_start_result = std::make_shared<AsyncResult<bool>>();
-        m_micAudioTrack->Start([=](rte::Error* err) {
+        m_micAudioTrack->Start([&audioTrackStarted, mic_audio_track_start_result](rte::Error* err) {
             if (err && err->Code() == kRteOk) {
-                audioTrackStarted = true;
+                audioTrackStarted.store(true);
                 mic_audio_track_start_result->SetResult(true);
                 LOG_INFO_STR("MicAudioTrack started successfully");
             } else {
                 mic_audio_track_start_result->SetResult(false);
-                LOG_ERROR_FMT_STR("MicAudioTrack start failed: error={}", err ? err->Code() : -1);
+                LOG_ERROR_FMT_STR("MicAudioTrack start failed: error=%d", err ? err->Code() : -1);
             }
         });
 
@@ -359,14 +359,14 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     // Start camera video track
     {
         std::shared_ptr<AsyncResult<bool>> camera_video_track_start_result = std::make_shared<AsyncResult<bool>>();
-        m_cameraVideoTrack->Start([=](rte::Error* err) {
+        m_cameraVideoTrack->Start([&videoTrackStarted, camera_video_track_start_result](rte::Error* err) {
             if (err && err->Code() == kRteOk) {
-                videoTrackStarted = true;
+                videoTrackStarted.store(true);
                 camera_video_track_start_result->SetResult(true);
                 LOG_INFO_STR("CameraVideoTrack started successfully");
             } else {
                 camera_video_track_start_result->SetResult(false);
-                LOG_ERROR_FMT_STR("CameraVideoTrack start failed: error={}", err ? err->Code() : -1);
+                LOG_ERROR_FMT_STR("CameraVideoTrack start failed: error=%d", err ? err->Code() : -1);
             }
         });
 
