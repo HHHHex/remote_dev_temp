@@ -12,11 +12,9 @@
 #endif
 
 // AppID数据源定义 - 使用UTF-8字符串
-const AppIdInfo CHomePageDlg::m_appIdList[] = {
+const std::vector<AppIdInfo> CHomePageDlg::m_appIdList = {
 	{ "38fdab08081e4dd7975aa430b35690ab", "c2fab1d528db43cdb52482490bf2e1b2", "38fdab***90ab" }
 };
-
-const int CHomePageDlg::m_appIdCount = 1;
 
 // CHomePageDlg 对话框
 
@@ -25,7 +23,7 @@ IMPLEMENT_DYNAMIC(CHomePageDlg, CDialogEx)
 CHomePageDlg::CHomePageDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_JOIN_CHANNEL_DLG, pParent)
 	, m_tokenManager(nullptr)
-	, m_isGeneratingToken(FALSE)
+	, m_isGeneratingToken(false)
 {
 	// 初始化参数
 	m_joinParams.appId = "";
@@ -143,10 +141,10 @@ void CHomePageDlg::InitializeControls()
 	}
 	catch (...) {
 		// 如果初始化失败，至少设置基本状态
-		m_comboAppId.AddString("选择AppID");
-		m_comboAudioPull.AddString("UID");
-		m_comboAudioPull.AddString("TOPN");
-		m_btnJoinChannel.SetWindowText("加入频道");
+		m_comboAppId.AddString(_T("选择AppID"));
+		m_comboAudioPull.AddString(_T("UID"));
+		m_comboAudioPull.AddString(_T("TOPN"));
+		m_btnJoinChannel.SetWindowText(_T("加入频道"));
 	}
 }
 
@@ -207,19 +205,20 @@ void CHomePageDlg::GenerateToken()
 	// 收集用户输入
 	CString temp;
 	
-	// 获取AppID和证书
-	int appIdSel = m_comboAppId.GetCurSel();
-	if (appIdSel >= 0 && appIdSel < static_cast<int>(m_appIdList.size())) {
-		m_joinParams.appId = m_appIdList[appIdSel].appId;  // 使用真实的AppID
-		m_joinParams.appCertificate = m_appIdList[appIdSel].certificate;  // 使用对应的证书
-	} else {
-		m_joinParams.appId = "";
-		m_joinParams.appCertificate = "";
-	}
+			// 获取AppID和证书
+		int appIdSel = m_comboAppId.GetCurSel();
+		if (appIdSel >= 0 && appIdSel < static_cast<int>(m_appIdList.size())) {
+			m_joinParams.appId = m_appIdList.at(appIdSel).appId;  // 使用真实的AppID
+			m_joinParams.appCertificate = m_appIdList.at(appIdSel).certificate;  // 使用对应的证书
+		} else {
+			m_joinParams.appId = "";
+			m_joinParams.appCertificate = "";
+		}
 
 	// 获取频道ID
 	m_editChannelId.GetWindowText(temp);
-	m_joinParams.channelId = std::string(CW2A(temp.Trim(), CP_UTF8));
+	temp.Trim();
+	m_joinParams.channelId = std::string(CW2A(temp, CP_UTF8));
 
 	// 生成随机用户ID
 	m_joinParams.userId = GenerateRandomUserId();
@@ -320,18 +319,18 @@ void CHomePageDlg::UpdateTokenStatus(const std::string& status, bool isError)
 		
 		// 记录状态到日志
 		if (isError) {
-			LOG_ERROR("Token status error: {}", status);
+			LOG_ERROR_FMT("Token status error: {}", status);
 		} else {
-			LOG_INFO("Token status: {}", status);
+			LOG_INFO_FMT("Token status: {}", status);
 		}
 	}
 	catch (...) {
 		LOG_ERROR("Failed to update token status display");
 		// 即使更新失败也要记录日志
 		if (isError) {
-			LOG_ERROR("Token status error: {}", status);
+			LOG_ERROR_FMT("Token status error: {}", status);
 		} else {
-			LOG_INFO("Token status: {}", status);
+			LOG_INFO_FMT("Token status: {}", status);
 		}
 	}
 }
@@ -378,7 +377,7 @@ void CHomePageDlg::OnCbnSelchangeAppid()
 	// 获取当前选择的索引
 	int sel = m_comboAppId.GetCurSel();
 	if (sel >= 0 && sel < static_cast<int>(m_appIdList.size())) {
-		LOG_INFO_FMT("AppID selected: {}", m_appIdList[sel].displayName);
+		LOG_INFO_FMT("AppID selected: {}", m_appIdList.at(sel).displayName);
 	}
 	
 	// 清空token状态
