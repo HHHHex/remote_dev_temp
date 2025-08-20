@@ -129,7 +129,7 @@ void CLogger::Log(LogLevel level, const char* format, ...)
     va_end(args_copy);
     
     if (size > 0) {
-        std::vector<char> buffer(size + 1);
+        std::vector<char> buffer(static_cast<size_t>(size) + 1);
         vsnprintf(buffer.data(), buffer.size(), format, args);
         message = buffer.data();
     }
@@ -290,7 +290,14 @@ void CLogger::WriteToDebug(const CString& message)
 void CLogger::WriteToDebug(const std::string& message)
 {
 #ifdef _DEBUG
-    OutputDebugStringW(WideCharToUTF8(message.c_str()).c_str());
+    // Convert std::string to wide string for OutputDebugStringW
+    int wideLen = MultiByteToWideChar(CP_UTF8, 0, message.c_str(), -1, nullptr, 0);
+    if (wideLen > 0) {
+        std::vector<wchar_t> wideBuffer(wideLen);
+        MultiByteToWideChar(CP_UTF8, 0, message.c_str(), -1, wideBuffer.data(), wideLen);
+        OutputDebugStringW(wideBuffer.data());
+        OutputDebugStringW(L"\n");
+    }
 #endif
     
     // Also output to console if available
