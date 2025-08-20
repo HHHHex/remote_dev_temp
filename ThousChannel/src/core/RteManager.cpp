@@ -16,10 +16,10 @@ public:
 
     // Override the correct virtual functions from ChannelObserver
     void OnRemoteUsersJoined(const std::vector<rte::RemoteUser>& new_users, const std::vector<rte::RemoteUserInfo>& new_users_info) override {
-        LOG_INFO("OnRemoteUsersJoined");
+        LOG_INFO_STR("OnRemoteUsersJoined");
         for (size_t i = 0; i < new_users.size(); ++i) {
             std::string userId = new_users_info[i].UserId();
-            LOG_INFO_FMT("OnUserJoined: userId=%s", userId.c_str());
+            LOG_INFO_FMT_STR("OnUserJoined: userId={}", userId);
             
             m_rteManager->OnRemoteUserJoined(userId);
             
@@ -31,10 +31,10 @@ public:
     }
 
     void OnRemoteUsersLeft(const std::vector<rte::RemoteUser>& removed_users, const std::vector<rte::RemoteUserInfo>& removed_users_info) override {
-        LOG_INFO("OnRemoteUsersLeft");
+        LOG_INFO_STR("OnRemoteUsersLeft");
         for (size_t i = 0; i < removed_users.size(); ++i) {
             std::string userId = removed_users_info[i].UserId();
-            LOG_INFO_FMT("OnUserLeft: userId=%s", userId.c_str());
+            LOG_INFO_FMT_STR("OnUserLeft: userId={}", userId);
             
             m_rteManager->OnRemoteUserLeft(userId);
             
@@ -46,7 +46,7 @@ public:
     }
 
     void OnRemoteStreamsAdded(const std::vector<rte::RemoteStream>& new_streams, const std::vector<rte::RemoteStreamInfo>& new_streams_info) override {
-        LOG_INFO("OnRemoteStreamsAdded");
+        LOG_INFO_STR("OnRemoteStreamsAdded");
         for (size_t i = 0; i < new_streams.size(); ++i) {
             // TODO: Fix HasAudio() const issue - temporarily commented out
             // if (m_rteManager->m_eventHandler && new_streams_info[i].HasAudio()) {
@@ -58,7 +58,7 @@ public:
     }
 
     void OnRemoteStreamsRemoved(const std::vector<rte::RemoteStream>& removed_streams, const std::vector<rte::RemoteStreamInfo>& removed_streams_info) override {
-        LOG_INFO("OnRemoteStreamsRemoved");
+        LOG_INFO_STR("OnRemoteStreamsRemoved");
         for (size_t i = 0; i < removed_streams.size(); ++i) {
             // TODO: Fix HasAudio() const issue - temporarily commented out
             // if (m_rteManager->m_eventHandler && removed_streams_info[i].HasAudio()) {
@@ -75,20 +75,20 @@ public:
 };
 
 RteManager::RteManager() : m_eventHandler(nullptr) {
-    LOG_INFO("RteManager created.");
+    LOG_INFO_STR("RteManager created.");
     
     // Test new std::string interface
-    CLogger::GetInstance().Info(std::string("Testing new std::string interface"));
-    CLogger::GetInstance().Info(std::string("Testing direct std::string"));
+    LOG_INFO_STR("Testing new std::string interface");
+    LOG_INFO_STR("Testing direct std::string");
 }
 
 RteManager::~RteManager() {
-    LOG_INFO("RteManager destroyed.");
+    LOG_INFO_STR("RteManager destroyed.");
     Destroy();
 }
 
 void RteManager::SetEventHandler(IRteManagerEventHandler* handler) {
-    LOG_INFO("SetEventHandler called.");
+    LOG_INFO_STR("SetEventHandler called.");
     m_eventHandler = handler;
 }
 
@@ -106,13 +106,13 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     rte::Config rteConfig;
     rteConfig.SetAppId(m_appId.c_str(), &err);
     if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT("Initialize failed: SetAppId error=%d", err.Code());
+        LOG_ERROR_FMT_STR("Initialize failed: SetAppId error={}", err.Code());
         return false;
     }
 
     m_rte->SetConfigs(&rteConfig, &err);
     if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT("Initialize failed: SetConfigs error=%d", err.Code());
+        LOG_ERROR_FMT_STR("Initialize failed: SetConfigs error={}", err.Code());
         return false;
     }
 
@@ -121,9 +121,9 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     m_rte->InitMediaEngine([&initSuccess, this](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             initSuccess = true;
-            LOG_INFO("Media engine initialized successfully");
+            LOG_INFO_STR("Media engine initialized successfully");
         } else {
-            LOG_ERROR_FMT("Media engine initialization failed: error=%d", err ? err->Code() : -1);
+            LOG_ERROR_FMT_STR("Media engine initialization failed: error={}", err ? err->Code() : -1);
         }
     }, nullptr);
 
@@ -131,7 +131,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     
     if (!initSuccess) {
-        LOG_ERROR("Initialize failed: Media engine initialization timeout or error");
+        LOG_ERROR_STR("Initialize failed: Media engine initialization timeout or error");
         return false;
     }
 
@@ -139,11 +139,11 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     m_localUser = std::make_shared<rte::LocalUser>(m_rte.get());
     
     rte::LocalUserConfig localUserConfig;
-    localUserConfig.SetUserId(m_userId);
+    localUserConfig.SetUserId(m_userId.c_str());
     
     m_localUser->SetConfigs(&localUserConfig, &err);
     if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT("Initialize failed: LocalUser SetConfigs error=%d", err.Code());
+        LOG_ERROR_FMT_STR("Initialize failed: LocalUser SetConfigs error={}", err.Code());
         return false;
     }
 
@@ -156,7 +156,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
         // Don't set JSON parameter to let RTE use system default
         m_micAudioTrack->SetConfigs(&micConfig, &err);
         if (err.Code() != kRteOk) {
-            LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
+            LOG_ERROR_FMT_STR("Initialize failed: MicAudioTrack SetConfigs error={}", err.Code());
             return false;
         }
     } // micConfig goes out of scope here and is properly destroyed
@@ -166,17 +166,17 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
         rte::CameraVideoTrackConfig cameraConfig;
         m_cameraVideoTrack->SetConfigs(&cameraConfig, &err);
         if (err.Code() != kRteOk) {
-            LOG_ERROR_FMT("Initialize failed: CameraVideoTrack SetConfigs error=%d", err.Code());
+            LOG_ERROR_FMT_STR("Initialize failed: CameraVideoTrack SetConfigs error={}", err.Code());
             return false;
         }
     } // cameraConfig goes out of scope here and is properly destroyed
 
-    LOG_INFO("Initialize successful.");
+    LOG_INFO_STR("Initialize successful.");
     return true;
 }
 
 void RteManager::Destroy() {
-    LOG_INFO("Destroy called.");
+    LOG_INFO_STR("Destroy called.");
     
     // Leave channel if connected
     if (m_channel) {
@@ -187,9 +187,9 @@ void RteManager::Destroy() {
     if (m_micAudioTrack) {
         m_micAudioTrack->Stop([](rte::Error* err) {
             if (err && err->Code() != kRteOk) {
-                LOG_ERROR_FMT("MicAudioTrack Stop failed: error=%d", err->Code());
+                LOG_ERROR_FMT_STR("MicAudioTrack Stop failed: error={}", err->Code());
             } else {
-                LOG_INFO("MicAudioTrack stopped successfully");
+                LOG_INFO_STR("MicAudioTrack stopped successfully");
             }
         });
         m_micAudioTrack.reset();
@@ -198,9 +198,9 @@ void RteManager::Destroy() {
     if (m_cameraVideoTrack) {
         m_cameraVideoTrack->Stop([](rte::Error* err) {
             if (err && err->Code() != kRteOk) {
-                LOG_ERROR_FMT("CameraVideoTrack Stop failed: error=%d", err->Code());
+                LOG_ERROR_FMT_STR("CameraVideoTrack Stop failed: error={}", err->Code());
             } else {
-                LOG_INFO("CameraVideoTrack stopped successfully");
+                LOG_INFO_STR("CameraVideoTrack stopped successfully");
             }
         });
         m_cameraVideoTrack.reset();
@@ -219,7 +219,7 @@ void RteManager::Destroy() {
     if (m_rte) {
         m_rte->Destroy();
         m_rte.reset();
-        LOG_INFO("RTE destroyed.");
+        LOG_INFO_STR("RTE destroyed.");
     }
 }
 
@@ -228,7 +228,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     m_channelId = channelId;
     
     if (!m_rte || !m_localUser) {
-        LOG_ERROR("JoinChannel failed: RTE or LocalUser not initialized");
+        LOG_ERROR_STR("JoinChannel failed: RTE or LocalUser not initialized");
         return false;
     }
     
@@ -239,10 +239,10 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
         {
             rte::LocalUserConfig localUserConfig;
             m_localUser->GetConfigs(&localUserConfig, &err);
-            localUserConfig.SetUserToken(token);
+            localUserConfig.SetUserToken(token.c_str());
             m_localUser->SetConfigs(&localUserConfig, &err);
             if (err.Code() != kRteOk) {
-                LOG_ERROR_FMT("JoinChannel failed: SetUserToken error=%d", err.Code());
+                LOG_ERROR_FMT_STR("JoinChannel failed: SetUserToken error={}", err.Code());
                 return false;
             }
         } // localUserConfig goes out of scope here
@@ -253,9 +253,9 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     m_localUser->Connect([&connectSuccess](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             connectSuccess = true;
-            LOG_INFO("Local user connected successfully");
+            LOG_INFO_STR("Local user connected successfully");
         } else {
-            LOG_ERROR_FMT("Local user connection failed: error=%d", err ? err->Code() : -1);
+            LOG_ERROR_FMT_STR("Local user connection failed: error={}", err ? err->Code() : -1);
         }
     });
     
@@ -263,7 +263,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     
     if (!connectSuccess.load()) {
-        LOG_ERROR("JoinChannel failed: Local user connection timeout");
+        LOG_ERROR_STR("JoinChannel failed: Local user connection timeout");
         return false;
     }
     
@@ -273,29 +273,29 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     
     {
         rte::ChannelConfig channelConfig;
-        channelConfig.SetChannelId(channelId);
+        channelConfig.SetChannelId(channelId.c_str());
         
         m_channel->SetConfigs(&channelConfig, &err);
         if (err.Code() != kRteOk) {
-            LOG_ERROR_FMT("JoinChannel failed: Channel SetConfigs error=%d", err.Code());
+            LOG_ERROR_FMT_STR("JoinChannel failed: Channel SetConfigs error={}", err.Code());
             return false;
         }
     } // channelConfig goes out of scope here
     
     m_channel->RegisterObserver(m_channelObserver.get(), &err);
     if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT("JoinChannel failed: RegisterObserver error=%d", err.Code());
+        LOG_ERROR_FMT_STR("JoinChannel failed: RegisterObserver error={}", err.Code());
         return false;
     }
     
     // Join channel
-    bool joinSuccess = m_channel->Join(m_localUser.get(), token, &err);
+    bool joinSuccess = m_channel->Join(m_localUser.get(), token.c_str(), &err);
     if (!joinSuccess || err.Code() != kRteOk) {
-        LOG_ERROR_FMT("JoinChannel failed: Join error=%d", err.Code());
+        LOG_ERROR_FMT_STR("JoinChannel failed: Join error={}", err.Code());
         return false;
     }
     
-    LOG_INFO("Channel joined successfully");
+    LOG_INFO_STR("Channel joined successfully");
     
     // Start audio and video tracks before adding to stream
     std::atomic<bool> audioTrackStarted(false);
@@ -304,18 +304,18 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     m_micAudioTrack->Start([&audioTrackStarted](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             audioTrackStarted = true;
-            LOG_INFO("MicAudioTrack started successfully");
+            LOG_INFO_STR("MicAudioTrack started successfully");
         } else {
-            LOG_ERROR_FMT("MicAudioTrack start failed: error=%d", err ? err->Code() : -1);
+            LOG_ERROR_FMT_STR("MicAudioTrack start failed: error={}", err ? err->Code() : -1);
         }
     });
     
     m_cameraVideoTrack->Start([&videoTrackStarted](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             videoTrackStarted = true;
-            LOG_INFO("CameraVideoTrack started successfully");
+            LOG_INFO_STR("CameraVideoTrack started successfully");
         } else {
-            LOG_ERROR_FMT("CameraVideoTrack start failed: error=%d", err ? err->Code() : -1);
+            LOG_ERROR_FMT_STR("CameraVideoTrack start failed: error={}", err ? err->Code() : -1);
         }
     });
     
@@ -327,11 +327,11 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     }
     
     if (!audioTrackStarted.load()) {
-        LOG_WARNING("MicAudioTrack failed to start, continuing anyway");
+        LOG_WARNING_STR("MicAudioTrack failed to start, continuing anyway");
     }
     
     if (!videoTrackStarted.load()) {
-        LOG_WARNING("CameraVideoTrack failed to start, continuing anyway");
+        LOG_WARNING_STR("CameraVideoTrack failed to start, continuing anyway");
     }
     
     // Create and publish local stream
@@ -341,32 +341,32 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     if (audioTrackStarted.load()) {
         m_localStream->AddAudioTrack(m_micAudioTrack.get(), &err);
         if (err.Code() != kRteOk) {
-            LOG_ERROR_FMT("JoinChannel warning: AddAudioTrack error=%d", err.Code());
+            LOG_ERROR_FMT_STR("JoinChannel warning: AddAudioTrack error={}", err.Code());
         } else {
-            LOG_INFO("Audio track added to stream successfully");
+            LOG_INFO_STR("Audio track added to stream successfully");
         }
     } else {
-        LOG_WARNING("Skipping audio track addition due to initialization failure");
+        LOG_WARNING_STR("Skipping audio track addition due to initialization failure");
     }
     
     // Always try to add video track
     m_localStream->AddVideoTrack(m_cameraVideoTrack.get(), &err);
     if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT("JoinChannel warning: AddVideoTrack error=%d", err.Code());
+        LOG_ERROR_FMT_STR("JoinChannel warning: AddVideoTrack error={}", err.Code());
     } else {
-        LOG_INFO("Video track added to stream successfully");
+        LOG_INFO_STR("Video track added to stream successfully");
     }
     
     // Publish stream to channel
     m_channel->PublishStream(m_localUser.get(), m_localStream.get(), [this](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
-            LOG_INFO("Local stream published successfully");
+            LOG_INFO_STR("Local stream published successfully");
         } else {
-            LOG_ERROR_FMT("Publish stream failed: error=%d", err ? err->Code() : -1);
+            LOG_ERROR_FMT_STR("Publish stream failed: error={}", err ? err->Code() : -1);
         }
     });
     
-    LOG_INFO("JoinChannel successful");
+    LOG_INFO_STR("JoinChannel successful");
     return true;
 }
 
@@ -380,9 +380,9 @@ void RteManager::LeaveChannel() {
         if (m_localStream) {
             m_channel->UnpublishStream(m_localStream.get(), [this](rte::Error* err) {
                 if (err && err->Code() == kRteOk) {
-                    LOG_INFO("Local stream unpublished successfully");
+                    LOG_INFO_STR("Local stream unpublished successfully");
                 } else {
-                    LOG_ERROR_FMT("Unpublish stream failed: error=%d", err ? err->Code() : -1);
+                    LOG_ERROR_FMT_STR("Unpublish stream failed: error={}", err ? err->Code() : -1);
                 }
             });
             m_localStream.reset();
@@ -398,16 +398,16 @@ void RteManager::LeaveChannel() {
         }
         
         m_channel.reset();
-        LOG_INFO("Channel left successfully");
+        LOG_INFO_STR("Channel left successfully");
     }
     
     // Disconnect local user
     if (m_localUser) {
         m_localUser->Disconnect([](rte::Error* err) {
             if (err && err->Code() != kRteOk) {
-                LOG_ERROR_FMT("LocalUser Disconnect failed: error=%d", err->Code());
+                LOG_ERROR_FMT_STR("LocalUser Disconnect failed: error={}", err->Code());
             } else {
-                LOG_INFO("LocalUser disconnected successfully");
+                LOG_INFO_STR("LocalUser disconnected successfully");
             }
         });
     }
@@ -422,21 +422,21 @@ void RteManager::LeaveChannel() {
 }
 
 void RteManager::RenewToken(const std::string& token) {
-    LOG_INFO("RenewToken called.");
+    LOG_INFO_STR("RenewToken called.");
     if (m_localUser) {
         rte::Error err;
         rte::LocalUserConfig localUserConfig;
         m_localUser->GetConfigs(&localUserConfig, &err);
-        localUserConfig.SetUserToken(token);
+        localUserConfig.SetUserToken(token.c_str());
         m_localUser->SetConfigs(&localUserConfig, &err);
         if (err.Code() != kRteOk) {
-            LOG_ERROR_FMT("RenewToken failed: error=%d", err.Code());
+            LOG_ERROR_FMT_STR("RenewToken failed: error={}", err.Code());
         }
     }
 }
 
 void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
-    LOG_INFO_FMT("SetLocalAudioCaptureEnabled: enabled=%d", enabled);
+    LOG_INFO_FMT_STR("SetLocalAudioCaptureEnabled: enabled={}", enabled);
     if (m_micAudioTrack) {
         if (enabled) {
             // Add delay to ensure RTE is fully initialized
@@ -445,17 +445,17 @@ void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
             // Start audio track with simple retry mechanism
             m_micAudioTrack->Start([](rte::Error* err) {
                 if (err && err->Code() != kRteOk) {
-                    LOG_ERROR_FMT("MicAudioTrack Start failed: error=%d", err->Code());
+                    LOG_ERROR_FMT_STR("MicAudioTrack Start failed: error={}", err->Code());
                 } else {
-                    LOG_INFO("MicAudioTrack started successfully");
+                    LOG_INFO_STR("MicAudioTrack started successfully");
                 }
             });
         } else {
             m_micAudioTrack->Stop([](rte::Error* err) {
                 if (err && err->Code() != kRteOk) {
-                    LOG_ERROR_FMT("MicAudioTrack Stop failed: error=%d", err->Code());
+                    LOG_ERROR_FMT_STR("MicAudioTrack Stop failed: error={}", err->Code());
                 } else {
-                    LOG_INFO("MicAudioTrack stopped successfully");
+                    LOG_INFO_STR("MicAudioTrack stopped successfully");
                 }
             });
         }
@@ -467,22 +467,22 @@ void RteManager::SetLocalAudioCaptureEnabled(bool enabled) {
 }
 
 void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
-    LOG_INFO_FMT("SetLocalVideoCaptureEnabled: enabled=%d", enabled);
+    LOG_INFO_FMT_STR("SetLocalVideoCaptureEnabled: enabled={}", enabled);
     if (m_cameraVideoTrack) {
         if (enabled) {
             m_cameraVideoTrack->Start([](rte::Error* err) {
                 if (err && err->Code() != kRteOk) {
-                    LOG_ERROR_FMT("CameraVideoTrack Start failed: error=%d", err->Code());
+                    LOG_ERROR_FMT_STR("CameraVideoTrack Start failed: error={}", err->Code());
                 } else {
-                    LOG_INFO("CameraVideoTrack started successfully");
+                    LOG_INFO_STR("CameraVideoTrack started successfully");
                 }
             });
         } else {
             m_cameraVideoTrack->Stop([](rte::Error* err) {
                 if (err && err->Code() != kRteOk) {
-                    LOG_ERROR_FMT("CameraVideoTrack Stop failed: error=%d", err->Code());
+                    LOG_ERROR_FMT_STR("CameraVideoTrack Stop failed: error={}", err->Code());
                 } else {
-                    LOG_INFO("CameraVideoTrack stopped successfully");
+                    LOG_INFO_STR("CameraVideoTrack stopped successfully");
                 }
             });
         }
@@ -490,7 +490,7 @@ void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
 }
 
 void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap) {
-    LOG_INFO("SetViewUserBindings called.");
+    LOG_INFO_STR("SetViewUserBindings called.");
     std::lock_guard<std::mutex> lock(m_mutex);
     
     // Clear existing canvases for views that are no longer bound
@@ -498,7 +498,7 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
         void* view = pair.first;
         const std::string& userId = pair.second;
         if (viewToUserMap.find(view) == viewToUserMap.end() || viewToUserMap.at(view) != userId) {
-            LOG_INFO_FMT("Unbinding view for user: %s", userId.c_str());
+            LOG_INFO_FMT_STR("Unbinding view for user: {}", userId);
             if (m_remoteUserCanvases.count(userId)) {
                 m_remoteUserCanvases.erase(userId);
             }
@@ -510,7 +510,7 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
         void* view = pair.first;
         const std::string& userId = pair.second;
         if (m_viewToUserMap.find(view) == m_viewToUserMap.end() || m_viewToUserMap.at(view) != userId) {
-            LOG_INFO_FMT("Binding view for user: %s", userId.c_str());
+            LOG_INFO_FMT_STR("Binding view for user: {}", userId);
             if (m_rte) {
                 auto canvas = std::make_shared<rte::Canvas>(m_rte.get());
                 rte::Error err;
@@ -520,7 +520,7 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
                 if (err.Code() == kRteOk) {
                     m_remoteUserCanvases[userId] = canvas;
                 } else {
-                    LOG_ERROR_FMT("Failed to create canvas for user %s: error=%d", userId.c_str(), err.Code());
+                    LOG_ERROR_FMT_STR("Failed to create canvas for user {}: error={}", userId, err.Code());
                 }
             }
         }
@@ -530,11 +530,11 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
 }
 
 int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
-    LOG_INFO_FMT("SetupRemoteVideo for user: %s", userId.c_str());
+    LOG_INFO_FMT_STR("SetupRemoteVideo for user: {}", userId);
     std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_rte) {
-        LOG_ERROR("SetupRemoteVideo failed: RTE not initialized");
+        LOG_ERROR_STR("SetupRemoteVideo failed: RTE not initialized");
         return -1;
     }
     
@@ -542,7 +542,7 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
         // Remove canvas for user
         if (m_remoteUserCanvases.count(userId)) {
             m_remoteUserCanvases.erase(userId);
-            LOG_INFO_FMT("Removed canvas for user: %s", userId.c_str());
+            LOG_INFO_FMT_STR("Removed canvas for user: {}", userId);
         }
         return 0;
     }
@@ -561,19 +561,19 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
         
         if (err.Code() == kRteOk) {
             m_remoteUserCanvases[userId] = canvas;
-            LOG_INFO_FMT("Created canvas for user: %s", userId.c_str());
+            LOG_INFO_FMT_STR("Created canvas for user: {}", userId);
             return 0;
         }
     }
     
-    LOG_ERROR_FMT("SetupRemoteVideo failed for user: %s, error=%d", userId.c_str(), err.Code());
+    LOG_ERROR_FMT_STR("SetupRemoteVideo failed for user: {}, error={}", userId, err.Code());
     return -1;
 }
 
 void RteManager::OnRemoteUserJoined(const std::string& userId) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_remoteUsers.push_back(userId);
-    LOG_INFO_FMT("Remote user joined: %s", userId.c_str());
+    LOG_INFO_FMT_STR("Remote user joined: {}", userId);
 }
 
 void RteManager::OnRemoteUserLeft(const std::string& userId) {
@@ -588,5 +588,5 @@ void RteManager::OnRemoteUserLeft(const std::string& userId) {
         m_remoteUserCanvases.erase(userId);
     }
     
-    LOG_INFO_FMT("Remote user left: %s", userId.c_str());
+    LOG_INFO_FMT_STR("Remote user left: {}", userId);
 }
