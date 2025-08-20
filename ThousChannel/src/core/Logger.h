@@ -105,6 +105,20 @@ private:
     static std::string CStringToUTF8(LPCTSTR wideStr);
 };
 
+// Helper function for converting _T() strings to UTF-8 std::string (outside class for macro access)
+inline std::string CStringToUTF8(LPCTSTR wideStr)
+{
+    if (!wideStr) return "";
+    
+    int utf8Len = WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, nullptr, 0, nullptr, nullptr);
+    if (utf8Len > 0) {
+        std::vector<char> utf8Buffer(utf8Len);
+        WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, utf8Buffer.data(), utf8Len, nullptr, nullptr);
+        return std::string(utf8Buffer.data());
+    }
+    return "";
+}
+
 // Unified logging macros - all use std::string internally for better encoding stability
 #define LOG_DEBUG(msg) CLogger::GetInstance().Debug(CStringToUTF8(_T(msg)))
 #define LOG_INFO(msg) CLogger::GetInstance().Info(CStringToUTF8(_T(msg)))

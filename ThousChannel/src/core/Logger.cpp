@@ -115,19 +115,7 @@ void CLogger::Log(LogLevel level, const char* format, ...)
     Log(level, message);
 }
 
-// Helper function for converting _T() strings to UTF-8 std::string
-std::string CLogger::CStringToUTF8(LPCTSTR wideStr)
-{
-    if (!wideStr) return "";
-    
-    int utf8Len = WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, nullptr, 0, nullptr, nullptr);
-    if (utf8Len > 0) {
-        std::vector<char> utf8Buffer(utf8Len);
-        WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, utf8Buffer.data(), utf8Len, nullptr, nullptr);
-        return std::string(utf8Buffer.data());
-    }
-    return "";
-}
+
 
 // New std::string convenience methods
 void CLogger::Debug(const std::string& message)
