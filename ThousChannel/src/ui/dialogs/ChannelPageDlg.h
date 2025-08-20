@@ -6,6 +6,7 @@
 #include "HomePageDlg.h"
 #include "VideoGridCell.h"
 #include "../../core/IRteManagerEventHandler.h"
+#include <string>
 
 // Forward declarations
 class RteManager;
@@ -27,38 +28,38 @@ class ChannelUser
 public:
     // Constructor
     ChannelUser() 
-        : uid(_T("")), isLocal(FALSE), isRobot(FALSE), isConnected(FALSE),
-          isVideoSubscribed(TRUE), isAudioSubscribed(TRUE),
-          isCurrentlyVisible(FALSE), lastVisiblePage(0) 
+        : uid(""), isLocal(false), isRobot(false), isConnected(false),
+          isVideoSubscribed(true), isAudioSubscribed(true),
+          isCurrentlyVisible(false), lastVisiblePage(0) 
     {
     }
 
     // Getter method
-    CString GetUID() const { return uid; }
+    std::string GetUID() const { return uid; }
 
     // Public members
-    CString userName;
-    CString uid;
-    BOOL isLocal;
-    BOOL isRobot;
-    BOOL isConnected;
-    BOOL isVideoSubscribed;
-    BOOL isAudioSubscribed;
-    BOOL isCurrentlyVisible;
+    std::string userName;
+    std::string uid;
+    bool isLocal;
+    bool isRobot;
+    bool isConnected;
+    bool isVideoSubscribed;
+    bool isAudioSubscribed;
+    bool isCurrentlyVisible;
     int lastVisiblePage;
 };
 
 // Page state management
 struct ChannelPageState {
-    CString channelId;              // Current channel ID
-    CString currentUserId;          // Current user ID
-    int currentGridMode;            // Current grid mode (2,3,4,5,7)
-    int currentPage;                // Current page number
-    int usersPerPage;              // Users per page
-    CArray<ChannelUser*> userList;          // User list (using pointers to avoid copying)
-    CString audioMode;              // Audio mode
-    BOOL isLocalVideoEnabled;       // Local video status
-    BOOL isLocalAudioEnabled;       // Local audio mode status
+    std::string channelId;              // Current channel ID
+    std::string currentUserId;          // Current user ID
+    int currentGridMode;                // Current grid mode (2,3,4,5,7)
+    int currentPage;                    // Current page number
+    int usersPerPage;                   // Users per page
+    CArray<ChannelUser*> userList;      // User list (using pointers to avoid copying)
+    std::string audioMode;              // Audio mode
+    bool isLocalVideoEnabled;           // Local video status
+    bool isLocalAudioEnabled;           // Local audio mode status
 };
 
 // Channel page dialog class

@@ -73,7 +73,6 @@ BOOL CThousChannelApp::InitInstance()
 	LOG_INFO("ThousChannel application starting...");
 
 	// 初始化日志系统
-	CLogger::GetInstance().Initialize();
 	LOG_INFO("Application initialization started");
 
 	// 如果一个运行在 Windows XP 上的应用程序清单指定要
@@ -163,7 +162,7 @@ BOOL CThousChannelApp::InitInstance()
 	CCommandLineInfo cmdInfo;
 	ParseCommandLine(cmdInfo);
 
-	LOG_INFO("Command line parsed: %s", cmdInfo.m_strFileName);
+	LOG_INFO_FMT("Command line parsed: {}", std::string(CW2A(cmdInfo.m_strFileName, CP_UTF8)));
 
 	// 调度在命令行中指定的命令。  如果
 	// 用 /RegServer、/Register、/Unregserver 或 /Unregister 启动应用程序，则返回 FALSE。
@@ -187,7 +186,7 @@ BOOL CThousChannelApp::InitInstance()
 
 	// 获取用户输入的参数
 	ChannelJoinParams joinParams = homeDlg.GetJoinParams();
-	LOG_INFO("User joined channel: AppID=%s, ChannelID=%s", 
+	LOG_INFO_FMT("User joined channel: AppID={}, ChannelID={}", 
 		joinParams.appId, joinParams.channelId);
 	
 	// TODO: 这里可以将参数传递给频道页面

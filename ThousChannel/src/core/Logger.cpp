@@ -1,9 +1,10 @@
 #include "Logger.h"
 #include <iostream>
-#include <filesystem>
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <direct.h>
+#include <io.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -26,9 +27,14 @@ std::string Logger::formatMessage(LogLevel level, const std::string& message) {
 
 void Logger::writeToFile(const std::string& message) {
     // Ensure log directory exists
-    auto logDir = std::filesystem::path(m_logPath).parent_path();
-    if (!logDir.empty()) {
-        std::filesystem::create_directories(logDir);
+    std::string logPath = m_logPath;
+    size_t lastSlash = logPath.find_last_of("/\\");
+    if (lastSlash != std::string::npos) {
+        std::string logDir = logPath.substr(0, lastSlash);
+        if (!logDir.empty()) {
+            // Create directory using Windows API
+            _mkdir(logDir.c_str());
+        }
     }
     
     // Open file if not already open

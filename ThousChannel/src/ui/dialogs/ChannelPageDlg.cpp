@@ -25,8 +25,8 @@ static int CompareUsers(const void* a, const void* b)
     if (!userA->isRobot && userB->isRobot) return -1;
     if (userA->isRobot && !userB->isRobot) return 1;
 
-    // Use _tcscmp for CString comparison
-    int result = _tcscmp(userA->GetUID(), userB->GetUID());
+    // Use std::string comparison
+    int result = userA->GetUID().compare(userB->GetUID());
     if (result < 0) return -1;
     if (result > 0) return 1;
 
@@ -63,7 +63,7 @@ CChannelPageDlg::CChannelPageDlg(CWnd* pParent /*=nullptr*/)
     m_pageState.currentPage = 1;
     m_pageState.usersPerPage = 4;
     m_rteManager = nullptr;
-    m_isChannelJoined = FALSE;
+    m_isChannelJoined = false;
 }
 
 CChannelPageDlg::CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pParent /*=nullptr*/)
@@ -78,18 +78,16 @@ CChannelPageDlg::CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pPar
     m_pageState.currentPage = 1;
     m_pageState.usersPerPage = 4;
     m_rteManager = nullptr;
-    m_isChannelJoined = FALSE;
+    m_isChannelJoined = false;
 
     // Create placeholders for real users (UID 2-31)
     for (int i = 2; i <= 31; ++i) {
         ChannelUser* placeholderUser = new ChannelUser();
-        CString uidStr;
-        uidStr.Format(_T("%d"), i);
-        placeholderUser->uid = uidStr;
-        placeholderUser->isLocal = FALSE;
-        placeholderUser->isRobot = FALSE;
-        placeholderUser->isConnected = FALSE;
-        placeholderUser->userName.Format(_T("User %d (Offline)"), i);
+        placeholderUser->uid = std::to_string(i);
+        placeholderUser->isLocal = false;
+        placeholderUser->isRobot = false;
+        placeholderUser->isConnected = false;
+        placeholderUser->userName = "User " + std::to_string(i) + " (Offline)";
         m_pageState.userList.Add(placeholderUser);
     }
 }
@@ -144,7 +142,7 @@ BOOL CChannelPageDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();
 
-    LOG_INFO("Channel page dialog initialized for channel: {}", m_pageState.channelId);
+    	LOG_INFO_FMT("Channel page dialog initialized for channel: {}", m_pageState.channelId);
 
     InitializeFonts();
     InitializeControls();
@@ -162,10 +160,10 @@ BOOL CChannelPageDlg::OnInitDialog()
     
     // Create local user data
     ChannelUser* localUser = new ChannelUser();
-    localUser->isLocal = TRUE;
-    localUser->isConnected = TRUE;
+    localUser->isLocal = true;
+    localUser->isConnected = true;
     localUser->userName = m_pageState.currentUserId;
-    localUser->uid = _T(""); // Will be updated onJoinChannelSuccess
+    localUser->uid = ""; // Will be updated onJoinChannelSuccess
     m_pageState.userList.InsertAt(0, localUser);
     
     if (!JoinRteChannel()) {
@@ -318,8 +316,8 @@ LRESULT CChannelPageDlg::OnRteJoinChannelSuccess(WPARAM wParam, LPARAM lParam)
     if (m_pageState.userList.GetSize() > 0) {
         ChannelUser* localUser = m_pageState.userList[0];
         if (localUser->isLocal) {
-            localUser->uid = localUserId;
-            localUser->userName.Format(_T("Local User (%s)"), localUserId);
+            localUser->uid = std::string(CW2A(localUserId, CP_UTF8));
+            localUser->userName = "Local User (" + std::string(CW2A(localUserId, CP_UTF8)) + ")";
 
             HWND canvas = NULL;
             if (m_userCanvasMap.Lookup(_T(""), canvas)) {
@@ -330,7 +328,7 @@ LRESULT CChannelPageDlg::OnRteJoinChannelSuccess(WPARAM wParam, LPARAM lParam)
             UpdateVideoLayout();
 
             CString strChannelInfo;
-            strChannelInfo.Format(_T("Channel: %s (My UID: %s)"), m_pageState.channelId, localUserId);
+            strChannelInfo.Format(_T("Channel: %s (My UID: %s)"), CString(m_pageState.channelId.c_str()), localUserId);
             m_staticChannelId.SetWindowText(strChannelInfo);
         }
     }
@@ -350,11 +348,11 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
         if (FindUserIndex(uid) != -1) return 0; // Already exists
 
         ChannelUser* robotUser = new ChannelUser();
-        robotUser->uid = uid;
-        robotUser->isConnected = TRUE;
-        robotUser->isLocal = FALSE;
-        robotUser->isRobot = TRUE;
-        robotUser->userName.Format(_T("Robot %s"), uid);
+        robotUser->uid = std::string(CW2A(uid, CP_UTF8));
+        robotUser->isConnected = true;
+        robotUser->isLocal = false;
+        robotUser->isRobot = true;
+        robotUser->userName = "Robot " + std::string(CW2A(uid, CP_UTF8));
         m_pageState.userList.Add(robotUser);
     }
     else { // Real user
@@ -362,8 +360,8 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
         if (userIndex != -1) {
             ChannelUser* user = m_pageState.userList[userIndex];
             if (user && !user->isConnected) {
-                user->isConnected = TRUE;
-                user->userName.Format(_T("Remote User %s"), uid);
+                user->isConnected = true;
+                user->userName = "Remote User " + std::string(CW2A(uid, CP_UTF8));
             }
         }
     }
@@ -380,8 +378,8 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     }
     int userIndex = FindUserIndex(uid);
     if (userIndex != -1) {
-        m_pageState.userList[userIndex]->isVideoSubscribed = TRUE;
-        m_pageState.userList[userIndex]->isAudioSubscribed = TRUE;
+        m_pageState.userList[userIndex]->isVideoSubscribed = true;
+        m_pageState.userList[userIndex]->isAudioSubscribed = true;
     }
 
     UpdateVideoLayout();
@@ -417,10 +415,10 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
             m_pageState.userList.RemoveAt(userIndex);
         } else if (!userInfo->isLocal) {
             // Reset placeholder
-            userInfo->isConnected = FALSE;
-            userInfo->userName.Format(_T("User %s (Offline)"), uid);
-            userInfo->isVideoSubscribed = TRUE;
-            userInfo->isAudioSubscribed = TRUE;
+            userInfo->isConnected = false;
+            userInfo->userName = "User " + std::string(CW2A(uid, CP_UTF8)) + " (Offline)";
+            userInfo->isVideoSubscribed = true;
+            userInfo->isAudioSubscribed = true;
         }
 
         SortUserList();
@@ -563,13 +561,13 @@ BOOL CChannelPageDlg::InitializeRteEngine()
 
     // Initialize RTE with config
     RteManagerConfig config;
-    // Convert CString to std::string directly - CString is already Unicode in Unicode builds
-    config.appId = std::string(CW2A(m_joinParams.appId, CP_UTF8));
-    config.userId = std::string(CW2A(m_pageState.currentUserId, CP_UTF8));
+    // Convert std::string to std::string (no conversion needed for appId)
+    config.appId = m_joinParams.appId;
+    config.userId = m_pageState.currentUserId;
     
     // Debug: Log the converted values using CString to avoid encoding issues
-    LOG_INFO("Converted appId: {}", CString(config.appId.c_str()));
-    LOG_INFO("Converted userId: {}", CString(config.userId.c_str()));
+    LOG_INFO_FMT("Converted appId: {}", CString(config.appId.c_str()));
+    LOG_INFO_FMT("Converted userId: {}", CString(config.userId.c_str()));
     // userToken is not a member of RteManagerConfig
     // Token should be passed separately to JoinChannel method
 
@@ -592,19 +590,19 @@ void CChannelPageDlg::ReleaseRteEngine()
 
 BOOL CChannelPageDlg::JoinRteChannel()
 {
-    if (!m_rteManager || m_joinParams.token.IsEmpty()) {
+    if (!m_rteManager || m_joinParams.token.empty()) {
         return FALSE;
     }
 
-    // Convert CString to std::string directly - CString is already Unicode in Unicode builds
-    std::string channelId = std::string(CW2A(m_joinParams.channelId, CP_UTF8));
-    std::string token = std::string(CW2A(m_joinParams.token, CP_UTF8));
+    // Convert std::string to std::string (no conversion needed)
+    std::string channelId = m_joinParams.channelId;
+    std::string token = m_joinParams.token;
     
     // Debug: Log the converted values using CString to avoid encoding issues
-    LOG_INFO("Converted channelId: {}", CString(channelId.c_str()));
-    LOG_INFO("Converted token: {}", CString(token.substr(0, 20).c_str()));
+    LOG_INFO_FMT("Converted channelId: {}", CString(channelId.c_str()));
+    LOG_INFO_FMT("Converted token: {}", CString(token.substr(0, 20).c_str()));
     
-    BOOL result = m_rteManager->JoinChannel(channelId, token);
+    bool result = m_rteManager->JoinChannel(channelId, token);
     m_isChannelJoined = result;
     return result;
 }
@@ -613,7 +611,7 @@ void CChannelPageDlg::LeaveRteChannel()
 {
     if (m_rteManager && m_isChannelJoined) {
         m_rteManager->LeaveChannel();
-        m_isChannelJoined = FALSE;
+        m_isChannelJoined = false;
     }
 }
 
@@ -707,14 +705,14 @@ void CChannelPageDlg::UpdateVideoLayout()
         if (userIndex < userCount)
         {
             ChannelUser* userInfo = m_pageState.userList[userIndex];
-            pVideoWnd->SetUserInfo(userInfo->userName, userInfo->userName, userInfo->isConnected);
+            pVideoWnd->SetUserInfo(CString(userInfo->userName.c_str()), CString(userInfo->userName.c_str()), userInfo->isConnected);
             pVideoWnd->SetVideoSubscription(userInfo->isVideoSubscribed);
             pVideoWnd->SetAudioSubscription(userInfo->isAudioSubscribed);
             pVideoWnd->ShowWindow(SW_SHOW);
         }
         else
         {
-            pVideoWnd->SetUserInfo(_T(""), _T(""), FALSE);
+            pVideoWnd->SetUserInfo(_T(""), _T(""), false);
             pVideoWnd->ShowWindow(SW_HIDE);
         }
     }
@@ -804,7 +802,7 @@ void CChannelPageDlg::AttachVisibleUsersToDisplay()
         {
             ChannelUser* userInfo = m_pageState.userList[userIndex];
             HWND displayWindow = m_videoWindows[i]->GetSafeHwnd();
-            HWND canvas = GetOrCreateUserCanvas(userInfo->GetUID());
+            HWND canvas = GetOrCreateUserCanvas(CString(userInfo->GetUID().c_str()));
 
             if (displayWindow && ::IsWindow(displayWindow) && canvas && ::IsWindow(canvas))
             {
@@ -861,7 +859,7 @@ int CChannelPageDlg::FindUserIndex(LPCTSTR uid)
 {
     for (int i = 0; i < m_pageState.userList.GetSize(); i++)
     {
-        if (_tcscmp(m_pageState.userList[i]->GetUID(), uid) == 0)
+        if (m_pageState.userList[i]->GetUID() == std::string(CW2A(uid, CP_UTF8)))
         {
             return i;
         }
@@ -1009,9 +1007,8 @@ void CChannelPageDlg::UpdateViewUserBindings()
             if (user && user->isConnected) {
                 HWND canvasWnd = NULL;
                 // Look up the correct canvas window from the map.
-                if (m_userCanvasMap.Lookup(user->GetUID(), canvasWnd) && canvasWnd) {
-                    CStringA uidA(user->GetUID());
-                    std::string userIdStr(uidA.GetString());
+                if (m_userCanvasMap.Lookup(CString(user->GetUID().c_str()), canvasWnd) && canvasWnd) {
+                    std::string userIdStr = user->GetUID();
                     viewToUserMap[canvasWnd] = userIdStr;
                 }
             }
