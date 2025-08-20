@@ -3,6 +3,7 @@
 #include "HomePageDlg.h"
 #include "ChannelPageDlg.h"
 #include "ModernLogger.h"
+#include <format>
 #include "afxdialogex.h"
 
 #ifdef _DEBUG
@@ -26,13 +27,13 @@ CHomePageDlg::CHomePageDlg(CWnd* pParent /*=nullptr*/)
 	, m_isGeneratingToken(FALSE)
 {
 	// 初始化参数
-	m_joinParams.appId = _T("");
-	m_joinParams.appCertificate = _T("");
-	m_joinParams.channelId = _T("");
-	m_joinParams.audioPullMode = _T("");
-	m_joinParams.token = _T("");
-	m_joinParams.enableCamera = TRUE;  // 默认开启摄像头
-	m_joinParams.enableMic = TRUE;     // 默认开启麦克风
+	m_joinParams.appId = "";
+	m_joinParams.appCertificate = "";
+	m_joinParams.channelId = "";
+	m_joinParams.audioPullMode = "";
+	m_joinParams.token = "";
+	m_joinParams.enableCamera = true;  // 默认开启摄像头
+	m_joinParams.enableMic = true;     // 默认开启麦克风
 }
 
 CHomePageDlg::~CHomePageDlg()
@@ -112,12 +113,12 @@ void CHomePageDlg::InitializeControls()
 		CString strText;
 		
 		// 初始化AppID下拉框 - 直接添加AppID项目，不需要提示项
-		for (int i = 0; i < m_appIdCount; i++) {
-			m_comboAppId.AddString(m_appIdList[i].displayName);
+		for (const auto& appId : m_appIdList) {
+			m_comboAppId.AddString(CString(appId.displayName.c_str()));
 		}
 		
 		// 默认选择第一个AppID（索引0）
-		if (m_appIdCount > 0) {
+		if (!m_appIdList.empty()) {
 			m_comboAppId.SetCurSel(0);
 		}
 
@@ -137,18 +138,18 @@ void CHomePageDlg::InitializeControls()
 		m_btnJoinChannel.SetWindowText(strText);
 
 		// 初始化Token状态显示
-		UpdateTokenStatus(_T("请填写完整信息后生成Token"), FALSE);
+		UpdateTokenStatus("请填写完整信息后生成Token", false);
 	}
 	catch (...) {
 		// 如果初始化失败，至少设置基本状态
-		m_comboAppId.AddString(_T("选择AppID"));
-		m_comboAudioPull.AddString(_T("UID"));
-		m_comboAudioPull.AddString(_T("TOPN"));
-		m_btnJoinChannel.SetWindowText(_T("加入频道"));
+		m_comboAppId.AddString("选择AppID");
+		m_comboAudioPull.AddString("UID");
+		m_comboAudioPull.AddString("TOPN");
+		m_btnJoinChannel.SetWindowText("加入频道");
 	}
 }
 
-BOOL CHomePageDlg::ValidateInput()
+bool CHomePageDlg::ValidateInput()
 {
 	CString strMessage;
 	
@@ -157,10 +158,10 @@ BOOL CHomePageDlg::ValidateInput()
 	if (appIdSel < 0)
 	{
 		strMessage.LoadString(IDS_MSG_SELECT_APPID);
-		        		LOG_WARN("User tried to join without selecting AppID");
+		LOG_WARN("User tried to join without selecting AppID");
 		AfxMessageBox(strMessage);
 		m_comboAppId.SetFocus();
-		return FALSE;
+		return false;
 	}
 
 	// App证书不需要用户输入，直接从配置中获取
@@ -172,10 +173,10 @@ BOOL CHomePageDlg::ValidateInput()
 	if (channelId.IsEmpty())
 	{
 		strMessage.LoadString(IDS_MSG_ENTER_CHANNEL);
-		        		LOG_WARN("User tried to join without entering channel ID");
+		LOG_WARN("User tried to join without entering channel ID");
 		AfxMessageBox(strMessage);
 		m_editChannelId.SetFocus();
-		return FALSE;
+		return false;
 	}
 
 	// 用户名检查已移除 - 不再需要用户名输入
@@ -188,11 +189,11 @@ BOOL CHomePageDlg::ValidateInput()
 		LOG_WARN("User tried to join without selecting audio pull mode");
 		AfxMessageBox(strMessage);
 		m_comboAudioPull.SetFocus();
-		return FALSE;
+		return false;
 	}
 
 	LOG_INFO("Input validation passed");
-	return TRUE;
+	return true;
 }
 
 void CHomePageDlg::GenerateToken()
@@ -207,17 +208,17 @@ void CHomePageDlg::GenerateToken()
 	
 	// 获取AppID和证书
 	int appIdSel = m_comboAppId.GetCurSel();
-	if (appIdSel >= 0 && appIdSel < m_appIdCount) {
+	if (appIdSel >= 0 && appIdSel < static_cast<int>(m_appIdList.size())) {
 		m_joinParams.appId = m_appIdList[appIdSel].appId;  // 使用真实的AppID
 		m_joinParams.appCertificate = m_appIdList[appIdSel].certificate;  // 使用对应的证书
 	} else {
-		m_joinParams.appId = _T("");
-		m_joinParams.appCertificate = _T("");
+		m_joinParams.appId = "";
+		m_joinParams.appCertificate = "";
 	}
 
 	// 获取频道ID
 	m_editChannelId.GetWindowText(temp);
-	m_joinParams.channelId = temp.Trim();
+	m_joinParams.channelId = std::string(CW2A(temp.Trim(), CP_UTF8));
 
 	// 生成随机用户ID
 	m_joinParams.userId = GenerateRandomUserId();
@@ -225,7 +226,7 @@ void CHomePageDlg::GenerateToken()
 	// 获取音频拉流方式
 	int audioPullSel = m_comboAudioPull.GetCurSel();
 	m_comboAudioPull.GetLBText(audioPullSel, temp);
-	m_joinParams.audioPullMode = temp;
+	m_joinParams.audioPullMode = std::string(CW2A(temp, CP_UTF8));
 
 	// 获取复选框状态
 	m_joinParams.enableCamera = (m_checkEnableCamera.GetCheck() == BST_CHECKED);
@@ -237,10 +238,10 @@ void CHomePageDlg::GenerateToken()
 
 	// 构建Token生成参数
 	TokenGenerateParams tokenParams;
-	tokenParams.appId = std::string(CW2A(m_joinParams.appId, CP_UTF8));
-	tokenParams.appCertificate = std::string(CW2A(m_joinParams.appCertificate, CP_UTF8));
-	tokenParams.channelName = std::string(CW2A(m_joinParams.channelId, CP_UTF8));
-	tokenParams.userId = std::string(CW2A(m_joinParams.userId, CP_UTF8));
+	tokenParams.appId = m_joinParams.appId;
+	tokenParams.appCertificate = m_joinParams.appCertificate;
+	tokenParams.channelName = m_joinParams.channelId;
+	tokenParams.userId = m_joinParams.userId;
 	tokenParams.expire = 24 * 60 * 60;  // 24小时过期
 	tokenParams.type = 1;      // RTC Token
 	tokenParams.src = "Windows";
@@ -249,32 +250,32 @@ void CHomePageDlg::GenerateToken()
 		tokenParams.appId, tokenParams.channelName, tokenParams.userId);
 
 	// 更新状态
-	m_isGeneratingToken = TRUE;
-	UpdateTokenStatus(_T("正在生成Token..."), FALSE);
-	m_btnJoinChannel.EnableWindow(FALSE);
+	m_isGeneratingToken = true;
+	UpdateTokenStatus("正在生成Token...", false);
+	m_btnJoinChannel.EnableWindow(false);
 
 	// 异步生成Token
 	m_tokenManager->GenerateTokenAsync(tokenParams, [this](const std::string& token, bool success, const std::string& errorMsg) {
 		// 通过消息机制在主线程中处理回调
 		TokenResult* pResult = new TokenResult();
-		pResult->token = CString(token.c_str());
+		pResult->token = token;
 		pResult->success = success;
-		pResult->errorMsg = CString(errorMsg.c_str());
+		pResult->errorMsg = errorMsg;
 		
 		::PostMessage(this->GetSafeHwnd(), WM_TOKEN_GENERATED, 0, (LPARAM)pResult);
 	});
 }
 
-void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CString& errorMsg)
+void CHomePageDlg::OnTokenGenerated(const std::string& token, bool success, const std::string& errorMsg)
 {
-	m_isGeneratingToken = FALSE;
-	m_btnJoinChannel.EnableWindow(TRUE);
+	m_isGeneratingToken = false;
+	m_btnJoinChannel.EnableWindow(true);
 
-	if (success && !token.IsEmpty()) {
+	if (success && !token.empty()) {
 		m_joinParams.token = token;
-		UpdateTokenStatus(_T("Token生成成功，可以加入频道"), FALSE);
+		UpdateTokenStatus("Token生成成功，可以加入频道", false);
 		
-		        		LOG_INFO("Token generated successfully: {}", token.Left(20) + _T("..."));
+		LOG_INFO("Token generated successfully: {}", token.substr(0, 20) + "...");
 		
 		// 自动跳转到频道页面
 		LOG_INFO("Creating channel page dialog");
@@ -296,23 +297,23 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 			LOG_INFO("User returned from channel page, showing join dialog again");
 			ShowWindow(SW_SHOW);
 			// 清空token，要求重新生成
-			m_joinParams.token = _T("");
-			UpdateTokenStatus(_T("请重新生成Token"), FALSE);
+			m_joinParams.token = "";
+			UpdateTokenStatus("请重新生成Token", false);
 		}
 	} else {
-		UpdateTokenStatus(_T("Token生成失败: ") + errorMsg, TRUE);
+		UpdateTokenStatus("Token生成失败: " + errorMsg, true);
 		LOG_ERROR("Token generation failed: {}", errorMsg);
-		AfxMessageBox(_T("Token生成失败: ") + errorMsg);
+		AfxMessageBox("Token生成失败: " + CString(errorMsg.c_str()));
 	}
 }
 
-void CHomePageDlg::UpdateTokenStatus(const CString& status, BOOL isError)
+void CHomePageDlg::UpdateTokenStatus(const std::string& status, bool isError)
 {
 	try {
 		// 尝试通过控件ID直接更新文本，避免使用成员变量
 		CWnd* pStatusWnd = GetDlgItem(IDC_STATIC_TOKEN_STATUS);
 		if (pStatusWnd && pStatusWnd->GetSafeHwnd()) {
-			CString displayText = _T("Token状态: ") + status;
+			CString displayText = "Token状态: " + CString(status.c_str());
 			pStatusWnd->SetWindowText(displayText);
 		}
 		
@@ -362,9 +363,9 @@ void CHomePageDlg::OnEnChangeChannelId()
 	// 频道ID输入变化时的处理
 	LOG_DEBUG("Channel ID input changed");
 	// 清空token状态
-	if (!m_joinParams.token.IsEmpty()) {
-		m_joinParams.token = _T("");
-		UpdateTokenStatus(_T("频道信息已更改，需要重新生成Token"), FALSE);
+	if (!m_joinParams.token.empty()) {
+		m_joinParams.token = "";
+		UpdateTokenStatus("频道信息已更改，需要重新生成Token", false);
 	}
 }
 
@@ -375,14 +376,14 @@ void CHomePageDlg::OnCbnSelchangeAppid()
 	
 	// 获取当前选择的索引
 	int sel = m_comboAppId.GetCurSel();
-	if (sel >= 0 && sel < m_appIdCount) {
+	if (sel >= 0 && sel < static_cast<int>(m_appIdList.size())) {
 		LOG_INFO("AppID selected: {}", m_appIdList[sel].displayName);
 	}
 	
 	// 清空token状态
-	if (!m_joinParams.token.IsEmpty()) {
-		m_joinParams.token = _T("");
-		UpdateTokenStatus(_T("AppID已更改，需要重新生成Token"), FALSE);
+	if (!m_joinParams.token.empty()) {
+		m_joinParams.token = "";
+		UpdateTokenStatus("AppID已更改，需要重新生成Token", false);
 	}
 }
 
@@ -401,7 +402,7 @@ void CHomePageDlg::OnOK()
 	OnBnClickedJoinChannel();
 }
 
-CString CHomePageDlg::GenerateRandomUserId()
+std::string CHomePageDlg::GenerateRandomUserId()
 {
 	// 获取当前时间戳（毫秒级）
 	SYSTEMTIME st;
@@ -421,9 +422,6 @@ CString CHomePageDlg::GenerateRandomUserId()
 	
 	// 使用3位随机数和时间戳的后4位组合
 	// 格式：YYYXXXX，其中YYY是3位随机数, XXXX是时间戳后4位
-	CString userId;
-	userId.Format(_T("%03d%04d"), random, (int)(timestamp % 10000));
-	
-	return userId;
+	return std::format("{:03d}{:04d}", random, static_cast<int>(timestamp % 10000));
 }
 

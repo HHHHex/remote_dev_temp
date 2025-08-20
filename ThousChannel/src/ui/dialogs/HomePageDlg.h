@@ -3,31 +3,33 @@
 #include "afxdialogex.h"
 #include "resource.h"
 #include "../../core/TokenManager.h"
+#include <string>
+#include <vector>
 
 // 加入频道参数结构
 struct ChannelJoinParams {
-	CString appId;           // AppID
-	CString appCertificate;  // App证书
-	CString channelId;       // 频道ID
-	CString userId;          // 用户ID
-	CString audioPullMode;   // 音频拉流方式
-	CString token;           // RTC Token
-	BOOL enableCamera;       // 是否开启摄像头
-	BOOL enableMic;          // 是否开启麦克风
+	std::string appId;           // AppID
+	std::string appCertificate;  // App证书
+	std::string channelId;       // 频道ID
+	std::string userId;          // 用户ID
+	std::string audioPullMode;   // 音频拉流方式
+	std::string token;           // RTC Token
+	bool enableCamera;           // 是否开启摄像头
+	bool enableMic;              // 是否开启麦克风
 };
 
 // Token结果结构
 struct TokenResult {
-	CString token;
+	std::string token;
 	bool success;
-	CString errorMsg;
+	std::string errorMsg;
 };
 
 // AppID和证书配对结构
 struct AppIdInfo {
-	CString appId;
-	CString certificate;
-	CString displayName;  // 显示名称
+	std::string appId;
+	std::string certificate;
+	std::string displayName;  // 显示名称
 };
 
 // 自定义消息
@@ -72,23 +74,22 @@ private:
 	// 数据成员
 	ChannelJoinParams m_joinParams;
 	CTokenManager* m_tokenManager;
-	BOOL m_isGeneratingToken;
+	bool m_isGeneratingToken;
 	
 	// AppID数据源
-	static const AppIdInfo m_appIdList[];
-	static const int m_appIdCount;
+	static const std::vector<AppIdInfo> m_appIdList;
 
 	// 初始化控件
 	void InitializeControls();
 	
 	// 输入验证
-	BOOL ValidateInput();
+	bool ValidateInput();
 
 	// Token生成相关
 	void GenerateToken();
-	CString GenerateRandomUserId();
-	void OnTokenGenerated(const CString& token, bool success, const CString& errorMsg);
-	void UpdateTokenStatus(const CString& status, BOOL isError = FALSE);
+	std::string GenerateRandomUserId();
+	void OnTokenGenerated(const std::string& token, bool success, const std::string& errorMsg);
+	void UpdateTokenStatus(const std::string& status, bool isError = false);
 
 	// 消息处理函数
 	afx_msg void OnBnClickedJoinChannel();
