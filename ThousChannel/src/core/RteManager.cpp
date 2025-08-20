@@ -153,7 +153,8 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
         rte::MicAudioTrackConfig micConfig;
         // Use minimal configuration to avoid audio device issues
         micConfig.SetRecordingVolume(50);  // Reduced volume
-        // Remove JSON parameter to use system default
+        // Set default audio device explicitly
+        micConfig.SetJsonParameter("{\"audio_device_id\":\"default\"}");
         m_micAudioTrack->SetConfigs(&micConfig, &err);
         if (err.Code() != kRteOk) {
             LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
@@ -296,6 +297,26 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     }
     
     LOG_INFO("Channel joined successfully");
+    
+    // Start audio and video tracks before adding to stream
+    m_micAudioTrack->Start([](rte::Error* err) {
+        if (err && err->Code() == kRteOk) {
+            LOG_INFO("MicAudioTrack started successfully");
+        } else {
+            LOG_ERROR_FMT("MicAudioTrack start failed: error=%d", err ? err->Code() : -1);
+        }
+    });
+    
+    m_cameraVideoTrack->Start([](rte::Error* err) {
+        if (err && err->Code() == kRteOk) {
+            LOG_INFO("CameraVideoTrack started successfully");
+        } else {
+            LOG_ERROR_FMT("CameraVideoTrack start failed: error=%d", err ? err->Code() : -1);
+        }
+    });
+    
+    // Wait a bit for tracks to start
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     
     // Create and publish local stream
     m_localStream = std::make_shared<rte::LocalRealTimeStream>(m_rte.get());
