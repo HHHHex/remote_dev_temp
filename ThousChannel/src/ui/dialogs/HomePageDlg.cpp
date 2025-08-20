@@ -9,9 +9,9 @@
 #define new DEBUG_NEW
 #endif
 
-// AppID数据源定义 - 使用ASCII字符串避免编码问题
+// AppID数据源定义 - 使用UTF-8字符串
 const AppIdInfo CHomePageDlg::m_appIdList[] = {
-	{ L"38fdab08081e4dd7975aa430b35690ab", L"c2fab1d528db43cdb52482490bf2e1b2", L"38fdab***90ab" }
+	{ "38fdab08081e4dd7975aa430b35690ab", "c2fab1d528db43cdb52482490bf2e1b2", "38fdab***90ab" }
 };
 
 const int CHomePageDlg::m_appIdCount = 1;
@@ -185,7 +185,7 @@ BOOL CHomePageDlg::ValidateInput()
 	if (audioPullSel < 0)
 	{
 		strMessage.LoadString(IDS_MSG_SELECT_AUDIO);
-		        		LOG_WARN("User tried to join without selecting audio pull mode");
+		LOG_WARN("User tried to join without selecting audio pull mode");
 		AfxMessageBox(strMessage);
 		m_comboAudioPull.SetFocus();
 		return FALSE;
@@ -198,7 +198,7 @@ BOOL CHomePageDlg::ValidateInput()
 void CHomePageDlg::GenerateToken()
 {
 	if (m_isGeneratingToken) {
-		        LOG_WARNING("Token generation already in progress");
+		LOG_WARN("Token generation already in progress");
 		return;
 	}
 
@@ -237,13 +237,13 @@ void CHomePageDlg::GenerateToken()
 
 	// 构建Token生成参数
 	TokenGenerateParams tokenParams;
-	tokenParams.appId = m_joinParams.appId;
-	tokenParams.appCertificate = m_joinParams.appCertificate;
-	tokenParams.channelName = m_joinParams.channelId;
-	tokenParams.userId = m_joinParams.userId;
-	tokenParams.expire = 24 * 60 * 60 ;  // 24小时过期
+	tokenParams.appId = std::string(CW2A(m_joinParams.appId, CP_UTF8));
+	tokenParams.appCertificate = std::string(CW2A(m_joinParams.appCertificate, CP_UTF8));
+	tokenParams.channelName = std::string(CW2A(m_joinParams.channelId, CP_UTF8));
+	tokenParams.userId = std::string(CW2A(m_joinParams.userId, CP_UTF8));
+	tokenParams.expire = 24 * 60 * 60;  // 24小时过期
 	tokenParams.type = 1;      // RTC Token
-	tokenParams.src = _T("Windows");
+	tokenParams.src = "Windows";
 
 	LOG_INFO("Generating token for AppID={}, Channel={}, UserID={}", 
 		tokenParams.appId, tokenParams.channelName, tokenParams.userId);
@@ -254,12 +254,12 @@ void CHomePageDlg::GenerateToken()
 	m_btnJoinChannel.EnableWindow(FALSE);
 
 	// 异步生成Token
-	m_tokenManager->GenerateTokenAsync(tokenParams, [this](const CString& token, bool success, const CString& errorMsg) {
+	m_tokenManager->GenerateTokenAsync(tokenParams, [this](const std::string& token, bool success, const std::string& errorMsg) {
 		// 通过消息机制在主线程中处理回调
 		TokenResult* pResult = new TokenResult();
-		pResult->token = token;
+		pResult->token = CString(token.c_str());
 		pResult->success = success;
-		pResult->errorMsg = errorMsg;
+		pResult->errorMsg = CString(errorMsg.c_str());
 		
 		::PostMessage(this->GetSafeHwnd(), WM_TOKEN_GENERATED, 0, (LPARAM)pResult);
 	});
@@ -318,18 +318,18 @@ void CHomePageDlg::UpdateTokenStatus(const CString& status, BOOL isError)
 		
 		// 记录状态到日志
 		if (isError) {
-			LOG_ERROR("Token status error: %s", status);
+			LOG_ERROR("Token status error: {}", status);
 		} else {
-			LOG_INFO("Token status: %s", status);
+			LOG_INFO("Token status: {}", status);
 		}
 	}
 	catch (...) {
 		LOG_ERROR("Failed to update token status display");
 		// 即使更新失败也要记录日志
 		if (isError) {
-			LOG_ERROR("Token status error: %s", status);
+			LOG_ERROR("Token status error: {}", status);
 		} else {
-			LOG_INFO("Token status: %s", status);
+			LOG_INFO("Token status: {}", status);
 		}
 	}
 }
@@ -360,7 +360,7 @@ LRESULT CHomePageDlg::OnTokenGenerated(WPARAM wParam, LPARAM lParam)
 void CHomePageDlg::OnEnChangeChannelId()
 {
 	// 频道ID输入变化时的处理
-	DEBUG("Channel ID input changed");
+	LOG_DEBUG("Channel ID input changed");
 	// 清空token状态
 	if (!m_joinParams.token.IsEmpty()) {
 		m_joinParams.token = _T("");
@@ -371,7 +371,7 @@ void CHomePageDlg::OnEnChangeChannelId()
 void CHomePageDlg::OnCbnSelchangeAppid()
 {
 	// AppID选择变化时的处理
-	DEBUG("AppID selection changed");
+	LOG_DEBUG("AppID selection changed");
 	
 	// 获取当前选择的索引
 	int sel = m_comboAppId.GetCurSel();
@@ -389,7 +389,7 @@ void CHomePageDlg::OnCbnSelchangeAppid()
 void CHomePageDlg::OnCbnSelchangeAudioPull()
 {
 	// 音频拉流方式选择变化时的处理
-	DEBUG("Audio pull mode selection changed");
+	LOG_DEBUG("Audio pull mode selection changed");
 }
 
 // 证书输入框已移除，不再需要此函数
