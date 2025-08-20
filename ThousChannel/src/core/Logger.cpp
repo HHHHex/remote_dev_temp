@@ -26,7 +26,7 @@ CLogger& CLogger::GetInstance()
     return instance;
 }
 
-void CLogger::Initialize(const CString& logFilePath)
+void CLogger::Initialize(const std::string& logFilePath)
 {
     EnterCriticalSection(&m_cs);
     
@@ -36,11 +36,10 @@ void CLogger::Initialize(const CString& logFilePath)
         return;
     }
     
-    if (logFilePath.IsEmpty())
+    if (logFilePath.empty())
     {
         // Default log file path
-        CString defaultPath;
-        defaultPath.Format(_T("logs\\ThousChannel_%s.log"), GetCurrentTimeString());
+        std::string defaultPath = "logs\\ThousChannel_" + GetCurrentTimeStringUTF8() + ".log";
         m_logFilePath = defaultPath;
     }
     else
@@ -49,12 +48,12 @@ void CLogger::Initialize(const CString& logFilePath)
     }
     
     // Create log directory
-    CString logDir = m_logFilePath;
-    int pos = logDir.ReverseFind(_T('\\'));
-    if (pos > 0)
+    std::string logDir = m_logFilePath;
+    size_t pos = logDir.find_last_of('\\');
+    if (pos != std::string::npos)
     {
-        logDir = logDir.Left(pos);
-        CreateDirectory(logDir, NULL);
+        logDir = logDir.substr(0, pos);
+        CreateDirectoryA(logDir.c_str(), NULL);
     }
     
     // Open log file in binary mode for UTF-8 support
@@ -66,39 +65,14 @@ void CLogger::Initialize(const CString& logFilePath)
     m_initialized = true;
     
     // Write startup log message
-    CString startMsg;
-    startMsg.Format(_T("=== ThousChannel Application Started at %s ==="), GetCurrentTimeString());
+    std::string startMsg = "=== ThousChannel Application Started at " + GetCurrentTimeStringUTF8() + " ===";
     WriteToFile(startMsg);
     WriteToDebug(startMsg);
     
     LeaveCriticalSection(&m_cs);
 }
 
-void CLogger::Log(LogLevel level, const CString& message)
-{
-    if (!m_initialized)
-    {
-        Initialize();
-    }
-    
-    CString formattedMessage = FormatLogMessage(level, message);
-    
-    EnterCriticalSection(&m_cs);
-    WriteToFile(formattedMessage);
-    WriteToDebug(formattedMessage);
-    LeaveCriticalSection(&m_cs);
-}
 
-void CLogger::Log(LogLevel level, LPCTSTR format, ...)
-{
-    CString message;
-    va_list args;
-    va_start(args, format);
-    message.FormatV(format, args);
-    va_end(args);
-    
-    Log(level, message);
-}
 
 // New std::string interface implementations
 void CLogger::Log(LogLevel level, const std::string& message)
@@ -139,30 +113,7 @@ void CLogger::Log(LogLevel level, const char* format, ...)
     Log(level, message);
 }
 
-void CLogger::Debug(const CString& message)
-{
-    Log(LOG_DEBUG, message);
-}
 
-void CLogger::Info(const CString& message)
-{
-    Log(LOG_INFO, message);
-}
-
-void CLogger::Warning(const CString& message)
-{
-    Log(LOG_WARNING, message);
-}
-
-void CLogger::Error(const CString& message)
-{
-    Log(LOG_ERROR, message);
-}
-
-void CLogger::Fatal(const CString& message)
-{
-    Log(LOG_FATAL, message);
-}
 
 // New std::string convenience methods
 void CLogger::Debug(const std::string& message)
@@ -190,15 +141,7 @@ void CLogger::Fatal(const std::string& message)
     Log(LOG_FATAL, message);
 }
 
-CString CLogger::FormatLogMessage(LogLevel level, const CString& message)
-{
-    CString formattedMessage;
-    formattedMessage.Format(_T("[%s] [%s] %s"), 
-        GetCurrentTimeString(), 
-        GetLevelString(level), 
-        message);
-    return formattedMessage;
-}
+
 
 std::string CLogger::FormatLogMessage(LogLevel level, const std::string& message)
 {
@@ -207,12 +150,7 @@ std::string CLogger::FormatLogMessage(LogLevel level, const std::string& message
     return formattedMessage;
 }
 
-CString CLogger::GetCurrentTimeString()
-{
-    CTime currentTime = CTime::GetCurrentTime();
-    CString timeStr = currentTime.Format(_T("%Y-%m-%d %H:%M:%S"));
-    return timeStr;
-}
+
 
 std::string CLogger::GetCurrentTimeStringUTF8()
 {
@@ -225,18 +163,7 @@ std::string CLogger::GetCurrentTimeStringUTF8()
     return std::string(buffer);
 }
 
-CString CLogger::GetLevelString(LogLevel level)
-{
-    switch (level)
-    {
-    case LOG_DEBUG:   return _T("DEBUG");
-    case LOG_INFO:    return _T("INFO ");
-    case LOG_WARNING: return _T("WARN ");
-    case LOG_ERROR:   return _T("ERROR");
-    case LOG_FATAL:   return _T("FATAL");
-    default:          return _T("UNKNOWN");
-    }
-}
+
 
 std::string CLogger::GetLevelStringUTF8(LogLevel level)
 {
@@ -251,20 +178,7 @@ std::string CLogger::GetLevelStringUTF8(LogLevel level)
     }
 }
 
-void CLogger::WriteToFile(const CString& message)
-{
-    if (m_logFile.is_open())
-    {
-        // Convert to UTF-8 and write to file
-        int utf8Len = WideCharToMultiByte(CP_UTF8, 0, message, -1, nullptr, 0, nullptr, nullptr);
-        if (utf8Len > 0) {
-            std::vector<char> utf8Buffer(utf8Len);
-            WideCharToMultiByte(CP_UTF8, 0, message, -1, utf8Buffer.data(), utf8Len, nullptr, nullptr);
-            m_logFile << utf8Buffer.data() << std::endl;
-            m_logFile.flush();
-        }
-    }
-}
+
 
 void CLogger::WriteToFile(const std::string& message)
 {
@@ -275,17 +189,7 @@ void CLogger::WriteToFile(const std::string& message)
     }
 }
 
-void CLogger::WriteToDebug(const CString& message)
-{
-#ifdef _DEBUG
-    OutputDebugString(message + _T("\n"));
-#endif
-    
-    // Also output to console if available
-    if (GetConsoleWindow()) {
-        printf("%s\n", CStringToUTF8(message).c_str());
-    }
-}
+
 
 void CLogger::WriteToDebug(const std::string& message)
 {
@@ -306,27 +210,4 @@ void CLogger::WriteToDebug(const std::string& message)
     }
 }
 
-// Helper methods for string conversion
-std::string CLogger::CStringToUTF8(const CString& str)
-{
-    int utf8Len = WideCharToMultiByte(CP_UTF8, 0, str, -1, nullptr, 0, nullptr, nullptr);
-    if (utf8Len > 0) {
-        std::vector<char> utf8Buffer(utf8Len);
-        WideCharToMultiByte(CP_UTF8, 0, str, -1, utf8Buffer.data(), utf8Len, nullptr, nullptr);
-        return std::string(utf8Buffer.data());
-    }
-    return "";
-}
 
-std::string CLogger::WideCharToUTF8(LPCWSTR wideStr)
-{
-    if (!wideStr) return "";
-    
-    int utf8Len = WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, nullptr, 0, nullptr, nullptr);
-    if (utf8Len > 0) {
-        std::vector<char> utf8Buffer(utf8Len);
-        WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, utf8Buffer.data(), utf8Len, nullptr, nullptr);
-        return std::string(utf8Buffer.data());
-    }
-    return "";
-}
