@@ -232,7 +232,7 @@ void CHomePageDlg::GenerateToken()
 	m_joinParams.enableMic = (m_checkEnableMic.GetCheck() == BST_CHECKED);
 
 	// 记录日志
-	LOG_INFO_FMT("Join params collected. Channel: %s, UserID: %s, Camera: %d, Mic: %d", 
+	LOG_INFO("Join params collected. Channel: %s, UserID: %s, Camera: %d, Mic: %d", 
 		m_joinParams.channelId, m_joinParams.userId, m_joinParams.enableCamera, m_joinParams.enableMic);
 
 	// 构建Token生成参数
@@ -245,7 +245,7 @@ void CHomePageDlg::GenerateToken()
 	tokenParams.type = 1;      // RTC Token
 	tokenParams.src = _T("Windows");
 
-	LOG_INFO_FMT("Generating token for AppID=%s, Channel=%s, UserID=%s", 
+	LOG_INFO("Generating token for AppID=%s, Channel=%s, UserID=%s", 
 		tokenParams.appId, tokenParams.channelName, tokenParams.userId);
 
 	// 更新状态
@@ -274,7 +274,7 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 		m_joinParams.token = token;
 		UpdateTokenStatus(_T("Token生成成功，可以加入频道"), FALSE);
 		
-		        LOG_INFO_FMT("Token generated successfully: %s", token.Left(20) + _T("..."));
+		        LOG_INFO("Token generated successfully: %s", token.Left(20) + _T("..."));
 		
 		// 自动跳转到频道页面
 		LOG_INFO("Creating channel page dialog");
@@ -301,7 +301,7 @@ void CHomePageDlg::OnTokenGenerated(const CString& token, bool success, const CS
 		}
 	} else {
 		UpdateTokenStatus(_T("Token生成失败: ") + errorMsg, TRUE);
-		LOG_ERROR_FMT("Token generation failed: %s", errorMsg);
+		LOG_ERROR("Token generation failed: %s", errorMsg);
 		AfxMessageBox(_T("Token生成失败: ") + errorMsg);
 	}
 }
@@ -318,18 +318,18 @@ void CHomePageDlg::UpdateTokenStatus(const CString& status, BOOL isError)
 		
 		// 记录状态到日志
 		if (isError) {
-			LOG_ERROR_FMT("Token status error: %s", status);
+			LOG_ERROR("Token status error: %s", status);
 		} else {
-			LOG_INFO_FMT("Token status: %s", status);
+			LOG_INFO("Token status: %s", status);
 		}
 	}
 	catch (...) {
 		LOG_ERROR("Failed to update token status display");
 		// 即使更新失败也要记录日志
 		if (isError) {
-			LOG_ERROR_FMT("Token status error: %s", status);
+			LOG_ERROR("Token status error: %s", status);
 		} else {
-			LOG_INFO_FMT("Token status: %s", status);
+			LOG_INFO("Token status: %s", status);
 		}
 	}
 }
@@ -376,7 +376,7 @@ void CHomePageDlg::OnCbnSelchangeAppid()
 	// 获取当前选择的索引
 	int sel = m_comboAppId.GetCurSel();
 	if (sel >= 0 && sel < m_appIdCount) {
-		LOG_INFO_FMT("AppID selected: %s", m_appIdList[sel].displayName);
+		LOG_INFO("AppID selected: %s", m_appIdList[sel].displayName);
 	}
 	
 	// 清空token状态

@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 #include "TokenManager.h"
-#include "Logger.h"
+#include "ModernLogger.h"
 #include <winhttp.h>
 #include <vector>
 #include <string>
@@ -115,7 +115,7 @@ bool CTokenManager::ParseResponseJson(const CString& jsonResponse, CString& toke
                 int code = _ttoi(codeStr);
                 
                 // 输出服务器返回内容用于调试
-                LOG_INFO_FMT("服务器返回内容: %s", response);
+                LOG_INFO("服务器返回内容: %s", response);
                 
                 if (code != 0) {
                     // 查找msg字段
