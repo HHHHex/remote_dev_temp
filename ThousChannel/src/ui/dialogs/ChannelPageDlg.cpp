@@ -306,61 +306,70 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     CString uid = *uidPtr;
     delete uidPtr;
 
-    // 1. 用户存在性检查
-    int userIndex = FindUserIndex(uid);
-    bool isRobot = (_ttoi(uid) >= 1000);
+    LOG_INFO("User joined: {}", uid);
 
-    // 2. 用户类型判断
+    // 1. 用户类型判断
+    bool isRobot = (_ttoi(uid) >= 1000);
+    std::string userId = std::string(CT2A(uid));
+
+    // 2. 用户存在性检查
+    int userIndex = FindUserIndex(uid);
+    ChannelUser* targetUser = nullptr;
+
     if (isRobot) {
-        // 机器人用户
+        // 机器人用户处理
         if (userIndex != -1) {
             // 已存在 -> 不做任何事
+            LOG_INFO("Robot user {} already exists, skipping", uid);
             return 0;
         }
         
-        // 3. 列表数据处理 - 创建新的机器人用户
-        ChannelUser* robotUser = new ChannelUser();
-        robotUser->userId = std::string(CT2A(uid));
-        robotUser->isConnected = true;
-        robotUser->isLocal = false;
-        robotUser->isRobot = true;
-        m_pageState.userList.Add(robotUser);
+        // 创建新的机器人用户
+        targetUser = new ChannelUser();
+        targetUser->userId = userId;
+        targetUser->isConnected = true;
+        targetUser->isLocal = false;
+        targetUser->isRobot = true;
+        targetUser->isVideoSubscribed = true;
+        targetUser->isAudioSubscribed = true;
+        
+        m_pageState.userList.Add(targetUser);
+        LOG_INFO("Created new robot user: {}", userId);
+        
     } else {
-        // 真人用户
+        // 真人用户处理
         if (userIndex != -1) {
-            // 3. 列表数据处理 - 更新现有用户状态
-            ChannelUser* user = m_pageState.userList[userIndex];
-            if (user && !user->isConnected) {
-                user->isConnected = true;
-                user->userId = std::string(CT2A(uid));
+            // 更新现有占位符用户
+            targetUser = m_pageState.userList[userIndex];
+            if (targetUser && !targetUser->isConnected) {
+                targetUser->isConnected = true;
+                targetUser->userId = userId;
+                targetUser->isVideoSubscribed = true;
+                targetUser->isAudioSubscribed = true;
+                LOG_INFO("Updated existing placeholder user: {}", userId);
             }
+        } else {
+            // 占位符不存在，创建新用户（异常情况）
+            targetUser = new ChannelUser();
+            targetUser->userId = userId;
+            targetUser->isConnected = true;
+            targetUser->isLocal = false;
+            targetUser->isRobot = false;
+            targetUser->isVideoSubscribed = true;
+            targetUser->isAudioSubscribed = true;
+            
+            m_pageState.userList.Add(targetUser);
+            LOG_WARN("Created new real user (should be placeholder): {}", userId);
         }
     }
 
-    // 4. 画布绑定状态更新
-    // 直接绑定用户到可用窗口（如果用户已连接）
-    if (m_rteManager) {
-        // 找到可用的窗口进行绑定
-        int availableWindowIndex = FindAvailableWindow();
-        if (availableWindowIndex >= 0 && availableWindowIndex < m_videoWindows.GetSize()) {
-            m_rteManager->BindUserToView(std::string(CT2A(uid)), 
-                                       m_videoWindows[availableWindowIndex]->GetSafeHwnd());
-        }
-    }
-
-    // 5. 订阅状态更新
-    if (m_rteManager) {
-        LOG_INFO("Subscribing to remote video for user: {}", uid);
+    // 3. 订阅状态更新
+    if (m_rteManager && targetUser && !targetUser->isLocal) {
+        LOG_INFO("Subscribing to remote video/audio for user: {}", userId);
         // TODO: 实现真正的订阅逻辑
     }
-    
-    // 设置订阅状态
-    if (userIndex != -1) {
-        m_pageState.userList[userIndex]->isVideoSubscribed = true;
-        m_pageState.userList[userIndex]->isAudioSubscribed = true;
-    }
 
-    // 更新UI状态
+    // 4. 更新UI状态
     UpdateVideoLayout();
     UpdatePageDisplay();
     UpdateSubscribedUsers();
@@ -375,41 +384,48 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
     CString uid = *uidPtr;
     delete uidPtr;
 
+    LOG_INFO("User left: {}", uid);
+
     // 1. 用户存在性检查
     int userIndex = FindUserIndex(uid);
     if (userIndex == -1) {
-        // 不存在 -> 不做任何事
+        LOG_WARN("User {} not found in list, ignoring leave event", uid);
         return 0;
     }
 
-    // 2. 用户类型判断
-    ChannelUser* userInfo = m_pageState.userList[userIndex];
-    bool isRobot = userInfo->isRobot;
+    // 2. 获取用户信息
+    ChannelUser* targetUser = m_pageState.userList[userIndex];
+    if (!targetUser) {
+        LOG_ERROR("User object at index {} is null", userIndex);
+        return 0;
+    }
 
-    // 3. 列表数据处理
+    // 3. 用户类型判断和处理
+    bool isRobot = targetUser->isRobot;
+    std::string userId = targetUser->GetUserId();
+
     if (isRobot) {
-        // 机器人用户 -> 将model从列表中移除
-        delete userInfo;
+        // 机器人用户 -> 从列表中移除
+        LOG_INFO("Removing robot user: {}", userId);
+        delete targetUser;
         m_pageState.userList.RemoveAt(userIndex);
+        
     } else {
-        // 真人用户 -> 将model设置成占位Model
-        userInfo->isConnected = false;
-        userInfo->userId = std::string(CT2A(uid)) + " (Offline)";
+        // 真人用户 -> 设置为离线状态
+        LOG_INFO("Setting real user offline: {}", userId);
+        targetUser->isConnected = false;
+        targetUser->isVideoSubscribed = false;
+        targetUser->isAudioSubscribed = false;
+        targetUser->userId = userId + " (Offline)";
     }
 
-    // 4. 画布绑定状态更新
-    // 直接解除用户绑定（如果用户已连接）
-    if (m_rteManager && userInfo->isConnected) {
-        m_rteManager->UnbindUserFromView(userInfo->GetUserId());
-    }
-
-    // 5. 订阅状态更新
-    if (m_rteManager && !userInfo->isLocal) {
-        LOG_INFO("Unsubscribing from remote video for user: {}", uid);
+    // 4. 订阅状态更新
+    if (m_rteManager && !targetUser->isLocal) {
+        LOG_INFO("Unsubscribing from remote video/audio for user: {}", userId);
         // TODO: 实现真正的取消订阅逻辑
     }
 
-    // 更新UI状态
+    // 5. 更新UI状态
     UpdateVideoLayout();
     UpdatePageDisplay();
     UpdateSubscribedUsers();
@@ -688,11 +704,6 @@ void CChannelPageDlg::UpdateVideoLayout()
             ChannelUser* userInfo = m_pageState.userList[userIndex];
             if (pVideoWnd && userInfo) {
                 pVideoWnd->SetUserInfo(CString(userInfo->userId.c_str()), CString(userInfo->userId.c_str()), userInfo->isConnected);
-                
-                // 直接绑定用户到窗口（如果用户已连接）
-                if (userInfo->isConnected && m_rteManager) {
-                    m_rteManager->BindUserToView(userInfo->GetUserId(), pVideoWnd->GetSafeHwnd());
-                }
             }
             pVideoWnd->SetVideoSubscription(userInfo->isVideoSubscribed);
             pVideoWnd->SetAudioSubscription(userInfo->isAudioSubscribed);
@@ -770,28 +781,7 @@ int CChannelPageDlg::FindUserIndex(LPCTSTR uid)
     return -1;
 }
 
-int CChannelPageDlg::FindAvailableWindow()
-{
-    // 找到第一个没有绑定用户的窗口
-    int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
-    
-    for (int i = 0; i < m_videoWindows.GetSize(); i++) {
-        int userIndex = startUserIndex + i;
-        if (userIndex >= m_pageState.userList.GetSize()) {
-            // 超出用户列表范围，说明这个窗口可用
-            return i;
-        }
-        
-        ChannelUser* user = m_pageState.userList[userIndex];
-        if (!user || !user->isConnected) {
-            // 用户不存在或未连接，窗口可用
-            return i;
-        }
-    }
-    
-    // 没有找到可用窗口
-    return -1;
-}
+
 
 void CChannelPageDlg::UpdatePageDisplay()
 {
