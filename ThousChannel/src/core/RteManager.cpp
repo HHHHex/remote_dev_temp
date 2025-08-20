@@ -76,6 +76,10 @@ public:
 
 RteManager::RteManager() : m_eventHandler(nullptr) {
     LOG_INFO("RteManager created.");
+    
+    // Test new std::string interface
+    CLogger::GetInstance().Info("Testing new std::string interface");
+    CLogger::GetInstance().Info(std::string("Testing direct std::string"));
 }
 
 RteManager::~RteManager() {

@@ -4,6 +4,7 @@
 #include <afxcmn.h>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 // Enum for log levels
 enum LogLevel {
@@ -23,25 +24,39 @@ public:
     // Initializes the logging system
     void Initialize(const CString& logFilePath = _T(""));
     
-    // Writes a log message
+    // Writes a log message - Legacy CString interface for backward compatibility
     void Log(LogLevel level, const CString& message);
     void Log(LogLevel level, LPCTSTR format, ...);
     
-    // Convenience methods
+    // Convenience methods - Legacy CString interface for backward compatibility
     void Debug(const CString& message);
     void Info(const CString& message);
     void Warning(const CString& message);
     void Error(const CString& message);
     void Fatal(const CString& message);
     
+    // New std::string interface for better encoding stability
+    void Log(LogLevel level, const std::string& message);
+    void Log(LogLevel level, const char* format, ...);
+    
+    // New convenience methods using std::string
+    void Debug(const std::string& message);
+    void Info(const std::string& message);
+    void Warning(const std::string& message);
+    void Error(const std::string& message);
+    void Fatal(const std::string& message);
+    
     // Formats a log message
     CString FormatLogMessage(LogLevel level, const CString& message);
+    std::string FormatLogMessage(LogLevel level, const std::string& message);
     
     // Gets the current time as a string
     CString GetCurrentTimeString();
+    std::string GetCurrentTimeStringUTF8();
     
     // Gets the string representation of a log level
     CString GetLevelString(LogLevel level);
+    std::string GetLevelStringUTF8(LogLevel level);
 
 private:
     CLogger();
@@ -58,9 +73,15 @@ private:
     
     // Writes a message to the log file
     void WriteToFile(const CString& message);
+    void WriteToFile(const std::string& message);
     
     // Writes a message to the debug output
     void WriteToDebug(const CString& message);
+    void WriteToDebug(const std::string& message);
+    
+    // Helper methods for string conversion
+    std::string CStringToUTF8(const CString& str);
+    std::string WideCharToUTF8(LPCWSTR wideStr);
 };
 
 // Macro definitions for easy use - automatically handle _T() conversion
