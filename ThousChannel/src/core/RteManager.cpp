@@ -5,6 +5,41 @@
 #include <algorithm>
 #include <set>
 #include <atomic>
+#include <future>
+#include <chrono>
+
+// AsyncResult class for handling asynchronous operations
+template<typename T>
+class AsyncResult {
+public:
+    AsyncResult() : valid_(false) {}
+    
+    void SetResult(const T& value) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        value_ = value;
+        valid_ = true;
+        cv_.notify_all();
+    }
+    
+    struct Result {
+        bool valid;
+        T value;
+    };
+    
+    Result Wait(int timeoutMs) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        if (cv_.wait_for(lock, std::chrono::milliseconds(timeoutMs), [this] { return valid_; })) {
+            return {true, value_};
+        }
+        return {false, T{}};
+    }
+    
+private:
+    T value_;
+    bool valid_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
+};
 
 // RTE Event Observer for channel events
 class RteManagerEventObserver : public rte::ChannelObserver {
@@ -297,41 +332,48 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     
     LOG_INFO_STR("Channel joined successfully");
     
-    // Start audio and video tracks before adding to stream
+    // Start audio and video tracks before adding to stream - following UT pattern
     std::atomic<bool> audioTrackStarted(false);
     std::atomic<bool> videoTrackStarted(false);
     
-    m_micAudioTrack->Start([&audioTrackStarted](rte::Error* err) {
-        if (err && err->Code() == kRteOk) {
-            audioTrackStarted = true;
-            LOG_INFO_STR("MicAudioTrack started successfully");
-        } else {
-            LOG_ERROR_FMT_STR("MicAudioTrack start failed: error={}", err ? err->Code() : -1);
+    // Start mic audio track first
+    {
+        std::shared_ptr<AsyncResult<bool>> mic_audio_track_start_result = std::make_shared<AsyncResult<bool>>();
+        m_micAudioTrack->Start([=](rte::Error* err) {
+            if (err && err->Code() == kRteOk) {
+                audioTrackStarted = true;
+                mic_audio_track_start_result->SetResult(true);
+                LOG_INFO_STR("MicAudioTrack started successfully");
+            } else {
+                mic_audio_track_start_result->SetResult(false);
+                LOG_ERROR_FMT_STR("MicAudioTrack start failed: error={}", err ? err->Code() : -1);
+            }
+        });
+
+        auto result = mic_audio_track_start_result->Wait(5000); // 5 second timeout
+        if (!result.valid || !result.value) {
+            LOG_WARNING_STR("MicAudioTrack failed to start, continuing anyway");
         }
-    });
-    
-    m_cameraVideoTrack->Start([&videoTrackStarted](rte::Error* err) {
-        if (err && err->Code() == kRteOk) {
-            videoTrackStarted = true;
-            LOG_INFO_STR("CameraVideoTrack started successfully");
-        } else {
-            LOG_ERROR_FMT_STR("CameraVideoTrack start failed: error={}", err ? err->Code() : -1);
-        }
-    });
-    
-    // Wait for tracks to start with timeout
-    int waitCount = 0;
-    while ((!audioTrackStarted.load() || !videoTrackStarted.load()) && waitCount < 10) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        waitCount++;
     }
     
-    if (!audioTrackStarted.load()) {
-        LOG_WARNING_STR("MicAudioTrack failed to start, continuing anyway");
-    }
-    
-    if (!videoTrackStarted.load()) {
-        LOG_WARNING_STR("CameraVideoTrack failed to start, continuing anyway");
+    // Start camera video track
+    {
+        std::shared_ptr<AsyncResult<bool>> camera_video_track_start_result = std::make_shared<AsyncResult<bool>>();
+        m_cameraVideoTrack->Start([=](rte::Error* err) {
+            if (err && err->Code() == kRteOk) {
+                videoTrackStarted = true;
+                camera_video_track_start_result->SetResult(true);
+                LOG_INFO_STR("CameraVideoTrack started successfully");
+            } else {
+                camera_video_track_start_result->SetResult(false);
+                LOG_ERROR_FMT_STR("CameraVideoTrack start failed: error={}", err ? err->Code() : -1);
+            }
+        });
+
+        auto result = camera_video_track_start_result->Wait(5000); // 5 second timeout
+        if (!result.valid || !result.value) {
+            LOG_WARNING_STR("CameraVideoTrack failed to start, continuing anyway");
+        }
     }
     
     // Create and publish local stream
@@ -371,7 +413,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
 }
 
 void RteManager::LeaveChannel() {
-    LOG_INFO_FMT_STR("LeaveChannel: channelId={}", m_channelId);
+    LOG_INFO_FMT_STR("LeaveChannel: channelId=%s", m_channelId.c_str());
     
     if (m_channel) {
         rte::Error err;
