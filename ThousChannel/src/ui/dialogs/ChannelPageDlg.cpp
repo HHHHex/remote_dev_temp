@@ -831,7 +831,7 @@ HWND CChannelPageDlg::GetOrCreateUserCanvas(LPCTSTR uid)
         ::GetDesktopWindow(), NULL, AfxGetInstanceHandle(), NULL);
 
     if (canvas) {
-        LOG_INFO_FMT("Canvas created for UID %s: 0x%p", uid, canvas);
+        LOG_INFO_FMT("Canvas created for UID %s: 0x%08X", uid, (unsigned int)(uintptr_t)canvas);
         m_userCanvasMap.SetAt(uid, canvas);
     }
     else {
