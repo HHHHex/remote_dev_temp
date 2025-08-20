@@ -16,7 +16,10 @@ std::string Logger::formatMessage(LogLevel level, const std::string& message) {
     // Timestamp
     oss << "[" << getCurrentTime() << "] ";
     
-    // Log level
+    // Application prefix tag
+    oss << "[ThousChannel]";
+    
+    // Log level (fixed spacing - no extra space after level)
     oss << "[" << getLevelString(level) << "] ";
     
     // Message
@@ -81,8 +84,8 @@ std::string Logger::getLevelString(LogLevel level) {
     switch (level) {
         case LogLevel::Trace: return "TRACE";
         case LogLevel::Debug: return "DEBUG";
-        case LogLevel::Info:  return "INFO ";
-        case LogLevel::Warn:  return "WARN ";
+        case LogLevel::Info:  return "INFO";
+        case LogLevel::Warn:  return "WARN";
         case LogLevel::Error: return "ERROR";
         case LogLevel::Fatal: return "FATAL";
         default:              return "UNKNOWN";
