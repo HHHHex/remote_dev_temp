@@ -80,14 +80,14 @@ CChannelPageDlg::CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pPar
     m_rteManager = nullptr;
     m_isChannelJoined = false;
 
-    // Create placeholders for real users (UID 2-31)
-    for (int i = 2; i <= 31; ++i) {
+    // Create placeholder users for grid display
+    int maxUsers = 32; // Assuming a max of 32 users for grid display
+    for (int i = 1; i < maxUsers; i++) {
         ChannelUser* placeholderUser = new ChannelUser();
-        placeholderUser->uid = std::to_string(i);
+        placeholderUser->userId = "-1";
         placeholderUser->isLocal = false;
-        placeholderUser->isRobot = false;
         placeholderUser->isConnected = false;
-        placeholderUser->userName = "User " + std::to_string(i) + " (Offline)";
+        placeholderUser->isRobot = false;
         m_pageState.userList.Add(placeholderUser);
     }
 }
@@ -162,8 +162,7 @@ BOOL CChannelPageDlg::OnInitDialog()
     ChannelUser* localUser = new ChannelUser();
     localUser->isLocal = true;
     localUser->isConnected = true;
-    localUser->userName = m_pageState.currentUserId;
-    localUser->uid = ""; // Will be updated onJoinChannelSuccess
+    localUser->userId = m_pageState.currentUserId;
     m_pageState.userList.InsertAt(0, localUser);
     
     if (!JoinRteChannel()) {
@@ -311,13 +310,18 @@ void CChannelPageDlg::OnUserListChanged()
 
 LRESULT CChannelPageDlg::OnRteJoinChannelSuccess(WPARAM wParam, LPARAM lParam)
 {
-    CString localUserId = _T("1"); // Default local user ID
+    // Use the real user ID passed from the previous page
+    std::string realUserId = m_pageState.currentUserId;
+    CString localUserId(realUserId.c_str());
+
+    LOG_INFO_FMT("Join channel success - Using user ID: {}", realUserId);
 
     if (m_pageState.userList.GetSize() > 0) {
         ChannelUser* localUser = m_pageState.userList[0];
         if (localUser->isLocal) {
-            localUser->uid = std::string(CW2A(localUserId, CP_UTF8));
-            localUser->userName = "Local User (" + std::string(CW2A(localUserId, CP_UTF8)) + ")";
+            // Update the local user with the real user ID from RTE
+            localUser->userId = realUserId;
+            LOG_INFO_FMT("Updated local user ID to: {}", realUserId);
 
             HWND canvas = NULL;
             if (m_userCanvasMap.Lookup(_T(""), canvas)) {
@@ -328,8 +332,11 @@ LRESULT CChannelPageDlg::OnRteJoinChannelSuccess(WPARAM wParam, LPARAM lParam)
             UpdateVideoLayout();
 
             CString strChannelInfo;
-            strChannelInfo.Format(_T("Channel: %s (My UID: %s)"), CString(m_pageState.channelId.c_str()), localUserId);
+            strChannelInfo.Format(_T("Channel: %s (My UID: %s)"), 
+                CString(m_pageState.channelId.c_str()), localUserId);
             m_staticChannelId.SetWindowText(strChannelInfo);
+            
+            LOG_INFO_FMT("Channel info updated: {}", std::string(CT2A(strChannelInfo)));
         }
     }
 
@@ -342,46 +349,54 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     CString uid = *uidPtr;
     delete uidPtr;
 
+    // 1. 用户存在性检查
+    int userIndex = FindUserIndex(uid);
     bool isRobot = (_ttoi(uid) >= 1000);
 
-    if (isRobot) { // Robot user
-        if (FindUserIndex(uid) != -1) return 0; // Already exists
-
+    // 2. 用户类型判断
+    if (isRobot) {
+        // 机器人用户
+        if (userIndex != -1) {
+            // 已存在 -> 不做任何事
+            return 0;
+        }
+        
+        // 3. 列表数据处理 - 创建新的机器人用户
         ChannelUser* robotUser = new ChannelUser();
-        robotUser->uid = std::string(CW2A(uid, CP_UTF8));
+        robotUser->userId = std::string(CT2A(uid));
         robotUser->isConnected = true;
         robotUser->isLocal = false;
         robotUser->isRobot = true;
-        robotUser->userName = "Robot " + std::string(CW2A(uid, CP_UTF8));
         m_pageState.userList.Add(robotUser);
-    }
-    else { // Real user
-        int userIndex = FindUserIndex(uid);
+    } else {
+        // 真人用户
         if (userIndex != -1) {
+            // 3. 列表数据处理 - 更新现有用户状态
             ChannelUser* user = m_pageState.userList[userIndex];
             if (user && !user->isConnected) {
                 user->isConnected = true;
-                user->userName = "Remote User " + std::string(CW2A(uid, CP_UTF8));
+                user->userId = std::string(CT2A(uid));
             }
         }
     }
 
-    SortUserList();
+    // 4. 画布绑定状态更新
     GetOrCreateUserCanvas(uid);
 
-    // Default subscribe to new user's streams
+    // 5. 订阅状态更新
     if (m_rteManager) {
-        // SubscribeRemoteVideo method is not implemented in RteManager.
-        // The video subscription logic needs to be updated based on the new RTE SDK API.
         LOG_INFO("Subscribing to remote video for user: {}", uid);
-        // m_rteManager->SubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
+        // TODO: 实现真正的订阅逻辑
     }
-    int userIndex = FindUserIndex(uid);
+    
+    // 设置订阅状态
     if (userIndex != -1) {
         m_pageState.userList[userIndex]->isVideoSubscribed = true;
         m_pageState.userList[userIndex]->isAudioSubscribed = true;
     }
 
+    // 更新UI状态
+    SortUserList();
     UpdateVideoLayout();
     UpdatePageDisplay();
     UpdateSubscribedUsers();
@@ -396,42 +411,43 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
     CString uid = *uidPtr;
     delete uidPtr;
 
+    // 1. 用户存在性检查
     int userIndex = FindUserIndex(uid);
-
-    if (userIndex != -1) {
-        ChannelUser* userInfo = m_pageState.userList[userIndex];
-        
-        if (m_rteManager && !userInfo->isLocal) {
-            // UnsubscribeRemoteVideo method is not implemented in RteManager.
-            // The video subscription logic needs to be updated based on the new RTE SDK API.
-            LOG_INFO("Unsubscribing from remote video for user: {}", uid);
-            // m_rteManager->UnsubscribeRemoteAudio(userIdStr); // Function might be removed or renamed
-        }
-        
-        DestroyUserCanvas(uid);
-
-        if (userInfo->isRobot) {
-            delete userInfo;
-            m_pageState.userList.RemoveAt(userIndex);
-        } else if (!userInfo->isLocal) {
-            // Reset placeholder
-            userInfo->isConnected = false;
-            userInfo->userName = "User " + std::string(CW2A(uid, CP_UTF8)) + " (Offline)";
-            userInfo->isVideoSubscribed = true;
-            userInfo->isAudioSubscribed = true;
-        }
-
-        SortUserList();
-        
-        if (m_pageState.currentPage > GetMaxPages()) {
-            m_pageState.currentPage = GetMaxPages();
-        }
-
-        UpdateVideoLayout();
-        UpdatePageDisplay();
-        UpdateSubscribedUsers();
-        UpdateViewUserBindings();
+    if (userIndex == -1) {
+        // 不存在 -> 不做任何事
+        return 0;
     }
+
+    // 2. 用户类型判断
+    ChannelUser* userInfo = m_pageState.userList[userIndex];
+    bool isRobot = userInfo->isRobot;
+
+    // 3. 列表数据处理
+    if (isRobot) {
+        // 机器人用户 -> 将model从列表中移除
+        delete userInfo;
+        m_pageState.userList.RemoveAt(userIndex);
+    } else {
+        // 真人用户 -> 将model设置成占位Model
+        userInfo->isConnected = false;
+        userInfo->userId = std::string(CT2A(uid)) + " (Offline)";
+    }
+
+    // 4. 画布绑定状态更新
+    DestroyUserCanvas(uid);
+
+    // 5. 订阅状态更新
+    if (m_rteManager && !userInfo->isLocal) {
+        LOG_INFO("Unsubscribing from remote video for user: {}", uid);
+        // TODO: 实现真正的取消订阅逻辑
+    }
+
+    // 更新UI状态
+    SortUserList();
+    UpdateVideoLayout();
+    UpdatePageDisplay();
+    UpdateSubscribedUsers();
+    UpdateViewUserBindings();
 
     return 0;
 }
@@ -705,7 +721,9 @@ void CChannelPageDlg::UpdateVideoLayout()
         if (userIndex < userCount)
         {
             ChannelUser* userInfo = m_pageState.userList[userIndex];
-            pVideoWnd->SetUserInfo(CString(userInfo->userName.c_str()), CString(userInfo->userName.c_str()), userInfo->isConnected);
+            if (pVideoWnd && userInfo) {
+                pVideoWnd->SetUserInfo(CString(userInfo->userId.c_str()), CString(userInfo->userId.c_str()), userInfo->isConnected);
+            }
             pVideoWnd->SetVideoSubscription(userInfo->isVideoSubscribed);
             pVideoWnd->SetAudioSubscription(userInfo->isAudioSubscribed);
             pVideoWnd->ShowWindow(SW_SHOW);

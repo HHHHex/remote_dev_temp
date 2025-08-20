@@ -28,18 +28,17 @@ class ChannelUser
 public:
     // Constructor
     ChannelUser() 
-        : uid(""), isLocal(false), isRobot(false), isConnected(false),
+        : userId(""), isLocal(false), isRobot(false), isConnected(false),
           isVideoSubscribed(true), isAudioSubscribed(true),
           isCurrentlyVisible(false), lastVisiblePage(0) 
     {
     }
 
     // Getter method
-    std::string GetUID() const { return uid; }
+    std::string GetUserId() const { return userId; }
 
     // Public members
-    std::string userName;
-    std::string uid;
+    std::string userId;
     bool isLocal;
     bool isRobot;
     bool isConnected;
