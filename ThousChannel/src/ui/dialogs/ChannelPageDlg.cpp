@@ -880,25 +880,44 @@ void CChannelPageDlg::UpdateSubscribedUsers()
 {
     if (!m_rteManager) return;
 
-    // This function's logic might need a complete review based on RteManager's capabilities.
-    // The SetSubscribedUsers might have been intended for bulk subscription management which may have changed.
-    // For now, we will comment out the call to avoid compilation errors.
-
-    /*
+    // 获取当前页面显示的用户列表
     std::vector<std::string> subscribedUserIds;
     int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
     int endUserIndex = startUserIndex + m_pageState.usersPerPage;
 
+    LOG_INFO("Updating subscribed users for page {} (users {} to {})", 
+             m_pageState.currentPage, startUserIndex, endUserIndex - 1);
+
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
-        if (user && !user->isLocal && user->isConnected && user->isVideoSubscribed) {
-            CStringA uidA(user->GetUserId());
-            subscribedUserIds.push_back(std::string(uidA.GetString()));
+        if (user && !user->isLocal && user->isConnected) {
+            // 检查视频订阅状态
+            if (user->isVideoSubscribed) {
+                subscribedUserIds.push_back(user->GetUserId());
+                LOG_INFO("Adding user {} to video subscription list", user->GetUserId());
+            } else {
+                LOG_INFO("User {} video subscription is disabled", user->GetUserId());
+            }
         }
     }
 
-    m_rteManager->SetSubscribedUsers(subscribedUserIds);
-    */
+    // 将订阅用户列表传给RTE管理器
+    if (!subscribedUserIds.empty()) {
+        LOG_INFO("Subscribing to {} users: {}", subscribedUserIds.size(), 
+                 [&]() -> std::string {
+                     std::string result;
+                     for (const auto& id : subscribedUserIds) {
+                         if (!result.empty()) result += ", ";
+                         result += id;
+                     }
+                     return result;
+                 }());
+        
+        m_rteManager->SetSubscribedUsers(subscribedUserIds);
+    } else {
+        LOG_INFO("No users to subscribe to");
+        m_rteManager->SetSubscribedUsers(std::vector<std::string>());
+    }
 }
 
 void CChannelPageDlg::UpdateViewUserBindings()
@@ -908,20 +927,34 @@ void CChannelPageDlg::UpdateViewUserBindings()
     std::map<void*, std::string> viewToUserMap;
     int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
 
+    LOG_INFO("Updating view-user bindings for page {} (users {} to {})", 
+             m_pageState.currentPage, startUserIndex, startUserIndex + m_videoWindows.GetSize() - 1);
+
     for (int i = 0; i < m_videoWindows.GetSize(); i++) {
         int userIndex = startUserIndex + i;
+        HWND videoWindow = m_videoWindows[i]->GetSafeHwnd();
+        
         if (userIndex < m_pageState.userList.GetSize()) {
             ChannelUser* user = m_pageState.userList[userIndex];
             if (user && user->isConnected) {
-                // 直接使用视频窗口句柄
-                HWND videoWindow = m_videoWindows[i]->GetSafeHwnd();
-                if (videoWindow) {
-                    viewToUserMap[videoWindow] = user->GetUserId();
-                }
+                // 绑定已连接的用户到视频窗口
+                viewToUserMap[videoWindow] = user->GetUserId();
+                LOG_INFO("Binding user {} to video window {} (index {})", 
+                         user->GetUserId(), (void*)videoWindow, i);
+            } else if (user) {
+                LOG_INFO("User {} is not connected, skipping binding for window {}", 
+                         user->GetUserId(), (void*)videoWindow);
+            } else {
+                LOG_INFO("No user at index {}, skipping binding for window {}", 
+                         userIndex, (void*)videoWindow);
             }
+        } else {
+            LOG_INFO("No user at index {} (beyond list size), skipping binding for window {}", 
+                     userIndex, (void*)videoWindow);
         }
     }
 
+    LOG_INFO("Setting {} view-user bindings", viewToUserMap.size());
     m_rteManager->SetViewUserBindings(viewToUserMap);
 }
 
