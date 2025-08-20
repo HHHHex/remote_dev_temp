@@ -130,8 +130,7 @@
     <ClInclude Include="..\src\core\pch.h" />
     <ClInclude Include="..\src\core\targetver.h" />
     <ClInclude Include="..\src\core\ThousChannel.h" />
-    <ClInclude Include="..\src\core\Logger.h" />
-    <!-- RtcManager.h 已删除，替换为 RTE -->
+    <ClInclude Include="..\src\core\ModernLogger.h" />
     <ClInclude Include="..\src\core\RteManager.h" />
     <ClInclude Include="..\src\core\TokenManager.h" />
     <ClInclude Include="..\src\windows\ChildFrm.h" />
@@ -151,8 +150,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\core\pch.cpp" />
     <ClCompile Include="..\src\core\ThousChannel.cpp" />
-    <ClCompile Include="..\src\core\Logger.cpp" />
-    <!-- RtcManager.cpp 已删除，替换为 RTE -->
+    <ClCompile Include="..\src\core\ModernLogger.cpp" />
     <ClCompile Include="..\src\core\RteManager.cpp" />
     <ClCompile Include="..\src\core\TokenManager.cpp" />
     <ClCompile Include="..\src\windows\ChildFrm.cpp" />
