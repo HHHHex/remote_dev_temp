@@ -1,6 +1,5 @@
 ﻿#include "pch.h"
 #include "VideoGridCell.h"
-#include "Logger.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
