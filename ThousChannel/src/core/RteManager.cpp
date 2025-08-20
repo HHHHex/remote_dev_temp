@@ -153,8 +153,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
         rte::MicAudioTrackConfig micConfig;
         // Use minimal configuration to avoid audio device issues
         micConfig.SetRecordingVolume(50);  // Reduced volume
-        // Set default audio device explicitly
-        micConfig.SetJsonParameter("{\"audio_device_id\":\"default\"}");
+        // Don't set JSON parameter to let RTE use system default
         m_micAudioTrack->SetConfigs(&micConfig, &err);
         if (err.Code() != kRteOk) {
             LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error=%d", err.Code());
@@ -299,37 +298,63 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     LOG_INFO("Channel joined successfully");
     
     // Start audio and video tracks before adding to stream
-    m_micAudioTrack->Start([](rte::Error* err) {
+    std::atomic<bool> audioTrackStarted(false);
+    std::atomic<bool> videoTrackStarted(false);
+    
+    m_micAudioTrack->Start([&audioTrackStarted](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
+            audioTrackStarted = true;
             LOG_INFO("MicAudioTrack started successfully");
         } else {
             LOG_ERROR_FMT("MicAudioTrack start failed: error=%d", err ? err->Code() : -1);
         }
     });
     
-    m_cameraVideoTrack->Start([](rte::Error* err) {
+    m_cameraVideoTrack->Start([&videoTrackStarted](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
+            videoTrackStarted = true;
             LOG_INFO("CameraVideoTrack started successfully");
         } else {
             LOG_ERROR_FMT("CameraVideoTrack start failed: error=%d", err ? err->Code() : -1);
         }
     });
     
-    // Wait a bit for tracks to start
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    // Wait for tracks to start with timeout
+    int waitCount = 0;
+    while ((!audioTrackStarted.load() || !videoTrackStarted.load()) && waitCount < 10) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        waitCount++;
+    }
+    
+    if (!audioTrackStarted.load()) {
+        LOG_WARNING("MicAudioTrack failed to start, continuing anyway");
+    }
+    
+    if (!videoTrackStarted.load()) {
+        LOG_WARNING("CameraVideoTrack failed to start, continuing anyway");
+    }
     
     // Create and publish local stream
     m_localStream = std::make_shared<rte::LocalRealTimeStream>(m_rte.get());
     
-    // Add tracks to stream
-    m_localStream->AddAudioTrack(m_micAudioTrack.get(), &err);
-    if (err.Code() != kRteOk) {
-        LOG_ERROR_FMT("JoinChannel warning: AddAudioTrack error=%d", err.Code());
+    // Add tracks to stream - only add audio if it started successfully
+    if (audioTrackStarted.load()) {
+        m_localStream->AddAudioTrack(m_micAudioTrack.get(), &err);
+        if (err.Code() != kRteOk) {
+            LOG_ERROR_FMT("JoinChannel warning: AddAudioTrack error=%d", err.Code());
+        } else {
+            LOG_INFO("Audio track added to stream successfully");
+        }
+    } else {
+        LOG_WARNING("Skipping audio track addition due to initialization failure");
     }
     
+    // Always try to add video track
     m_localStream->AddVideoTrack(m_cameraVideoTrack.get(), &err);
     if (err.Code() != kRteOk) {
         LOG_ERROR_FMT("JoinChannel warning: AddVideoTrack error=%d", err.Code());
+    } else {
+        LOG_INFO("Video track added to stream successfully");
     }
     
     // Publish stream to channel
