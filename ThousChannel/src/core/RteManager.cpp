@@ -93,7 +93,7 @@ void RteManager::SetEventHandler(IRteManagerEventHandler* handler) {
 }
 
 bool RteManager::Initialize(const RteManagerConfig& config) {
-    LOG_INFO_FMT("Initialize: appId=%s, userId=%s", config.appId.c_str(), config.userId.c_str());
+    LOG_INFO_FMT_STR("Initialize: appId={}, userId={}", config.appId, config.userId);
     m_appId = config.appId;
     m_userId = config.userId;
 
@@ -224,7 +224,7 @@ void RteManager::Destroy() {
 }
 
 bool RteManager::JoinChannel(const std::string& channelId, const std::string& token) {
-    LOG_INFO_FMT("JoinChannel: channelId=%s", channelId.c_str());
+    LOG_INFO_FMT_STR("JoinChannel: channelId={}", channelId);
     m_channelId = channelId;
     
     if (!m_rte || !m_localUser) {
@@ -371,7 +371,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
 }
 
 void RteManager::LeaveChannel() {
-    LOG_INFO_FMT("LeaveChannel: channelId=%s", m_channelId.c_str());
+    LOG_INFO_FMT_STR("LeaveChannel: channelId={}", m_channelId);
     
     if (m_channel) {
         rte::Error err;

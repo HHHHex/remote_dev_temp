@@ -84,7 +84,7 @@ private:
     std::string WideCharToUTF8(LPCWSTR wideStr);
 };
 
-// Macro definitions for easy use - automatically handle _T() conversion
+// Legacy macro definitions for backward compatibility - automatically handle _T() conversion
 #define LOG_DEBUG(msg) CLogger::GetInstance().Debug(_T(msg))
 #define LOG_INFO(msg) CLogger::GetInstance().Info(_T(msg))
 #define LOG_WARNING(msg) CLogger::GetInstance().Warning(_T(msg))
@@ -96,4 +96,18 @@ private:
 #define LOG_WARNING_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_WARNING, _T(fmt), ##__VA_ARGS__)
 #define LOG_ERROR_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_ERROR, _T(fmt), ##__VA_ARGS__)
 #define LOG_FATAL_FMT(fmt, ...) CLogger::GetInstance().Log(LOG_FATAL, _T(fmt), ##__VA_ARGS__)
+
+// New modern macro definitions supporting std::string and multiple types
+#define LOG_DEBUG_STR(msg) CLogger::GetInstance().Debug(std::string(msg))
+#define LOG_INFO_STR(msg) CLogger::GetInstance().Info(std::string(msg))
+#define LOG_WARNING_STR(msg) CLogger::GetInstance().Warning(std::string(msg))
+#define LOG_ERROR_STR(msg) CLogger::GetInstance().Error(std::string(msg))
+#define LOG_FATAL_STR(msg) CLogger::GetInstance().Fatal(std::string(msg))
+
+// Modern formatting macros using {} style - supports std::string, int, float, etc.
+#define LOG_DEBUG_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_DEBUG, fmt, ##__VA_ARGS__)
+#define LOG_INFO_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_INFO, fmt, ##__VA_ARGS__)
+#define LOG_WARNING_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_WARNING, fmt, ##__VA_ARGS__)
+#define LOG_ERROR_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_ERROR, fmt, ##__VA_ARGS__)
+#define LOG_FATAL_FMT_STR(fmt, ...) CLogger::GetInstance().Log(LOG_FATAL, fmt, ##__VA_ARGS__)
 
