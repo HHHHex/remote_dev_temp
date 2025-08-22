@@ -129,8 +129,23 @@ public:
      * @technical preview
      * @return true if stream has audio, false otherwise
      */
-    bool HasAudio() {
-        return false;
+    bool GetHasAudio() {
+        if (c_remote_stream_info == nullptr) {
+            return false;
+        }
+        return c_remote_stream_info->has_audio;
+    }
+
+    /**
+     * @brief Set the has audio flag
+     * @technical preview
+     * @param has_audio 
+     */
+    void SetHasAudio(bool has_audio) {
+        if (c_remote_stream_info == nullptr) {
+            return;
+        }
+        c_remote_stream_info->has_audio = has_audio;
     }
 
     /**
@@ -138,8 +153,23 @@ public:
      * @technical preview
      * @return true if stream has video, false otherwise
      */
-    bool HasVideo() {
-        return false;
+    bool GetHasVideo() {
+        if (c_remote_stream_info == nullptr) {
+            return false;
+        }
+        return c_remote_stream_info->has_video;
+    }
+
+    /**
+     * @brief Set the has video flag
+     * @technical preview
+     * @param has_video
+     */
+    void SetHasVideo(bool has_video) {
+        if (c_remote_stream_info == nullptr) {
+            return;
+        }
+        c_remote_stream_info->has_video = has_video;
     }
 
     /**

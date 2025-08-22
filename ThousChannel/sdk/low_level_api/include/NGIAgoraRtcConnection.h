@@ -163,7 +163,10 @@ struct RtcConnectionConfiguration {
    */
   bool isDataChannelOnly;
 
-  CONNECTION_TYPE connection_type ;
+  /**
+   * Indicates the connection type.
+   */
+  CONNECTION_TYPE connectionType;
 
   RtcConnectionConfiguration()
       : autoSubscribeAudio(true),
@@ -179,7 +182,7 @@ struct RtcConnectionConfiguration {
         videoRecvMediaPacket(false),
         isInteractiveAudience(false),
         isDataChannelOnly(false),
-        connection_type(CONNECTION_TYPE_CHANNEL) {}
+        connectionType(CONNECTION_TYPE_CHANNEL) {}
 };
 
 /**

@@ -296,6 +296,12 @@ enum CHANNEL_PROFILE_TYPE {
   CHANNEL_PROFILE_COMMUNICATION_1v1 __deprecated = 4,
 };
 
+enum CONNECTION_TYPE {
+  CONNECTION_TYPE_CHANNEL = 0,    // server grouped by channel
+  CONNECTION_TYPE_STREAM = 1,     // server grouped by stream
+  CONNECTION_TYPE_AUDIO_TOPN = 2, // audio only for global topN
+};
+
 /**
  * The warning codes.
  */

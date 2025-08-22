@@ -18,6 +18,7 @@ typedef enum RteLocalVideoTrackEvent {
 
 typedef struct RteLocalVideoTrackInitialConfig {
   // RteVideoTrackInitialConfig video_track_initial_config;
+  char place_holder;
 } RteLocalVideoTrackInitialConfig;
 
 typedef struct RteLocalVideoTrackConfig {
