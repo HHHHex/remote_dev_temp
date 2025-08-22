@@ -136,9 +136,6 @@ typedef struct RteChannelConfig {
   RteString *channel_id;
   bool _channel_id_is_set;
 
-  RteString *channel_token;
-  bool _channel_token_is_set;
-
   bool allow_auto_subscribe_all;
   bool _allow_auto_subscribe_all_is_set;
 
@@ -251,14 +248,6 @@ AGORA_RTE_API_C void RteChannelConfigGetChannelId(RteChannelConfig *self,
                                                  RteString *channel_id,
                                                  RteError *err);
 
-AGORA_RTE_API_C void RteChannelConfigSetChannelToken(RteChannelConfig *self,
-                                                    RteString *channel_token,
-                                                    RteError *err);
-                                                    
-AGORA_RTE_API_C void RteChannelConfigGetChannelToken(RteChannelConfig *self,
-                                                    RteString *channel_token,
-                                                    RteError *err);
-
 AGORA_RTE_API_C void RteChannelConfigSetAllowAutoSubscribeAll(RteChannelConfig *self,
                                                            bool allow_auto_subscribe_all,
                                                            RteError *err);
@@ -348,7 +337,7 @@ AGORA_RTE_API_C bool RteChannelSetConfigs(
     RteChannel *self, RteChannelConfig *config, RteError *err);
 
 AGORA_RTE_API_C void RteChannelPublishStream(
-    RteChannel *self, RteLocalStream *stream,
+    RteChannel *self, RteLocalUser *user, RteLocalStream *stream,
     void (*cb)(RteChannel *self, RteLocalStream *stream, void *cb_data,
                RteError *err),
     void *cb_data);
@@ -381,8 +370,12 @@ AGORA_RTE_API_C bool RteChannelGetRemoteUsers(RteChannel *self,
                                              RteError *err);
 
 AGORA_RTE_API_C bool RteChannelJoin(RteChannel *self, RteLocalUser *user,
-                                    RteError *err);
+                                   RteString *channel_token, RteError *err);
 AGORA_RTE_API_C bool RteChannelLeave(RteChannel *self, RteError *err);
+
+AGORA_RTE_API_C void RteChannelRenewToken(
+    RteChannel *self, RteString *channel_token,
+    void (*cb)(RteChannel *self, void *cb_data, RteError *err), void *cb_data);
 
 AGORA_RTE_API_C void RteChannelPublishMessage(
     RteChannel *self, RteBuf *message,

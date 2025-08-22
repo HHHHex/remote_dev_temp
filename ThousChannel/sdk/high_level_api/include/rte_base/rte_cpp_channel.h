@@ -290,29 +290,6 @@ class ChannelConfig {
     }
 
     /**
-     * @brief Set the Channel Token object
-     * @technical preview
-     * @param channel_token 
-     * @param err 
-     */
-    void SetChannelToken(const std::string& channel_token, Error *err = nullptr){
-      String str(channel_token.c_str());
-      RteChannelConfigSetChannelToken(&c_config, str.get_underlying_impl(), err != nullptr ? err->get_underlying_impl(): nullptr);
-    }
-
-    /**
-     * @brief Get the Channel Token object
-     * @technical preview
-     * @param err 
-     * @return std::string 
-     */
-    std::string GetChannelToken(Error *err = nullptr){
-      String str;
-      RteChannelConfigGetChannelToken(&c_config, str.get_underlying_impl(), err != nullptr ? err->get_underlying_impl(): nullptr);
-      return std::string(str.CStr());
-    }
-
-    /**
      * @brief Set the Allow Auto Subscribe All object
      * @technical preview
      * @param allow_auto_subscribe_all 
@@ -989,49 +966,49 @@ void OnRemoteStreamsRemoved(RteChannelObserver *self, RteRemoteStream *removed_s
 
 void OnLocalStreamInfo(RteChannelObserver *self, RteLocalStream *stream, RteLocalStreamInfo *info) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    LocalStream local_stream(*stream);
-    LocalStreamInfo stream_info(info);
-    observer->OnLocalStreamInfo(local_stream, stream_info);
+    // ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
+    // LocalStream local_stream(stream);
+    // LocalStreamInfo stream_info(info);
+    // observer->OnLocalStreamInfo(local_stream, stream_info);
   }
 }
 
 void OnRemoteStreamInfo(RteChannelObserver *self, RteRemoteStream *stream, RteRemoteStreamInfo *info) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    RemoteStream remote_stream(*stream);
-    RemoteStreamInfo stream_info(info);
-    observer->OnRemoteStreamInfo(remote_stream, stream_info);
+    // ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
+    // RemoteStream remote_stream(stream);
+    // RemoteStreamInfo stream_info(info);
+    // observer->OnRemoteStreamInfo(remote_stream, stream_info);
   }
 }
 
 void OnSubStateChanged(RteChannelObserver *self, RteRemoteStream *stream, RteTrack *track, RteTrackMediaType track_media_type,
                       RteTrackSubState old_state, RteTrackSubState new_state, RteTrackSubStateChangedReason reason, RteError *err) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    RemoteStream remote_stream(*stream);
-    Track track_obj(track);
-    Error error(err);
-    observer->OnSubStateChanged(remote_stream, track_obj, track_media_type, old_state, new_state, reason, &error);
+    // ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
+    // RemoteStream remote_stream(stream);
+    // Track track_obj(track);
+    // Error error(err);
+    // observer->OnSubStateChanged(remote_stream, track_obj, track_media_type, old_state, new_state, reason, &error);
   }
 }
 
 void OnPubStateChanged(RteChannelObserver *self, RteLocalStream *stream, RteTrack *track, RteTrackMediaType track_media_type,
                       RteTrackPubState old_state, RteTrackPubState new_state, RteTrackPubStateChangedReason reason, RteError *err) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    LocalStream local_stream(*stream);
-    Track track_obj(track);
-    Error error(err);
-    observer->OnPubStateChanged(local_stream, track_obj, track_media_type, old_state, new_state, reason, &error);
+    // ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
+    // LocalStream local_stream(stream);
+    // Track track_obj(track);
+    // Error error(err);
+    // observer->OnPubStateChanged(local_stream, track_obj, track_media_type, old_state, new_state, reason, &error);
   }
 }
 
 void OnActiveSpeaker(RteChannelObserver *self, RteStream *stream) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    Stream stream_obj(*stream);
-    observer->OnActiveSpeaker(stream_obj);
+    // ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
+    // Stream stream_obj(stream);
+    // observer->OnActiveSpeaker(stream_obj);
   }
 }
 
@@ -1056,10 +1033,10 @@ void OnChannelTokenWillExpire(RteChannelObserver *self, RteString *channel_token
 
 void OnStreamTokenWillExpire(RteChannelObserver *self, RteStream *stream, RteString *stream_token) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    Stream stream_obj(*stream);
-    String str(stream_token);
-    observer->OnStreamTokenWillExpire(stream_obj, std::string(str.CStr()));
+    // ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
+    // Stream stream_obj(stream);
+    // String str(stream_token);
+    // observer->OnStreamTokenWillExpire(stream_obj, std::string(str.CStr()));
   }
 }
 
@@ -1072,9 +1049,9 @@ void OnChannelTokenExpired(RteChannelObserver *self) {
 
 void OnStreamTokenExpired(RteChannelObserver *self, RteStream *stream) {
   if(self != nullptr && self->base_observer.me_in_target_lang != nullptr) {
-    ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
-    Stream stream_obj(*stream);
-    observer->OnStreamTokenExpired(stream_obj);
+    // ChannelObserver* observer = static_cast<ChannelObserver*>(self->base_observer.me_in_target_lang);
+    // Stream stream_obj(stream);
+    // observer->OnStreamTokenExpired(stream_obj);
   }
 }
 
@@ -1148,11 +1125,13 @@ class Channel {
      * @brief Join the channel with a local user.
      * @note Technical preview.
      * @param local_user Pointer to the LocalUser object representing the user joining the channel.
+     * @param token The token string used for authentication.
      * @param err Pointer to an Error object to receive error information.
      * @return bool Returns true if the operation succeeds, false otherwise.
      */
-    bool Join(LocalUser* local_user, Error* err = nullptr){
-      return RteChannelJoin(&c_channel, local_user != nullptr ? reinterpret_cast<RteLocalUser*>(&local_user->c_user) : nullptr, err != nullptr ? err->get_underlying_impl() : nullptr);
+    bool Join(LocalUser* local_user, const std::string& token, Error* err = nullptr){
+      String str(token.c_str());
+      return RteChannelJoin(&c_channel, local_user != nullptr ? reinterpret_cast<RteLocalUser*>(&local_user->c_user) : nullptr, str.get_underlying_impl(), err != nullptr ? err->get_underlying_impl() : nullptr);
     }
 
     /**
@@ -1197,14 +1176,27 @@ class Channel {
     bool GetRemoteUsers(std::vector<RemoteUser>& remote_users,size_t start_idx, size_t remote_users_cnt, Error* err = nullptr){ 
       bool result = false;
 
-      std::shared_ptr<RteRemoteUser> remote_users_ptr( new RteRemoteUser[remote_users_cnt], [](RteRemoteUser *p){ delete[] p; p = nullptr; } );
-      result = RteChannelGetRemoteUsers(&c_channel, remote_users_ptr.get(), 0, remote_users_cnt, err != nullptr ? err->get_underlying_impl() : nullptr);
 
-      for(size_t i = 0; i < remote_users_cnt; i++){
-        remote_users.push_back(RemoteUser(remote_users_ptr.get()[i]));
-      }
+      // std::shared_ptr<RteRemoteUser> remote_users_ptr( new RteRemoteUser[remote_users_count], [](RteRemoteUser *p){ delete[] p; p = nullptr; } );
+      // result = RteChannelGetRemoteUsers(&c_channel, remote_users_ptr.get(), 0, remote_users_count, err != nullptr ? err->get_underlying_impl() : nullptr);
+
+      // for(size_t i = 0; i < remote_users_count; i++){
+      //   remote_users.push_back(RemoteUser(remote_users_ptr.get()[i]));
+      // }
       
       return result;
+    }
+
+    /**
+     * @brief Renew the channel token.
+     * @note Technical preview.
+     * @param token The new token string to be used for the channel.
+     * @param cb Callback function to be invoked when the token renewal operation is completed. The callback receives an Error pointer.
+     */
+    void RenewToken(const std::string& token, std::function<void(Error* err)> cb){
+      String str(token.c_str());
+      CallbackContextWithArgs<Channel>* callbackCtx = new CallbackContextWithArgs<Channel>(this, cb);
+      RteChannelRenewToken(&c_channel, str.get_underlying_impl() , &CallbackFuncWithArgs<::RteChannel, Channel>, callbackCtx);
     }
 
     /**
@@ -1367,12 +1359,14 @@ class Channel {
     /**
      * @brief Publishes a local stream to the channel.
      * @note Technical preview.
+     * @param local_user Pointer to the LocalUser who is publishing the stream.
      * @param local_stream Pointer to the LocalStream to be published.
      * @param cb Callback function to be invoked when the operation completes. The callback receives an Error pointer.
      */
-    void PublishStream(LocalStream* local_stream, std::function<void(Error* err)> cb) {
+    void PublishStream(LocalUser* local_user, LocalStream* local_stream, std::function<void(Error* err)> cb) {
       CallbackContextWithArgs<Channel, RteLocalStream*>* callbackCtx = new CallbackContextWithArgs<Channel, RteLocalStream*>(this, cb, true);
       RteChannelPublishStream(&c_channel, 
+        local_user != nullptr ? reinterpret_cast<RteLocalUser*>(&local_user->c_user) : nullptr,
         local_stream != nullptr ? local_stream->get_underlying_impl() : nullptr,
         &CallbackFuncWithArgs<::RteChannel, Channel, RteLocalStream*>, 
         callbackCtx);

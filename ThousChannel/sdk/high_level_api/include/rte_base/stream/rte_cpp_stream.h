@@ -597,8 +597,9 @@ class Stream {
    * @return The VideoTrack object.
    */
   VideoTrack GetVideoTrack(Error* err = nullptr) {
-    RteVideoTrack video_track = RteStreamGetVideoTrack(&c_stream, err != nullptr ? err->get_underlying_impl() : nullptr);
-    return VideoTrack(std::move(video_track));
+    // return VideoTrack(std::move(RteStreamGetVideoTrack(&c_stream, err != nullptr ? err->get_underlying_impl() : nullptr)));
+     VideoTrack video_track;
+     return video_track;
   }
 
   /**

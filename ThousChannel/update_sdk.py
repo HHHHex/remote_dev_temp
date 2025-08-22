@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Agora SDK Update Script
 跨平台SDK更新脚本，支持Windows、macOS和Linux
