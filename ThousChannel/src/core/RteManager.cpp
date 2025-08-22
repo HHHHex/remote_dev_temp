@@ -605,8 +605,6 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
     m_viewToUserMap = viewToUserMap;
 }
 
-
-
 void RteManager::OnRemoteUserJoined(const std::string& userId) {
     LOG_INFO_FMT("Remote user joined: {}", userId);
 }
@@ -624,12 +622,48 @@ void RteManager::UpdateVideoSubscriptions(const std::vector<std::string>& videoS
         return;
     }
     
+    rte::Error err;
+    
+    // Get current remote streams
+    size_t remote_streams_count = m_channel->GetRemoteStreamsCount(&err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("Failed to get remote streams count: error={}", err.Code());
+        return;
+    }
+    
+    std::vector<rte::RemoteStream> remote_streams;
+    m_channel->GetRemoteStreams(remote_streams, 0, remote_streams_count, &err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("Failed to get remote streams: error={}", err.Code());
+        return;
+    }
+    
     // Find users to unsubscribe (in current list but not in new list)
     for (const auto& userId : m_videoSubscribedUsers) {
         if (std::find(videoSubscribedUsers.begin(), videoSubscribedUsers.end(), userId) == videoSubscribedUsers.end()) {
             LOG_INFO_FMT("Unsubscribing video for user: {}", userId);
-            // TODO: Implement video unsubscribe logic using new SDK API
-            // m_channel->UnsubscribeTrack(userId, videoTrack, [](rte::Error* err) { ... });
+            
+            // Find the stream for this user and unsubscribe video
+            for (auto& remote_stream : remote_streams) {
+                rte::RemoteStreamInfo remote_stream_info;
+                remote_stream.GetInfo(&remote_stream_info, &err);
+                if (err.Code() != kRteOk) continue;
+                
+                std::string stream_id = remote_stream_info.GetStreamId();
+                if (stream_id == userId) {  // Assuming stream_id matches userId
+                    rte::SubscribeOptions subscribeOption;
+                    subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeVideo);
+                    
+                    m_channel->UnsubscribeTrack(stream_id, &subscribeOption, [userId](rte::Error* err) {
+                        if (err && err->Code() == kRteOk) {
+                            LOG_INFO_FMT("Successfully unsubscribed video for user: {}", userId);
+                        } else {
+                            LOG_ERROR_FMT("Failed to unsubscribe video for user {}: error={}", userId, err ? err->Code() : -1);
+                        }
+                    });
+                    break;
+                }
+            }
         }
     }
     
@@ -637,8 +671,31 @@ void RteManager::UpdateVideoSubscriptions(const std::vector<std::string>& videoS
     for (const auto& userId : videoSubscribedUsers) {
         if (std::find(m_videoSubscribedUsers.begin(), m_videoSubscribedUsers.end(), userId) == m_videoSubscribedUsers.end()) {
             LOG_INFO_FMT("Subscribing video for user: {}", userId);
-            // TODO: Implement video subscribe logic using new SDK API
-            // m_channel->SubscribeTrack(userId, videoTrack, [](rte::Error* err) { ... });
+            
+            // Find the stream for this user and subscribe video
+            for (auto& remote_stream : remote_streams) {
+                rte::RemoteStreamInfo remote_stream_info;
+                remote_stream.GetInfo(&remote_stream_info, &err);
+                if (err.Code() != kRteOk) continue;
+                
+                std::string stream_id = remote_stream_info.GetStreamId();
+                if (stream_id == userId) {  // Assuming stream_id matches userId
+                    rte::SubscribeOptions subscribeOption;
+                    subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeVideo);
+                    
+                    m_channel->SubscribeTrack(stream_id, &subscribeOption, [userId](rte::Track* track, rte::Error* err) {
+                        if (err && err->Code() == kRteOk) {
+                            LOG_INFO_FMT("Successfully subscribed video for user: {}", userId);
+                            
+                            // Set canvas for video rendering if we have a view for this user
+                            // This would need to be implemented based on the view binding logic
+                        } else {
+                            LOG_ERROR_FMT("Failed to subscribe video for user {}: error={}", userId, err ? err->Code() : -1);
+                        }
+                    });
+                    break;
+                }
+            }
         }
     }
     
@@ -656,12 +713,48 @@ void RteManager::UpdateAudioSubscriptions(const std::vector<std::string>& audioS
         return;
     }
     
+    rte::Error err;
+    
+    // Get current remote streams
+    size_t remote_streams_count = m_channel->GetRemoteStreamsCount(&err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("Failed to get remote streams count: error={}", err.Code());
+        return;
+    }
+    
+    std::vector<rte::RemoteStream> remote_streams;
+    m_channel->GetRemoteStreams(remote_streams, 0, remote_streams_count, &err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("Failed to get remote streams: error={}", err.Code());
+        return;
+    }
+    
     // Find users to unsubscribe (in current list but not in new list)
     for (const auto& userId : m_audioSubscribedUsers) {
         if (std::find(audioSubscribedUsers.begin(), audioSubscribedUsers.end(), userId) == audioSubscribedUsers.end()) {
             LOG_INFO_FMT("Unsubscribing audio for user: {}", userId);
-            // TODO: Implement audio unsubscribe logic using new SDK API
-            // m_channel->UnsubscribeTrack(userId, audioTrack, [](rte::Error* err) { ... });
+            
+            // Find the stream for this user and unsubscribe audio
+            for (auto& remote_stream : remote_streams) {
+                rte::RemoteStreamInfo remote_stream_info;
+                remote_stream.GetInfo(&remote_stream_info, &err);
+                if (err.Code() != kRteOk) continue;
+                
+                std::string stream_id = remote_stream_info.GetStreamId();
+                if (stream_id == userId) {  // Assuming stream_id matches userId
+                    rte::SubscribeOptions subscribeOption;
+                    subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeAudio);
+                    
+                    m_channel->UnsubscribeTrack(stream_id, &subscribeOption, [userId](rte::Error* err) {
+                        if (err && err->Code() == kRteOk) {
+                            LOG_INFO_FMT("Successfully unsubscribed audio for user: {}", userId);
+                        } else {
+                            LOG_ERROR_FMT("Failed to unsubscribe audio for user {}: error={}", userId, err ? err->Code() : -1);
+                        }
+                    });
+                    break;
+                }
+            }
         }
     }
     
@@ -669,8 +762,28 @@ void RteManager::UpdateAudioSubscriptions(const std::vector<std::string>& audioS
     for (const auto& userId : audioSubscribedUsers) {
         if (std::find(m_audioSubscribedUsers.begin(), m_audioSubscribedUsers.end(), userId) == m_audioSubscribedUsers.end()) {
             LOG_INFO_FMT("Subscribing audio for user: {}", userId);
-            // TODO: Implement audio subscribe logic using new SDK API
-            // m_channel->SubscribeTrack(userId, audioTrack, [](rte::Error* err) { ... });
+            
+            // Find the stream for this user and subscribe audio
+            for (auto& remote_stream : remote_streams) {
+                rte::RemoteStreamInfo remote_stream_info;
+                remote_stream.GetInfo(&remote_stream_info, &err);
+                if (err.Code() != kRteOk) continue;
+                
+                std::string stream_id = remote_stream_info.GetStreamId();
+                if (stream_id == userId) {  // Assuming stream_id matches userId
+                    rte::SubscribeOptions subscribeOption;
+                    subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeAudio);
+                    
+                    m_channel->SubscribeTrack(stream_id, &subscribeOption, [userId](rte::Track* track, rte::Error* err) {
+                        if (err && err->Code() == kRteOk) {
+                            LOG_INFO_FMT("Successfully subscribed audio for user: {}", userId);
+                        } else {
+                            LOG_ERROR_FMT("Failed to subscribe audio for user {}: error={}", userId, err ? err->Code() : -1);
+                        }
+                    });
+                    break;
+                }
+            }
         }
     }
     
