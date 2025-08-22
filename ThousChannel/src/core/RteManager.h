@@ -60,6 +60,4 @@ private:
     // Thread-safe members
     std::mutex m_mutex;
     std::map<void*, std::string> m_viewToUserMap;
-    std::map<std::string, std::shared_ptr<rte::Canvas>> m_remoteUserCanvases;
-    std::vector<std::string> m_remoteUsers;
 };

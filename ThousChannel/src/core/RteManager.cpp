@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "RteManager.h"
 #include "Logger.h"
-#include <iterator>
-#include <algorithm>
-#include <set>
 #include <atomic>
 #include <future>
 #include <chrono>
@@ -457,8 +454,6 @@ void RteManager::LeaveChannel() {
     // Clear remote user data
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_remoteUsers.clear();
-        m_remoteUserCanvases.clear();
         m_viewToUserMap.clear();
     }
 }
@@ -535,36 +530,23 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
     LOG_INFO("SetViewUserBindings called.");
     std::lock_guard<std::mutex> lock(m_mutex);
     
-    // Clear existing canvases for views that are no longer bound
+    // Check for views that are no longer bound and need cleanup
     for (const auto& pair : m_viewToUserMap) {
         void* view = pair.first;
         const std::string& userId = pair.second;
         if (viewToUserMap.find(view) == viewToUserMap.end() || viewToUserMap.at(view) != userId) {
             LOG_INFO_FMT("Unbinding view for user: {}", userId);
-            if (m_remoteUserCanvases.count(userId)) {
-                m_remoteUserCanvases.erase(userId);
-            }
+            // Here we could add cleanup logic if needed in the future
         }
     }
     
-    // Create new canvases for new view bindings
+    // Check for new view bindings that need setup
     for (const auto& pair : viewToUserMap) {
         void* view = pair.first;
         const std::string& userId = pair.second;
         if (m_viewToUserMap.find(view) == m_viewToUserMap.end() || m_viewToUserMap.at(view) != userId) {
             LOG_INFO_FMT("Binding view for user: {}", userId);
-            if (m_rte) {
-                auto canvas = std::make_shared<rte::Canvas>(m_rte.get());
-                rte::Error err;
-                rte::View rteView = reinterpret_cast<rte::View>(view);
-                rte::ViewConfig viewConfig;
-                canvas->AddView(&rteView, &viewConfig, &err);
-                if (err.Code() == kRteOk) {
-                    m_remoteUserCanvases[userId] = canvas;
-                } else {
-                    LOG_ERROR_FMT("Failed to create canvas for user {}: error={}", userId, err.Code());
-                }
-            }
+            // Here we could add setup logic if needed in the future
         }
     }
     
@@ -573,7 +555,6 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
 
 int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
     LOG_INFO_FMT("SetupRemoteVideo for user: {}", userId);
-    std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_rte) {
         LOG_ERROR("SetupRemoteVideo failed: RTE not initialized");
@@ -581,11 +562,7 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
     }
     
     if (!view) {
-        // Remove canvas for user
-        if (m_remoteUserCanvases.count(userId)) {
-            m_remoteUserCanvases.erase(userId);
-            LOG_INFO_FMT("Removed canvas for user: {}", userId);
-        }
+        LOG_INFO_FMT("Removed canvas for user: {}", userId);
         return 0;
     }
     
@@ -602,7 +579,6 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
         canvas->SetConfigs(&canvasConfig, &err);
         
         if (err.Code() == kRteOk) {
-            m_remoteUserCanvases[userId] = canvas;
             LOG_INFO_FMT("Created canvas for user: {}", userId);
             return 0;
         }
@@ -613,22 +589,9 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
 }
 
 void RteManager::OnRemoteUserJoined(const std::string& userId) {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_remoteUsers.push_back(userId);
     LOG_INFO_FMT("Remote user joined: {}", userId);
 }
 
 void RteManager::OnRemoteUserLeft(const std::string& userId) {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    auto it = std::find(m_remoteUsers.begin(), m_remoteUsers.end(), userId);
-    if (it != m_remoteUsers.end()) {
-        m_remoteUsers.erase(it);
-    }
-    
-    // Clean up canvas for this user
-    if (m_remoteUserCanvases.count(userId)) {
-        m_remoteUserCanvases.erase(userId);
-    }
-    
     LOG_INFO_FMT("Remote user left: {}", userId);
 }
