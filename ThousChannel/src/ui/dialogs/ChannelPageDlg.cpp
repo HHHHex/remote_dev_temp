@@ -213,59 +213,59 @@ void CChannelPageDlg::OnBnClickedNextPage()
 //===========================================================================
 
 // IRteManagerEventHandler implementation
-void CChannelPageDlg::OnConnectionStateChanged(int state)
+void CChannelPageDlg::OnConnectionStateChanged(int state) override
 {
     // Post message to UI thread
     PostMessage(WM_USER_RTE_JOIN_CHANNEL_SUCCESS, 0, 0);
 }
 
-void CChannelPageDlg::OnUserJoined(const std::string& userId)
+void CChannelPageDlg::OnUserJoined(const std::string& userId) override
 {
     // Convert std::string to CString and post it
     CString* uidStr = new CString(userId.c_str());
     PostMessage(WM_USER_RTE_USER_JOINED, (WPARAM)uidStr, 0);
 }
 
-void CChannelPageDlg::OnUserLeft(const std::string& userId)
+void CChannelPageDlg::OnUserLeft(const std::string& userId) override
 {
     // Convert std::string to CString and post it
     CString* uidStr = new CString(userId.c_str());
     PostMessage(WM_USER_RTE_USER_LEFT, (WPARAM)uidStr, 0);
 }
 
-void CChannelPageDlg::OnLocalAudioStateChanged(int state)
+void CChannelPageDlg::OnLocalAudioStateChanged(int state) override
 {
     // Post message to UI thread
     PostMessage(WM_USER_RTE_LOCAL_AUDIO_STATE_CHANGED, state, 0);
 }
 
-void CChannelPageDlg::OnLocalVideoStateChanged(int state, int reason)
+void CChannelPageDlg::OnLocalVideoStateChanged(int state, int reason) override
 {
     // Post message to UI thread
     PostMessage(WM_USER_RTE_LOCAL_VIDEO_STATE_CHANGED, MAKEWPARAM(state, reason), 0);
 }
 
-void CChannelPageDlg::OnRemoteAudioStateChanged(const std::string& userId, int state)
+void CChannelPageDlg::OnRemoteAudioStateChanged(const std::string& userId, int state) override
 {
     // Convert std::string to CString and post it
     CString* uidStr = new CString(userId.c_str());
     PostMessage(WM_USER_RTE_REMOTE_AUDIO_STATE_CHANGED, (WPARAM)uidStr, state);
 }
 
-void CChannelPageDlg::OnRemoteVideoStateChanged(const std::string& userId, int state)
+void CChannelPageDlg::OnRemoteVideoStateChanged(const std::string& userId, int state) override
 {
     // Convert std::string to CString and post it
     CString* uidStr = new CString(userId.c_str());
     PostMessage(WM_USER_RTE_REMOTE_VIDEO_STATE_CHANGED, (WPARAM)uidStr, state);
 }
 
-void CChannelPageDlg::OnError(int error)
+void CChannelPageDlg::OnError(int error) override
 {
     // Post message to UI thread
     PostMessage(WM_USER_RTE_ERROR, error, 0);
 }
 
-void CChannelPageDlg::OnUserListChanged()
+void CChannelPageDlg::OnUserListChanged() override
 {
     // Post message to UI thread
     PostMessage(WM_USER_RTE_USER_LIST_CHANGED, 0, 0);
