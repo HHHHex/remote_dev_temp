@@ -110,6 +110,20 @@ public:
      */
     void SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap);
     
+    /**
+     * 更新视频订阅列表，检查并订阅/退订用户的视频流
+     * @param videoSubscribedUsers 需要订阅视频的用户ID列表
+     * 调用时机：当用户列表或视频订阅状态发生变化时
+     */
+    void UpdateVideoSubscriptions(const std::vector<std::string>& videoSubscribedUsers);
+    
+    /**
+     * 更新音频订阅列表，检查并订阅/退订用户的音频流
+     * @param audioSubscribedUsers 需要订阅音频的用户ID列表
+     * 调用时机：当用户列表或音频订阅状态发生变化时
+     */
+    void UpdateAudioSubscriptions(const std::vector<std::string>& audioSubscribedUsers);
+    
 private:
     friend class RteManagerEventObserver;
 
@@ -127,14 +141,7 @@ private:
      */
     void OnRemoteUserLeft(const std::string& userId);
 
-    /**
-     * 为特定用户设置远程视频渲染
-     * @param userId 目标用户ID
-     * @param view 视频渲染的视图指针
-     * @return 成功返回0，失败返回-1
-     * 调用时机：当需要显示远程用户视频时
-     */
-    int SetupRemoteVideo(const std::string& userId, void* view);
+
 
 private:
     // RTE SDK核心组件
@@ -159,4 +166,8 @@ private:
     // 线程安全状态管理
     std::mutex m_mutex;                                        ///< 用于保护共享状态的互斥锁
     std::map<void*, std::string> m_viewToUserMap;             ///< 视图指针到用户ID的映射
+    
+    // 订阅状态管理
+    std::vector<std::string> m_videoSubscribedUsers;          ///< 已订阅视频的用户ID列表
+    std::vector<std::string> m_audioSubscribedUsers;          ///< 已订阅音频的用户ID列表
 };

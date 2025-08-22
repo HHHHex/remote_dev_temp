@@ -4,6 +4,7 @@
 #include <atomic>
 #include <future>
 #include <chrono>
+#include <algorithm>
 
 // AsyncResult class for handling asynchronous operations
 template<typename T>
@@ -455,6 +456,8 @@ void RteManager::LeaveChannel() {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_viewToUserMap.clear();
+        m_videoSubscribedUsers.clear();
+        m_audioSubscribedUsers.clear();
     }
 }
 
@@ -530,13 +533,40 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
     LOG_INFO("SetViewUserBindings called.");
     std::lock_guard<std::mutex> lock(m_mutex);
     
+    if (!m_rte || !m_channel) {
+        LOG_ERROR("SetViewUserBindings failed: RTE or Channel not initialized");
+        return;
+    }
+    
     // Check for views that are no longer bound and need cleanup
     for (const auto& pair : m_viewToUserMap) {
         void* view = pair.first;
         const std::string& userId = pair.second;
         if (viewToUserMap.find(view) == viewToUserMap.end() || viewToUserMap.at(view) != userId) {
             LOG_INFO_FMT("Unbinding view for user: {}", userId);
-            // Here we could add cleanup logic if needed in the future
+            
+            // Unbind user from view using RTE SDK
+            rte::Error err;
+            rte::View rteView = reinterpret_cast<rte::View>(view);
+            
+            // Get remote users from channel
+            auto remoteUsers = m_channel->GetRemoteUsers(&err);
+            if (err.Code() == kRteOk) {
+                for (const auto& remoteUser : remoteUsers) {
+                    if (remoteUser.UserId() == userId) {
+                        // Unbind user from view
+                        remoteUser.UnbindFromView(&rteView, &err);
+                        if (err.Code() == kRteOk) {
+                            LOG_INFO_FMT("Successfully unbound user {} from view", userId);
+                        } else {
+                            LOG_ERROR_FMT("Failed to unbind user {} from view: error={}", userId, err.Code());
+                        }
+                        break;
+                    }
+                }
+            } else {
+                LOG_ERROR_FMT("Failed to get remote users for unbinding: error={}", err.Code());
+            }
         }
     }
     
@@ -546,47 +576,36 @@ void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToU
         const std::string& userId = pair.second;
         if (m_viewToUserMap.find(view) == m_viewToUserMap.end() || m_viewToUserMap.at(view) != userId) {
             LOG_INFO_FMT("Binding view for user: {}", userId);
-            // Here we could add setup logic if needed in the future
+            
+            // Bind user to view using RTE SDK
+            rte::Error err;
+            rte::View rteView = reinterpret_cast<rte::View>(view);
+            
+            // Get remote users from channel
+            auto remoteUsers = m_channel->GetRemoteUsers(&err);
+            if (err.Code() == kRteOk) {
+                for (const auto& remoteUser : remoteUsers) {
+                    if (remoteUser.UserId() == userId) {
+                        // Bind user to view
+                        remoteUser.BindToView(&rteView, &err);
+                        if (err.Code() == kRteOk) {
+                            LOG_INFO_FMT("Successfully bound user {} to view", userId);
+                        } else {
+                            LOG_ERROR_FMT("Failed to bind user {} to view: error={}", userId, err.Code());
+                        }
+                        break;
+                    }
+                }
+            } else {
+                LOG_ERROR_FMT("Failed to get remote users for binding: error={}", err.Code());
+            }
         }
     }
     
     m_viewToUserMap = viewToUserMap;
 }
 
-int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
-    LOG_INFO_FMT("SetupRemoteVideo for user: {}", userId);
-    
-    if (!m_rte) {
-        LOG_ERROR("SetupRemoteVideo failed: RTE not initialized");
-        return -1;
-    }
-    
-    if (!view) {
-        LOG_INFO_FMT("Removed canvas for user: {}", userId);
-        return 0;
-    }
-    
-    // Create canvas for user
-    auto canvas = std::make_shared<rte::Canvas>(m_rte.get());
-    rte::Error err;
-    rte::View rteView = reinterpret_cast<rte::View>(view);
-    rte::ViewConfig viewConfig;
-    canvas->AddView(&rteView, &viewConfig, &err);
-    
-    if (err.Code() == kRteOk) {
-        rte::CanvasConfig canvasConfig;
-        canvasConfig.SetRenderMode(rte::VideoRenderMode::kRteVideoRenderModeFit);
-        canvas->SetConfigs(&canvasConfig, &err);
-        
-        if (err.Code() == kRteOk) {
-            LOG_INFO_FMT("Created canvas for user: {}", userId);
-            return 0;
-        }
-    }
-    
-    LOG_ERROR_FMT("SetupRemoteVideo failed for user: {}, error={}", userId, err.Code());
-    return -1;
-}
+
 
 void RteManager::OnRemoteUserJoined(const std::string& userId) {
     LOG_INFO_FMT("Remote user joined: {}", userId);
@@ -594,4 +613,68 @@ void RteManager::OnRemoteUserJoined(const std::string& userId) {
 
 void RteManager::OnRemoteUserLeft(const std::string& userId) {
     LOG_INFO_FMT("Remote user left: {}", userId);
+}
+
+void RteManager::UpdateVideoSubscriptions(const std::vector<std::string>& videoSubscribedUsers) {
+    LOG_INFO("UpdateVideoSubscriptions called");
+    std::lock_guard<std::mutex> lock(m_mutex);
+    
+    if (!m_channel) {
+        LOG_ERROR("UpdateVideoSubscriptions failed: Channel not initialized");
+        return;
+    }
+    
+    // Find users to unsubscribe (in current list but not in new list)
+    for (const auto& userId : m_videoSubscribedUsers) {
+        if (std::find(videoSubscribedUsers.begin(), videoSubscribedUsers.end(), userId) == videoSubscribedUsers.end()) {
+            LOG_INFO_FMT("Unsubscribing video for user: {}", userId);
+            // TODO: Implement video unsubscribe logic using new SDK API
+            // m_channel->UnsubscribeTrack(userId, videoTrack, [](rte::Error* err) { ... });
+        }
+    }
+    
+    // Find users to subscribe (in new list but not in current list)
+    for (const auto& userId : videoSubscribedUsers) {
+        if (std::find(m_videoSubscribedUsers.begin(), m_videoSubscribedUsers.end(), userId) == m_videoSubscribedUsers.end()) {
+            LOG_INFO_FMT("Subscribing video for user: {}", userId);
+            // TODO: Implement video subscribe logic using new SDK API
+            // m_channel->SubscribeTrack(userId, videoTrack, [](rte::Error* err) { ... });
+        }
+    }
+    
+    // Update the subscription list
+    m_videoSubscribedUsers = videoSubscribedUsers;
+    LOG_INFO_FMT("Video subscription list updated, total subscribed users: {}", m_videoSubscribedUsers.size());
+}
+
+void RteManager::UpdateAudioSubscriptions(const std::vector<std::string>& audioSubscribedUsers) {
+    LOG_INFO("UpdateAudioSubscriptions called");
+    std::lock_guard<std::mutex> lock(m_mutex);
+    
+    if (!m_channel) {
+        LOG_ERROR("UpdateAudioSubscriptions failed: Channel not initialized");
+        return;
+    }
+    
+    // Find users to unsubscribe (in current list but not in new list)
+    for (const auto& userId : m_audioSubscribedUsers) {
+        if (std::find(audioSubscribedUsers.begin(), audioSubscribedUsers.end(), userId) == audioSubscribedUsers.end()) {
+            LOG_INFO_FMT("Unsubscribing audio for user: {}", userId);
+            // TODO: Implement audio unsubscribe logic using new SDK API
+            // m_channel->UnsubscribeTrack(userId, audioTrack, [](rte::Error* err) { ... });
+        }
+    }
+    
+    // Find users to subscribe (in new list but not in current list)
+    for (const auto& userId : audioSubscribedUsers) {
+        if (std::find(m_audioSubscribedUsers.begin(), m_audioSubscribedUsers.end(), userId) == m_audioSubscribedUsers.end()) {
+            LOG_INFO_FMT("Subscribing audio for user: {}", userId);
+            // TODO: Implement audio subscribe logic using new SDK API
+            // m_channel->SubscribeTrack(userId, audioTrack, [](rte::Error* err) { ... });
+        }
+    }
+    
+    // Update the subscription list
+    m_audioSubscribedUsers = audioSubscribedUsers;
+    LOG_INFO_FMT("Audio subscription list updated, total subscribed users: {}", m_audioSubscribedUsers.size());
 }
