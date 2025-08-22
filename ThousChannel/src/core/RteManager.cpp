@@ -81,24 +81,52 @@ public:
     void OnRemoteStreamsAdded(const std::vector<rte::RemoteStream>& new_streams, const std::vector<rte::RemoteStreamInfo>& new_streams_info) override {
         LOG_INFO("OnRemoteStreamsAdded");
         for (size_t i = 0; i < new_streams.size(); ++i) {
-            // TODO: Fix HasAudio() const issue - temporarily commented out
-            // if (m_rteManager->m_eventHandler && new_streams_info[i].HasAudio()) {
-            //     // Note: We need to get the user ID from the stream info or context
-            //     // For now, we'll use a placeholder approach
-            //     m_rteManager->m_eventHandler->OnRemoteAudioStateChanged("", 2); // REMOTE_AUDIO_STATE_DECODING
-            // }
+            const auto& stream_info = new_streams_info[i];
+            std::string stream_id = stream_info.GetStreamId();
+            LOG_INFO_FMT("Stream added: streamId={}", stream_id);
+            
+            // 检查音频状态并通知外部处理器
+            if (m_rteManager->m_eventHandler) {
+                // 假设stream_id就是用户ID，或者需要从其他地方获取用户ID
+                std::string userId = stream_id; // 这里可能需要根据实际情况调整
+                
+                if (stream_info.HasAudio()) {
+                    LOG_INFO_FMT("Stream {} has audio, notifying audio state change", stream_id);
+                    m_rteManager->m_eventHandler->OnRemoteAudioStateChanged(userId, 2); // REMOTE_AUDIO_STATE_DECODING
+                }
+                
+                if (stream_info.HasVideo()) {
+                    LOG_INFO_FMT("Stream {} has video, notifying video state change", stream_id);
+                    // 如果有视频状态变化的回调，在这里调用
+                    // m_rteManager->m_eventHandler->OnRemoteVideoStateChanged(userId, 2);
+                }
+            }
         }
     }
 
     void OnRemoteStreamsRemoved(const std::vector<rte::RemoteStream>& removed_streams, const std::vector<rte::RemoteStreamInfo>& removed_streams_info) override {
         LOG_INFO("OnRemoteStreamsRemoved");
         for (size_t i = 0; i < removed_streams.size(); ++i) {
-            // TODO: Fix HasAudio() const issue - temporarily commented out
-            // if (m_rteManager->m_eventHandler && removed_streams_info[i].HasAudio()) {
-            //     // Note: We need to get the user ID from the stream info or context
-            //     // For now, we'll use a placeholder approach
-            //     m_rteManager->m_eventHandler->OnRemoteAudioStateChanged("", 0); // REMOTE_AUDIO_STATE_STOPPED
-            // }
+            const auto& stream_info = removed_streams_info[i];
+            std::string stream_id = stream_info.GetStreamId();
+            LOG_INFO_FMT("Stream removed: streamId={}", stream_id);
+            
+            // 检查音频状态并通知外部处理器
+            if (m_rteManager->m_eventHandler) {
+                // 假设stream_id就是用户ID，或者需要从其他地方获取用户ID
+                std::string userId = stream_id; // 这里可能需要根据实际情况调整
+                
+                if (stream_info.HasAudio()) {
+                    LOG_INFO_FMT("Stream {} had audio, notifying audio state change", stream_id);
+                    m_rteManager->m_eventHandler->OnRemoteAudioStateChanged(userId, 0); // REMOTE_AUDIO_STATE_STOPPED
+                }
+                
+                if (stream_info.HasVideo()) {
+                    LOG_INFO_FMT("Stream {} had video, notifying video state change", stream_id);
+                    // 如果有视频状态变化的回调，在这里调用
+                    // m_rteManager->m_eventHandler->OnRemoteVideoStateChanged(userId, 0);
+                }
+            }
         }
     }
 

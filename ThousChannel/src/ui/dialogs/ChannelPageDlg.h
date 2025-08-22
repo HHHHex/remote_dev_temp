@@ -78,10 +78,10 @@ public:
 
 protected:
     // MFC Overrides
-    virtual void DoDataExchange(CDataExchange* pDX);
-    virtual BOOL OnInitDialog();
-    virtual void OnOK();
-    virtual void OnCancel();
+    virtual void DoDataExchange(CDataExchange* pDX) override;
+    virtual BOOL OnInitDialog() override;
+    virtual void OnOK() override;
+    virtual void OnCancel() override;
 
     // Message Map Functions
     DECLARE_MESSAGE_MAP()
