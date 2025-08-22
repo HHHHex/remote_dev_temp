@@ -880,8 +880,10 @@ void CChannelPageDlg::UpdateSubscribedUsers()
 {
     if (!m_rteManager) return;
 
-    // 获取当前页面显示的用户列表
-    std::vector<std::string> subscribedUserIds;
+    // 分别获取视频和音频订阅用户列表
+    std::vector<std::string> videoSubscribedUserIds;
+    std::vector<std::string> audioSubscribedUserIds;
+    
     int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
     int endUserIndex = startUserIndex + m_pageState.usersPerPage;
 
@@ -891,33 +893,23 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
         if (user && !user->isLocal && user->isConnected) {
-            // 检查视频订阅状态
+            // 1. 需要视频订阅的用户：显示在窗格中 && 视频订阅打开
             if (user->isVideoSubscribed) {
-                subscribedUserIds.push_back(user->GetUserId());
+                videoSubscribedUserIds.push_back(user->GetUserId());
                 LOG_INFO("Adding user {} to video subscription list", user->GetUserId());
-            } else {
-                LOG_INFO("User {} video subscription is disabled", user->GetUserId());
+            }
+            
+            // 2. 需要音频订阅的用户：显示在窗格中 && 音频订阅打开
+            if (user->isAudioSubscribed) {
+                audioSubscribedUserIds.push_back(user->GetUserId());
+                LOG_INFO("Adding user {} to audio subscription list", user->GetUserId());
             }
         }
     }
 
-    // 将订阅用户列表传给RTE管理器
-    if (!subscribedUserIds.empty()) {
-        LOG_INFO("Subscribing to {} users: {}", subscribedUserIds.size(), 
-                 [&]() -> std::string {
-                     std::string result;
-                     for (const auto& id : subscribedUserIds) {
-                         if (!result.empty()) result += ", ";
-                         result += id;
-                     }
-                     return result;
-                 }());
-        
-        m_rteManager->SetSubscribedUsers(subscribedUserIds);
-    } else {
-        LOG_INFO("No users to subscribe to");
-        m_rteManager->SetSubscribedUsers(std::vector<std::string>());
-    }
+    // 3. 将获取的ID作为参数调用更新订阅方法
+    m_rteManager->UpdateVideoSubscriptions(videoSubscribedUserIds);
+    m_rteManager->UpdateAudioSubscriptions(audioSubscribedUserIds);
 }
 
 void CChannelPageDlg::UpdateViewUserBindings()
