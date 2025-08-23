@@ -2,6 +2,9 @@
 chcp 65001 >nul
 title ThousChannel Launcher
 
+:: 设置64位DLL搜索路径
+set PATH=%PATH%;%~dp0sdk
+
 echo ========================================
 echo           ThousChannel v1.0.0
 echo ========================================

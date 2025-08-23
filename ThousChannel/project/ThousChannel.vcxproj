@@ -82,7 +82,7 @@
         %(AdditionalLibraryDirectories)
       </AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>agora_rtc_sdk.dll.lib;mfcs140d.lib;mfcs140.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mfcs140d.lib;mfcs140.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -112,7 +112,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\sdk\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>agora_rtc_sdk.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -127,6 +127,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\src\core\framework.h" />
+    <!-- 添加运行时DLL复制 -->
+    <Content Include="..\sdk\x86_64\agora_rtc_sdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <ClInclude Include="..\src\core\pch.h" />
     <ClInclude Include="..\src\core\targetver.h" />
     <ClInclude Include="..\src\core\ThousChannel.h" />
