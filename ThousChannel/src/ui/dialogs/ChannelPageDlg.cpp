@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ThousChannel.h"
 #include "ChannelPageDlg.h"
 #include "Logger.h"
@@ -306,7 +306,7 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     CString uid = *uidPtr;
     delete uidPtr;
 
-    LOG_INFO("User joined: {}", uid);
+    LOG_INFO_FMT("User joined: {}", uid);
 
     // 1. 用户类型判断
     bool isRobot = (_ttoi(uid) >= 1000);
@@ -320,7 +320,7 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
         // 机器人用户处理
         if (userIndex != -1) {
             // 已存在 -> 不做任何事
-            LOG_INFO("Robot user {} already exists, skipping", uid);
+            LOG_INFO_FMT("Robot user {} already exists, skipping", uid);
             return 0;
         }
         
@@ -334,7 +334,7 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
         targetUser->isAudioSubscribed = true;
         
         m_pageState.userList.Add(targetUser);
-        LOG_INFO("Created new robot user: {}", userId);
+        LOG_INFO_FMT("Created new robot user: {}", userId);
         
     } else {
         // 真人用户处理
@@ -346,7 +346,7 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
                 targetUser->userId = userId;
                 targetUser->isVideoSubscribed = true;
                 targetUser->isAudioSubscribed = true;
-                LOG_INFO("Updated existing placeholder user: {}", userId);
+                LOG_INFO_FMT("Updated existing placeholder user: {}", userId);
             }
         } else {
             // 占位符不存在，创建新用户（异常情况）
@@ -365,7 +365,7 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
 
     // 3. 订阅状态更新
     if (m_rteManager && targetUser && !targetUser->isLocal) {
-        LOG_INFO("Subscribing to remote video/audio for user: {}", userId);
+        LOG_INFO_FMT("Subscribing to remote video/audio for user: {}", userId);
         // TODO: 实现真正的订阅逻辑
     }
 
@@ -384,7 +384,7 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
     CString uid = *uidPtr;
     delete uidPtr;
 
-    LOG_INFO("User left: {}", uid);
+    LOG_INFO_FMT("User left: {}", uid);
 
     // 1. 用户存在性检查
     int userIndex = FindUserIndex(uid);
@@ -406,13 +406,13 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
 
     if (isRobot) {
         // 机器人用户 -> 从列表中移除
-        LOG_INFO("Removing robot user: {}", userId);
+        LOG_INFO_FMT("Removing robot user: {}", userId);
         delete targetUser;
         m_pageState.userList.RemoveAt(userIndex);
         
     } else {
         // 真人用户 -> 设置为离线状态
-        LOG_INFO("Setting real user offline: {}", userId);
+        LOG_INFO_FMT("Setting real user offline: {}", userId);
         targetUser->isConnected = false;
         targetUser->isVideoSubscribed = false;
         targetUser->isAudioSubscribed = false;
@@ -421,7 +421,7 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
 
     // 4. 订阅状态更新
     if (m_rteManager && !targetUser->isLocal) {
-        LOG_INFO("Unsubscribing from remote video/audio for user: {}", userId);
+        LOG_INFO_FMT("Unsubscribing from remote video/audio for user: {}", userId);
         // TODO: 实现真正的取消订阅逻辑
     }
 
@@ -442,7 +442,7 @@ LRESULT CChannelPageDlg::OnRteRemoteVideoStateChanged(WPARAM wParam, LPARAM lPar
 
     int state = LOWORD(lParam);
     int reason = HIWORD(lParam);
-    LOG_INFO("Remote video state changed for user {}, state={}, reason={}", uid, state, reason);
+    LOG_INFO_FMT("Remote video state changed for user {}, state={}, reason={}", uid, state, reason);
 
     // You might want to update the UI for this user
     // For example, show an icon if their video is disabled
@@ -454,7 +454,7 @@ LRESULT CChannelPageDlg::OnRteLocalVideoStateChanged(WPARAM wParam, LPARAM lPara
 {
     int state = LOWORD(wParam);
     int reason = HIWORD(wParam);
-    LOG_INFO("Local video state changed, state={}, reason={}", state, reason);
+    LOG_INFO_FMT("Local video state changed, state={}, reason={}", state, reason);
 
     // You can update the local user's UI based on the state
     // e.g., show a "camera off" icon
@@ -468,7 +468,7 @@ LRESULT CChannelPageDlg::OnRteRemoteAudioStateChanged(WPARAM wParam, LPARAM lPar
     delete uidPtr;
 
     int state = (int)lParam;
-    LOG_INFO("Remote audio state changed for user {}, state={}", uid, state);
+    LOG_INFO_FMT("Remote audio state changed for user {}, state={}", uid, state);
 
     return 0;
 }
@@ -476,7 +476,7 @@ LRESULT CChannelPageDlg::OnRteRemoteAudioStateChanged(WPARAM wParam, LPARAM lPar
 LRESULT CChannelPageDlg::OnRteLocalAudioStateChanged(WPARAM wParam, LPARAM lParam)
 {
     int state = (int)wParam;
-    LOG_INFO("Local audio state changed, state={}", state);
+    LOG_INFO_FMT("Local audio state changed, state={}", state);
 
     return 0;
 }
@@ -836,7 +836,7 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
                 // SubscribeRemoteVideo and UnsubscribeRemoteVideo methods are not implemented in RteManager.
                 // The video subscription logic needs to be updated based on the new RTE SDK API.
                 // For now, we'll just log it.
-                LOG_INFO("Video subscription for user {} set to {}", user->GetUserId(), isVideoSubscribed);
+                LOG_INFO_FMT("Video subscription for user {} set to {}", user->GetUserId(), isVideoSubscribed);
             }
 
             // 更新UI显示状态
@@ -861,7 +861,7 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
                 // SubscribeRemoteAudio and UnsubscribeRemoteAudio were removed or renamed.
                 // The logic for audio subscription needs to be updated based on the new RteManager API.
                 // For now, we'll just log it.
-                LOG_INFO("Audio subscription for user {} set to {}", user->GetUserId(), isAudioSubscribed);
+                LOG_INFO_FMT("Audio subscription for user {} set to {}", user->GetUserId(), isAudioSubscribed);
             }
             
             // 更新UI显示状态
@@ -885,8 +885,7 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
     int endUserIndex = startUserIndex + m_pageState.usersPerPage;
 
-    LOG_INFO("Updating subscribed users for page {} (users {} to {})", 
-             m_pageState.currentPage, startUserIndex, endUserIndex - 1);
+    LOG_INFO_FMT("Updating subscribed users for page {} (users {} to {})", m_pageState.currentPage, startUserIndex, endUserIndex - 1);
 
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
@@ -894,29 +893,27 @@ void CChannelPageDlg::UpdateSubscribedUsers()
             // 检查视频订阅状态
             if (user->isVideoSubscribed) {
                 subscribedUserIds.push_back(user->GetUserId());
-                LOG_INFO("Adding user {} to video subscription list", user->GetUserId());
+                LOG_INFO_FMT("Adding user {} to video subscription list", user->GetUserId());
             } else {
-                LOG_INFO("User {} video subscription is disabled", user->GetUserId());
+                LOG_INFO_FMT("User {} video subscription is disabled", user->GetUserId());
             }
         }
     }
 
     // 将订阅用户列表传给RTE管理器
     if (!subscribedUserIds.empty()) {
-        LOG_INFO("Subscribing to {} users: {}", subscribedUserIds.size(), 
-                 [&]() -> std::string {
-                     std::string result;
-                     for (const auto& id : subscribedUserIds) {
-                         if (!result.empty()) result += ", ";
-                         result += id;
-                     }
-                     return result;
-                 }());
+        LOG_INFO_FMT("Subscribing to {} users: {}", subscribedUserIds.size(), [&]() -> std::string {                     std::string result;                     for (const auto& id : subscribedUserIds) {                         if (!result.empty()) result += ", ";                         result += id;                     }                     return result;                 }());
         
-        m_rteManager->SetSubscribedUsers(subscribedUserIds);
+        // 创建视图用户绑定映射
+        std::map<void*, std::string> viewUserMap;
+        for (const auto& userId : subscribedUserIds) {
+            // 使用用户ID的指针作为临时视图键
+            viewUserMap[const_cast<char*>(userId.c_str())] = userId;
+        }
+        m_rteManager->SetViewUserBindings(viewUserMap);
     } else {
         LOG_INFO("No users to subscribe to");
-        m_rteManager->SetSubscribedUsers(std::vector<std::string>());
+        m_rteManager->SetViewUserBindings(std::map<void*, std::string>());
     }
 }
 
@@ -927,8 +924,7 @@ void CChannelPageDlg::UpdateViewUserBindings()
     std::map<void*, std::string> viewToUserMap;
     int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
 
-    LOG_INFO("Updating view-user bindings for page {} (users {} to {})", 
-             m_pageState.currentPage, startUserIndex, startUserIndex + m_videoWindows.GetSize() - 1);
+    LOG_INFO_FMT("Updating view-user bindings for page {} (users {} to {})", m_pageState.currentPage, startUserIndex, startUserIndex + m_videoWindows.GetSize() - 1);
 
     for (int i = 0; i < m_videoWindows.GetSize(); i++) {
         int userIndex = startUserIndex + i;
@@ -939,22 +935,18 @@ void CChannelPageDlg::UpdateViewUserBindings()
             if (user && user->isConnected) {
                 // 绑定已连接的用户到视频窗口
                 viewToUserMap[videoWindow] = user->GetUserId();
-                LOG_INFO("Binding user {} to video window {} (index {})", 
-                         user->GetUserId(), (void*)videoWindow, i);
+                LOG_INFO_FMT("Binding user {} to video window {} (index {})", user->GetUserId(), (void*)videoWindow, i);
             } else if (user) {
-                LOG_INFO("User {} is not connected, skipping binding for window {}", 
-                         user->GetUserId(), (void*)videoWindow);
+                LOG_INFO_FMT("User {} is not connected, skipping binding for window {}", user->GetUserId(), (void*)videoWindow);
             } else {
-                LOG_INFO("No user at index {}, skipping binding for window {}", 
-                         userIndex, (void*)videoWindow);
+                LOG_INFO_FMT("No user at index {}, skipping binding for window {}", userIndex, (void*)videoWindow);
             }
         } else {
-            LOG_INFO("No user at index {} (beyond list size), skipping binding for window {}", 
-                     userIndex, (void*)videoWindow);
+            LOG_INFO_FMT("No user at index {} (beyond list size), skipping binding for window {}", userIndex, (void*)videoWindow);
         }
     }
 
-    LOG_INFO("Setting {} view-user bindings", viewToUserMap.size());
+    LOG_INFO_FMT("Setting {} view-user bindings", viewToUserMap.size());
     m_rteManager->SetViewUserBindings(viewToUserMap);
 }
 

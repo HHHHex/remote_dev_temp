@@ -95,7 +95,7 @@ function Build-Project {
     Write-ColorOutput "Configuration: $Configuration, Platform: $Platform" "Cyan"
     
     $buildArgs = @(
-        "ThousChannel.sln",
+        "project\ThousChannel.vcxproj",
         "/p:Configuration=$Configuration",
         "/p:Platform=$Platform",
         "/verbosity:minimal"
@@ -441,4 +441,4 @@ try {
 } catch {
     Write-ColorOutput "Error occurred during packaging: $($_.Exception.Message)" "Red"
     exit 1
-} 
+}
