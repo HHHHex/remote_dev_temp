@@ -319,12 +319,12 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
     
     m_channel->RegisterObserver(m_channelObserver.get(), &err);
     if (err.Code() != kRteOk) {
-        LOG_ERROR("JoinChannel failed: RegisterObserver error={}", err.Code());
+        LOG_ERROR_FMT("JoinChannel failed: RegisterObserver error={}", err.Code());
         return false;
     }
     
     // Join channel
-    bool joinSuccess = m_channel->Join(m_localUser.get(), token.c_str(), &err);
+    bool joinSuccess = m_channel->Join(m_localUser.get(), &err);
     if (!joinSuccess || err.Code() != kRteOk) {
         LOG_ERROR_FMT("JoinChannel failed: Join error={}", err.Code());
         return false;
@@ -400,7 +400,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
         }
     
     // Publish stream to channel
-    m_channel->PublishStream(m_localUser.get(), m_localStream.get(), [this](rte::Error* err) {
+    m_channel->PublishStream(m_localStream.get(), [this](rte::Error* err) {
         if (err && err->Code() == kRteOk) {
             LOG_INFO("Local stream published successfully");
         } else {
@@ -631,4 +631,14 @@ void RteManager::OnRemoteUserLeft(const std::string& userId) {
     }
     
     LOG_INFO_FMT("Remote user left: {}", userId);
+}
+
+void RteManager::SetSubscribedUsers(const std::vector<std::string>& userIds) {
+    LOG_INFO_FMT("SetSubscribedUsers called with {} users", userIds.size());
+    
+    std::lock_guard<std::mutex> lock(m_mutex);
+    // For now, just log the user IDs - implementation can be expanded later
+    for (const auto& userId : userIds) {
+        LOG_INFO_FMT("Subscribing to user: {}", userId);
+    }
 }

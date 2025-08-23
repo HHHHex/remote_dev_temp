@@ -34,6 +34,7 @@ public:
 
     void SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap);
     int SetupRemoteVideo(const std::string& userId, void* view);
+    void SetSubscribedUsers(const std::vector<std::string>& userIds);
 
 private:
     friend class RteManagerEventObserver;
