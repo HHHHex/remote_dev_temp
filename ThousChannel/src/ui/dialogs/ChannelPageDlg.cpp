@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ThousChannel.h"
 #include "ChannelPageDlg.h"
 #include "Logger.h"
