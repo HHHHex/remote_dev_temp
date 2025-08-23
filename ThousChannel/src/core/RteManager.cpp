@@ -145,8 +145,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
         return false;
     }
 
-    m_rte->SetConfigs(&rteConfig, &err);
-    if (err.Code() != kRteOk) {
+    if (!m_rte->SetConfigs(&rteConfig, &err)) {
         LOG_ERROR_FMT("Initialize failed: SetConfigs error={}", err.Code());
         return false;
     }
@@ -176,8 +175,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     rte::LocalUserConfig localUserConfig;
     localUserConfig.SetUserId(m_userId.c_str());
     LOG_INFO_FMT("localUserConfig.SetUserId: {}", m_userId);
-    m_localUser->SetConfigs(&localUserConfig, &err);
-    if (err.Code() != kRteOk) {
+    if (!m_localUser->SetConfigs(&localUserConfig, &err)) {
         LOG_ERROR_FMT("Initialize failed: LocalUser SetConfigs error={}", err.Code());
         return false;
     }
@@ -189,8 +187,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
         // Use minimal configuration to avoid audio device issues
         micConfig.SetRecordingVolume(50);  // Reduced volume
         // Don't set JSON parameter to let RTE use system default
-        m_micAudioTrack->SetConfigs(&micConfig, &err);
-        if (err.Code() != kRteOk) {
+        if (!m_micAudioTrack->SetConfigs(&micConfig, &err)) {
             LOG_ERROR_FMT("Initialize failed: MicAudioTrack SetConfigs error={}", err.Code());
             return false;
         }
@@ -199,8 +196,7 @@ bool RteManager::Initialize(const RteManagerConfig& config) {
     m_cameraVideoTrack = std::make_shared<rte::CameraVideoTrack>(m_rte.get());
     {
         rte::CameraVideoTrackConfig cameraConfig;
-        m_cameraVideoTrack->SetConfigs(&cameraConfig, &err);
-        if (err.Code() != kRteOk) {
+        if (!m_cameraVideoTrack->SetConfigs(&cameraConfig, &err)) {
             LOG_ERROR_FMT("Initialize failed: CameraVideoTrack SetConfigs error={}", err.Code());
             return false;
         }
@@ -275,11 +271,10 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
             rte::LocalUserConfig localUserConfig;
             m_localUser->GetConfigs(&localUserConfig, &err);
             localUserConfig.SetUserToken(token.c_str());
-            m_localUser->SetConfigs(&localUserConfig, &err);
-                    if (err.Code() != kRteOk) {
-            LOG_ERROR_FMT("JoinChannel failed: SetUserToken error={}", err.Code());
-            return false;
-        }
+            if (!m_localUser->SetConfigs(&localUserConfig, &err)) {
+                LOG_ERROR_FMT("JoinChannel failed: SetUserToken error={}", err.Code());
+                return false;
+            }
         } // localUserConfig goes out of scope here
     }
     
@@ -310,8 +305,7 @@ bool RteManager::JoinChannel(const std::string& channelId, const std::string& to
         rte::ChannelConfig channelConfig;
         channelConfig.SetChannelId(channelId.c_str());
         
-        m_channel->SetConfigs(&channelConfig, &err);
-        if (err.Code() != kRteOk) {
+        if (!m_channel->SetConfigs(&channelConfig, &err)) {
             LOG_ERROR_FMT("JoinChannel failed: Channel SetConfigs error={}", err.Code());
             return false;
         }
@@ -470,8 +464,7 @@ void RteManager::RenewToken(const std::string& token) {
         rte::LocalUserConfig localUserConfig;
         m_localUser->GetConfigs(&localUserConfig, &err);
         localUserConfig.SetUserToken(token.c_str());
-        m_localUser->SetConfigs(&localUserConfig, &err);
-        if (err.Code() != kRteOk) {
+        if (!m_localUser->SetConfigs(&localUserConfig, &err)) {
             LOG_ERROR_FMT("RenewToken failed: error={}", err.Code());
         }
     }
@@ -599,9 +592,7 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
     if (err.Code() == kRteOk) {
         rte::CanvasConfig canvasConfig;
         canvasConfig.SetRenderMode(rte::VideoRenderMode::kRteVideoRenderModeFit);
-        canvas->SetConfigs(&canvasConfig, &err);
-        
-        if (err.Code() == kRteOk) {
+        if (canvas->SetConfigs(&canvasConfig, &err)) {
             m_remoteUserCanvases[userId] = canvas;
             LOG_INFO_FMT("Created canvas for user: {}", userId);
             return 0;

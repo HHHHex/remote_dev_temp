@@ -61,8 +61,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_AFXDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>
-        <!-- 注释掉旧的 SDK 引用 -->
-        <!-- ..\sdk\high_level_api\include; -->
         ..\src\core;
         ..\src\ui\dialogs;
         ..\src\ui\views;
