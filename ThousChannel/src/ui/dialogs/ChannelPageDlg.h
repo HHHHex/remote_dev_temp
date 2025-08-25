@@ -165,7 +165,6 @@ private:
     void OnUserListChanged() override;
 
     // RTE Integration Helpers
-    void UpdateSubscribedUsers();
-    void UpdateViewUserBindings();
+    void UpdateRteSubscriptions();
 };
 

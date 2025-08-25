@@ -190,8 +190,8 @@ void CChannelPageDlg::OnBnClickedPrevPage()
         m_pageState.currentPage--;
         UpdateVideoLayout();
         UpdatePageDisplay();
-        UpdateSubscribedUsers();
-        UpdateViewUserBindings();
+        // 页面变化时更新RTE订阅和视图绑定
+        UpdateRteSubscriptions();
     }
 }
 
@@ -202,8 +202,8 @@ void CChannelPageDlg::OnBnClickedNextPage()
         m_pageState.currentPage++;
         UpdateVideoLayout();
         UpdatePageDisplay();
-        UpdateSubscribedUsers();
-        UpdateViewUserBindings();
+        // 页面变化时更新RTE订阅和视图绑定
+        UpdateRteSubscriptions();
     }
 }
 
@@ -372,8 +372,8 @@ LRESULT CChannelPageDlg::OnRteUserJoined(WPARAM wParam, LPARAM lParam)
     // 4. 更新UI状态
     UpdateVideoLayout();
     UpdatePageDisplay();
-    UpdateSubscribedUsers();
-    UpdateViewUserBindings();
+    // 用户加入时更新RTE订阅和视图绑定
+    UpdateRteSubscriptions();
 
     return 0;
 }
@@ -428,8 +428,8 @@ LRESULT CChannelPageDlg::OnRteUserLeft(WPARAM wParam, LPARAM lParam)
     // 5. 更新UI状态
     UpdateVideoLayout();
     UpdatePageDisplay();
-    UpdateSubscribedUsers();
-    UpdateViewUserBindings();
+    // 用户离开时更新RTE订阅和视图绑定
+    UpdateRteSubscriptions();
 
     return 0;
 }
@@ -497,13 +497,10 @@ LRESULT CChannelPageDlg::OnRteError(WPARAM wParam, LPARAM lParam)
 
 LRESULT CChannelPageDlg::OnRteUserListChanged(WPARAM wParam, LPARAM lParam)
 {
-    // Placeholder implementation
-    // This message is sent when the user list changes, e.g., when a user joins or leaves.
-    // You might need to re-sort or update the UI based on the new user list.
+    // 用户列表变化时更新UI和RTE订阅
     UpdateVideoLayout();
     UpdatePageDisplay();
-    UpdateSubscribedUsers();
-    UpdateViewUserBindings();
+    UpdateRteSubscriptions();
     return 0;
 }
 
@@ -728,8 +725,8 @@ void CChannelPageDlg::SetGridMode(int gridMode)
         UpdateGridLayout();
         UpdateVideoLayout();
         UpdatePageDisplay();
-        UpdateSubscribedUsers();
-        UpdateViewUserBindings();
+        // 网格模式变化时更新RTE订阅和视图绑定
+        UpdateRteSubscriptions();
     }
 }
 
@@ -845,7 +842,7 @@ void CChannelPageDlg::OnVideoCellVideoSubscriptionChanged(int cellIndex, BOOL is
             }
 
             // 同步订阅用户列表
-            UpdateSubscribedUsers();
+            UpdateRteSubscriptions();
         }
     }
 }
@@ -876,41 +873,64 @@ void CChannelPageDlg::OnVideoCellAudioSubscriptionChanged(int cellIndex, BOOL is
 // RTE Integration Helpers
 //===========================================================================
 
-void CChannelPageDlg::UpdateSubscribedUsers()
+/**
+ * 统一的RTE订阅更新方法
+ * 调用时机：
+ * 1. 页面翻页时 - 当前页面显示的用户发生变化
+ * 2. 网格模式改变时 - 视频窗口数量发生变化
+ * 3. 用户加入/离开时 - 用户列表发生变化
+ * 4. 用户订阅状态改变时 - 音频/视频订阅开关
+ * 5. 初始化时 - 首次设置订阅
+ */
+void CChannelPageDlg::UpdateRteSubscriptions()
 {
     if (!m_rteManager) return;
 
     // 获取当前页面显示的用户列表
     std::vector<std::string> audioSubscribedUserIds;
     std::vector<std::string> videoSubscribedUserIds;
+    std::map<void*, std::string> viewToUserMap;
+    
     int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
     int endUserIndex = startUserIndex + m_pageState.usersPerPage;
 
-    LOG_INFO_FMT("Updating subscribed users for page {} (users {} to {})", 
+    LOG_INFO_FMT("Updating RTE subscriptions for page {} (users {} to {})", 
              m_pageState.currentPage, startUserIndex, endUserIndex - 1);
 
+    // 遍历当前页面显示的用户
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
         if (user && !user->isLocal && user->isConnected) {
+            std::string userId = user->GetUserId();
+            
             // 检查音频订阅状态
             if (user->isAudioSubscribed) {
-                audioSubscribedUserIds.push_back(user->GetUserId());
-                LOG_INFO_FMT("Adding user {} to audio subscription list", user->GetUserId());
+                audioSubscribedUserIds.push_back(userId);
+                LOG_INFO_FMT("Adding user {} to audio subscription list", userId);
             } else {
-                LOG_INFO_FMT("User {} audio subscription is disabled", user->GetUserId());
+                LOG_INFO_FMT("User {} audio subscription is disabled", userId);
             }
             
             // 检查视频订阅状态
             if (user->isVideoSubscribed) {
-                videoSubscribedUserIds.push_back(user->GetUserId());
-                LOG_INFO_FMT("Adding user {} to video subscription list", user->GetUserId());
+                videoSubscribedUserIds.push_back(userId);
+                LOG_INFO_FMT("Adding user {} to video subscription list", userId);
             } else {
-                LOG_INFO_FMT("User {} video subscription is disabled", user->GetUserId());
+                LOG_INFO_FMT("User {} video subscription is disabled", userId);
+            }
+            
+            // 构建视图绑定映射
+            int windowIndex = i - startUserIndex;
+            if (windowIndex < m_videoWindows.GetSize()) {
+                HWND videoWindow = m_videoWindows[windowIndex]->GetSafeHwnd();
+                viewToUserMap[videoWindow] = userId;
+                LOG_INFO_FMT("Binding user {} to video window {} (index {})", 
+                         userId, (void*)videoWindow, windowIndex);
             }
         }
     }
 
-    // 将音频订阅用户列表传给RTE管理器
+    // 更新音频订阅
     if (!audioSubscribedUserIds.empty()) {
         LOG_INFO_FMT("Subscribing to {} users for audio: {}", audioSubscribedUserIds.size(), 
                  [&]() -> std::string {
@@ -928,7 +948,7 @@ void CChannelPageDlg::UpdateSubscribedUsers()
         m_rteManager->SetAudioSubscribedUsers(std::vector<std::string>());
     }
 
-    // 将视频订阅用户列表传给RTE管理器
+    // 更新视频订阅
     if (!videoSubscribedUserIds.empty()) {
         LOG_INFO_FMT("Subscribing to {} users for video: {}", videoSubscribedUserIds.size(), 
                  [&]() -> std::string {
@@ -945,43 +965,11 @@ void CChannelPageDlg::UpdateSubscribedUsers()
         LOG_INFO("No users to subscribe to for video");
         m_rteManager->SetVideoSubscribedUsers(std::vector<std::string>());
     }
-}
 
-void CChannelPageDlg::UpdateViewUserBindings()
-{
-    if (!m_rteManager) return;
-
-    std::map<void*, std::string> viewToUserMap;
-    int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
-
-    LOG_INFO_FMT("Updating view-user bindings for page {} (users {} to {})", 
-             m_pageState.currentPage, startUserIndex, startUserIndex + m_videoWindows.GetSize() - 1);
-
-    for (int i = 0; i < m_videoWindows.GetSize(); i++) {
-        int userIndex = startUserIndex + i;
-        HWND videoWindow = m_videoWindows[i]->GetSafeHwnd();
-        
-        if (userIndex < m_pageState.userList.GetSize()) {
-            ChannelUser* user = m_pageState.userList[userIndex];
-            if (user && user->isConnected) {
-                // 绑定已连接的用户到视频窗口
-                viewToUserMap[videoWindow] = user->GetUserId();
-                LOG_INFO_FMT("Binding user {} to video window {} (index {})", 
-                         user->GetUserId(), (void*)videoWindow, i);
-            } else if (user) {
-                LOG_INFO_FMT("User {} is not connected, skipping binding for window {}", 
-                         user->GetUserId(), (void*)videoWindow);
-            } else {
-                LOG_INFO_FMT("No user at index {}, skipping binding for window {}", 
-                         userIndex, (void*)videoWindow);
-            }
-        } else {
-            LOG_INFO_FMT("No user at index {} (beyond list size), skipping binding for window {}", 
-                     userIndex, (void*)videoWindow);
-        }
-    }
-
+    // 更新视图绑定
     LOG_INFO_FMT("Setting {} view-user bindings", viewToUserMap.size());
     m_rteManager->SetViewUserBindings(viewToUserMap);
 }
+
+
 
