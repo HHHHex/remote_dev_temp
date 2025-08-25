@@ -115,13 +115,6 @@ BOOL CChannelPageDlg::OnInitDialog()
         return FALSE;
     }
     
-    // Create local user data
-    ChannelUser* localUser = new ChannelUser();
-    localUser->isLocal = true;
-    localUser->isConnected = true;
-    localUser->userId = m_pageState.currentUserId;
-    m_pageState.userList.InsertAt(0, localUser);
-    
     if (!JoinRteChannel()) {
         LOG_ERROR("Failed to join RTE channel");
         return FALSE;
@@ -532,15 +525,30 @@ void CChannelPageDlg::InitializeControls()
 
 void CChannelPageDlg::InitializeUserList()
 {
-    LOG_INFO("Initializing user list with placeholder users");
+    LOG_INFO("Initializing user list with local user and placeholder users");
     
-    // 根据当前网格模式计算需要的用户数量
+    // 1. 创建本地用户（放在第一个位置）
+    ChannelUser* localUser = new ChannelUser();
+    localUser->userId = m_pageState.currentUserId;
+    localUser->isLocal = true;
+    localUser->isConnected = true;  // 本地用户默认已连接
+    localUser->isRobot = false;
+    localUser->isVideoSubscribed = m_pageState.isLocalVideoEnabled;
+    localUser->isAudioSubscribed = m_pageState.isLocalAudioEnabled;
+    m_pageState.userList.Add(localUser);
+    
+    LOG_INFO_FMT("Created local user: {} (video: {}, audio: {})", 
+                 m_pageState.currentUserId, 
+                 m_pageState.isLocalVideoEnabled, 
+                 m_pageState.isLocalAudioEnabled);
+    
+    // 2. 根据当前网格模式计算需要的用户数量
     int maxUsers = m_pageState.currentGridMode * m_pageState.currentGridMode;
     maxUsers = std::max(maxUsers, 32); // 至少32个用户，确保有足够的占位符
     
     LOG_INFO_FMT("Creating {} placeholder users for grid mode {}", maxUsers - 1, m_pageState.currentGridMode);
     
-    // 创建占位符用户
+    // 3. 创建占位符用户（从第二个位置开始）
     for (int i = 1; i < maxUsers; i++) {
         ChannelUser* placeholderUser = new ChannelUser();
         placeholderUser->userId = "-1";
@@ -552,7 +560,8 @@ void CChannelPageDlg::InitializeUserList()
         m_pageState.userList.Add(placeholderUser);
     }
     
-    LOG_INFO_FMT("User list initialized with {} placeholder users", m_pageState.userList.GetSize());
+    LOG_INFO_FMT("User list initialized with 1 local user and {} placeholder users (total: {})", 
+                 maxUsers - 1, m_pageState.userList.GetSize());
 }
 
 
