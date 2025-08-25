@@ -856,22 +856,21 @@ void RteManager::SubscribeUserVideo(const std::string& userId) {
                             rte::View viewPtr = reinterpret_cast<rte::View>(view);
                             rte::Error canvasErr;
                             canvas.AddView(&viewPtr, &viewConfig, &canvasErr);
-                                
-                                if (canvasErr.Code() == kRteOk) {
-                                    videoTrack.SetCanvas(&canvas, 
-                                        rte::VideoPipelinePosition::kRteVideoPipelinePositionRemotePreRenderer,
-                                        [this, userId](rte::Error* canvasErr) {
-                                            if (canvasErr && canvasErr->Code() == kRteOk) {
-                                                LOG_INFO_FMT("Video canvas set successfully for user: {}", userId);
-                                            } else {
-                                                LOG_ERROR_FMT("Failed to set video canvas for user: {}, error={}", 
-                                                             userId, canvasErr ? canvasErr->Code() : -1);
-                                            }
-                                        });
-                                } else {
-                                    LOG_ERROR_FMT("Failed to add view to canvas for user: {}, error={}", 
-                                                 userId, canvasErr.Code());
-                                }
+                            
+                            if (canvasErr.Code() == kRteOk) {
+                                videoTrack.SetCanvas(&canvas, 
+                                    rte::VideoPipelinePosition::kRteVideoPipelinePositionRemotePreRenderer,
+                                    [this, userId](rte::Error* canvasErr) {
+                                        if (canvasErr && canvasErr->Code() == kRteOk) {
+                                            LOG_INFO_FMT("Video canvas set successfully for user: {}", userId);
+                                        } else {
+                                            LOG_ERROR_FMT("Failed to set video canvas for user: {}, error={}", 
+                                                         userId, canvasErr ? canvasErr->Code() : -1);
+                                        }
+                                    });
+                            } else {
+                                LOG_ERROR_FMT("Failed to add view to canvas for user: {}, error={}", 
+                                             userId, canvasErr.Code());
                             }
                         }
                     } else {
