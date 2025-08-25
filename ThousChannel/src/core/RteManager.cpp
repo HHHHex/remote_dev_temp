@@ -583,6 +583,11 @@ void RteManager::OnRemoteUserLeft(const std::string& userId) {
 void RteManager::SetAudioSubscribedUsers(const std::vector<std::string>& userIds) {
     LOG_INFO_FMT("SetAudioSubscribedUsers called with {} users", userIds.size());
     
+    if (!m_channel) {
+        LOG_ERROR("SetAudioSubscribedUsers failed: channel not initialized");
+        return;
+    }
+    
     std::lock_guard<std::mutex> lock(m_mutex);
     
     // 找出需要退订的用户（在旧列表中但不在新列表中）
@@ -604,15 +609,13 @@ void RteManager::SetAudioSubscribedUsers(const std::vector<std::string>& userIds
     // 执行退订操作
     for (const auto& userId : usersToUnsubscribe) {
         LOG_INFO_FMT("Unsubscribing from audio of user: {}", userId);
-        // TODO: 实现实际的音频退订逻辑
-        // m_channel->UnsubscribeAudio(userId);
+        UnsubscribeUserAudio(userId);
     }
     
     // 执行订阅操作
     for (const auto& userId : usersToSubscribe) {
         LOG_INFO_FMT("Subscribing to audio from user: {}", userId);
-        // TODO: 实现实际的音频订阅逻辑
-        // m_channel->SubscribeAudio(userId);
+        SubscribeUserAudio(userId);
     }
     
     // 更新本地记录
@@ -624,6 +627,11 @@ void RteManager::SetAudioSubscribedUsers(const std::vector<std::string>& userIds
 
 void RteManager::SetVideoSubscribedUsers(const std::vector<std::string>& userIds) {
     LOG_INFO_FMT("SetVideoSubscribedUsers called with {} users", userIds.size());
+    
+    if (!m_channel) {
+        LOG_ERROR("SetVideoSubscribedUsers failed: channel not initialized");
+        return;
+    }
     
     std::lock_guard<std::mutex> lock(m_mutex);
     
@@ -646,15 +654,13 @@ void RteManager::SetVideoSubscribedUsers(const std::vector<std::string>& userIds
     // 执行退订操作
     for (const auto& userId : usersToUnsubscribe) {
         LOG_INFO_FMT("Unsubscribing from video of user: {}", userId);
-        // TODO: 实现实际的视频退订逻辑
-        // m_channel->UnsubscribeVideo(userId);
+        UnsubscribeUserVideo(userId);
     }
     
     // 执行订阅操作
     for (const auto& userId : usersToSubscribe) {
         LOG_INFO_FMT("Subscribing to video from user: {}", userId);
-        // TODO: 实现实际的视频订阅逻辑
-        // m_channel->SubscribeVideo(userId);
+        SubscribeUserVideo(userId);
     }
     
     // 更新本地记录
@@ -662,4 +668,269 @@ void RteManager::SetVideoSubscribedUsers(const std::vector<std::string>& userIds
     
     LOG_INFO_FMT("Video subscription updated: {} unsubscribed, {} subscribed, {} total", 
                  usersToUnsubscribe.size(), usersToSubscribe.size(), userIds.size());
+}
+
+//===========================================================================
+// 音频订阅和退订实现
+//===========================================================================
+
+void RteManager::SubscribeUserAudio(const std::string& userId) {
+    LOG_INFO_FMT("SubscribeUserAudio: userId={}", userId);
+    
+    if (!m_channel) {
+        LOG_ERROR("SubscribeUserAudio failed: channel not initialized");
+        return;
+    }
+    
+    rte::Error err;
+    
+    // 获取远程流列表
+    size_t remoteStreamsCount = m_channel->GetRemoteStreamsCount(&err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("SubscribeUserAudio failed: GetRemoteStreamsCount error={}", err.Code());
+        return;
+    }
+    
+    std::vector<rte::RemoteStream> remoteStreams;
+    m_channel->GetRemoteStreams(remoteStreams, 0, remoteStreamsCount, &err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("SubscribeUserAudio failed: GetRemoteStreams error={}", err.Code());
+        return;
+    }
+    
+    // 查找对应用户的流
+    for (auto& remoteStream : remoteStreams) {
+        rte::RemoteStreamInfo remoteStreamInfo;
+        remoteStream.GetInfo(&remoteStreamInfo, &err);
+        if (err.Code() != kRteOk) {
+            LOG_ERROR_FMT("SubscribeUserAudio failed: GetInfo error={}", err.Code());
+            continue;
+        }
+        
+        std::string streamUserId = remoteStreamInfo.GetUserId();
+        if (streamUserId == userId && remoteStreamInfo.HasAudio()) {
+            // 订阅音频轨道
+            rte::SubscribeOptions subscribeOption;
+            subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeAudio);
+            
+            std::string streamId = remoteStreamInfo.GetStreamId();
+            m_channel->SubscribeTrack(streamId, &subscribeOption, 
+                [this, userId](rte::Track* track, rte::Error* err) {
+                    if (err && err->Code() == kRteOk) {
+                        LOG_INFO_FMT("Successfully subscribed to audio from user: {}", userId);
+                    } else {
+                        LOG_ERROR_FMT("Failed to subscribe to audio from user: {}, error={}", 
+                                     userId, err ? err->Code() : -1);
+                    }
+                });
+            
+            LOG_INFO_FMT("Audio subscription request sent for user: {}", userId);
+            return;
+        }
+    }
+    
+    LOG_WARN_FMT("No audio stream found for user: {}", userId);
+}
+
+void RteManager::UnsubscribeUserAudio(const std::string& userId) {
+    LOG_INFO_FMT("UnsubscribeUserAudio: userId={}", userId);
+    
+    if (!m_channel) {
+        LOG_ERROR("UnsubscribeUserAudio failed: channel not initialized");
+        return;
+    }
+    
+    rte::Error err;
+    
+    // 获取远程流列表
+    size_t remoteStreamsCount = m_channel->GetRemoteStreamsCount(&err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("UnsubscribeUserAudio failed: GetRemoteStreamsCount error={}", err.Code());
+        return;
+    }
+    
+    std::vector<rte::RemoteStream> remoteStreams;
+    m_channel->GetRemoteStreams(remoteStreams, 0, remoteStreamsCount, &err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("UnsubscribeUserAudio failed: GetRemoteStreams error={}", err.Code());
+        return;
+    }
+    
+    // 查找对应用户的流
+    for (auto& remoteStream : remoteStreams) {
+        rte::RemoteStreamInfo remoteStreamInfo;
+        remoteStream.GetInfo(&remoteStreamInfo, &err);
+        if (err.Code() != kRteOk) {
+            LOG_ERROR_FMT("UnsubscribeUserAudio failed: GetInfo error={}", err.Code());
+            continue;
+        }
+        
+        std::string streamUserId = remoteStreamInfo.GetUserId();
+        if (streamUserId == userId && remoteStreamInfo.HasAudio()) {
+            // 退订音频轨道
+            rte::SubscribeOptions subscribeOption;
+            subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeAudio);
+            
+            std::string streamId = remoteStreamInfo.GetStreamId();
+            m_channel->UnsubscribeTrack(streamId, &subscribeOption, 
+                [this, userId](rte::Error* err) {
+                    if (err && err->Code() == kRteOk) {
+                        LOG_INFO_FMT("Successfully unsubscribed from audio of user: {}", userId);
+                    } else {
+                        LOG_ERROR_FMT("Failed to unsubscribe from audio of user: {}, error={}", 
+                                     userId, err ? err->Code() : -1);
+                    }
+                });
+            
+            LOG_INFO_FMT("Audio unsubscription request sent for user: {}", userId);
+            return;
+        }
+    }
+    
+    LOG_WARN_FMT("No audio stream found for user: {}", userId);
+}
+
+//===========================================================================
+// 视频订阅和退订实现
+//===========================================================================
+
+void RteManager::SubscribeUserVideo(const std::string& userId) {
+    LOG_INFO_FMT("SubscribeUserVideo: userId={}", userId);
+    
+    if (!m_channel) {
+        LOG_ERROR("SubscribeUserVideo failed: channel not initialized");
+        return;
+    }
+    
+    rte::Error err;
+    
+    // 获取远程流列表
+    size_t remoteStreamsCount = m_channel->GetRemoteStreamsCount(&err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("SubscribeUserVideo failed: GetRemoteStreamsCount error={}", err.Code());
+        return;
+    }
+    
+    std::vector<rte::RemoteStream> remoteStreams;
+    m_channel->GetRemoteStreams(remoteStreams, 0, remoteStreamsCount, &err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("SubscribeUserVideo failed: GetRemoteStreams error={}", err.Code());
+        return;
+    }
+    
+    // 查找对应用户的流
+    for (auto& remoteStream : remoteStreams) {
+        rte::RemoteStreamInfo remoteStreamInfo;
+        remoteStream.GetInfo(&remoteStreamInfo, &err);
+        if (err.Code() != kRteOk) {
+            LOG_ERROR_FMT("SubscribeUserVideo failed: GetInfo error={}", err.Code());
+            continue;
+        }
+        
+        std::string streamUserId = remoteStreamInfo.GetUserId();
+        if (streamUserId == userId && remoteStreamInfo.HasVideo()) {
+            // 订阅视频轨道
+            rte::SubscribeOptions subscribeOption;
+            subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeVideo);
+            
+            std::string streamId = remoteStreamInfo.GetStreamId();
+            m_channel->SubscribeTrack(streamId, &subscribeOption, 
+                [this, userId](rte::Track* track, rte::Error* err) {
+                    if (err && err->Code() == kRteOk) {
+                        LOG_INFO_FMT("Successfully subscribed to video from user: {}", userId);
+                        
+                        // 如果有对应的视图绑定，设置视频渲染
+                        auto it = m_viewToUserMap.find(userId);
+                        if (it != m_viewToUserMap.end()) {
+                            void* view = it->second;
+                            if (view) {
+                                rte::VideoTrack videoTrack(track->get_underlying_impl()->handle);
+                                rte::Canvas canvas(m_rte.get());
+                                rte::ViewConfig viewConfig;
+                                canvas.AddView(&view, &viewConfig, &err);
+                                
+                                if (err.Code() == kRteOk) {
+                                    videoTrack.SetCanvas(&canvas, 
+                                        rte::VideoPipelinePosition::kRteVideoPipelinePositionRemotePreRenderer,
+                                        [this, userId](rte::Error* err) {
+                                            if (err && err->Code() == kRteOk) {
+                                                LOG_INFO_FMT("Video canvas set successfully for user: {}", userId);
+                                            } else {
+                                                LOG_ERROR_FMT("Failed to set video canvas for user: {}, error={}", 
+                                                             userId, err ? err->Code() : -1);
+                                            }
+                                        });
+                                }
+                            }
+                        }
+                    } else {
+                        LOG_ERROR_FMT("Failed to subscribe to video from user: {}, error={}", 
+                                     userId, err ? err->Code() : -1);
+                    }
+                });
+            
+            LOG_INFO_FMT("Video subscription request sent for user: {}", userId);
+            return;
+        }
+    }
+    
+    LOG_WARN_FMT("No video stream found for user: {}", userId);
+}
+
+void RteManager::UnsubscribeUserVideo(const std::string& userId) {
+    LOG_INFO_FMT("UnsubscribeUserVideo: userId={}", userId);
+    
+    if (!m_channel) {
+        LOG_ERROR("UnsubscribeUserVideo failed: channel not initialized");
+        return;
+    }
+    
+    rte::Error err;
+    
+    // 获取远程流列表
+    size_t remoteStreamsCount = m_channel->GetRemoteStreamsCount(&err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("UnsubscribeUserVideo failed: GetRemoteStreamsCount error={}", err.Code());
+        return;
+    }
+    
+    std::vector<rte::RemoteStream> remoteStreams;
+    m_channel->GetRemoteStreams(remoteStreams, 0, remoteStreamsCount, &err);
+    if (err.Code() != kRteOk) {
+        LOG_ERROR_FMT("UnsubscribeUserVideo failed: GetRemoteStreams error={}", err.Code());
+        return;
+    }
+    
+    // 查找对应用户的流
+    for (auto& remoteStream : remoteStreams) {
+        rte::RemoteStreamInfo remoteStreamInfo;
+        remoteStream.GetInfo(&remoteStreamInfo, &err);
+        if (err.Code() != kRteOk) {
+            LOG_ERROR_FMT("UnsubscribeUserVideo failed: GetInfo error={}", err.Code());
+            continue;
+        }
+        
+        std::string streamUserId = remoteStreamInfo.GetUserId();
+        if (streamUserId == userId && remoteStreamInfo.HasVideo()) {
+            // 退订视频轨道
+            rte::SubscribeOptions subscribeOption;
+            subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeVideo);
+            
+            std::string streamId = remoteStreamInfo.GetStreamId();
+            m_channel->UnsubscribeTrack(streamId, &subscribeOption, 
+                [this, userId](rte::Error* err) {
+                    if (err && err->Code() == kRteOk) {
+                        LOG_INFO_FMT("Successfully unsubscribed from video of user: {}", userId);
+                    } else {
+                        LOG_ERROR_FMT("Failed to unsubscribe from video of user: {}, error={}", 
+                                     userId, err ? err->Code() : -1);
+                    }
+                });
+            
+            LOG_INFO_FMT("Video unsubscription request sent for user: {}", userId);
+            return;
+        }
+    }
+    
+    LOG_WARN_FMT("No video stream found for user: {}", userId);
 }

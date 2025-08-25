@@ -149,6 +149,34 @@ private:
      */
     int SetupRemoteVideo(const std::string& userId, void* view);
 
+    /**
+     * 订阅指定用户的音频流
+     * 调用时机：需要接收特定用户的音频时
+     * @param userId 要订阅音频的用户ID
+     */
+    void SubscribeUserAudio(const std::string& userId);
+    
+    /**
+     * 退订指定用户的音频流
+     * 调用时机：需要停止接收特定用户的音频时
+     * @param userId 要退订音频的用户ID
+     */
+    void UnsubscribeUserAudio(const std::string& userId);
+    
+    /**
+     * 订阅指定用户的视频流
+     * 调用时机：需要接收特定用户的视频时
+     * @param userId 要订阅视频的用户ID
+     */
+    void SubscribeUserVideo(const std::string& userId);
+    
+    /**
+     * 退订指定用户的视频流
+     * 调用时机：需要停止接收特定用户的视频时
+     * @param userId 要退订视频的用户ID
+     */
+    void UnsubscribeUserVideo(const std::string& userId);
+
 private:
     // RTE SDK核心组件
     std::shared_ptr<rte::Rte> m_rte;                           // RTE引擎实例
