@@ -881,7 +881,8 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     if (!m_rteManager) return;
 
     // 获取当前页面显示的用户列表
-    std::vector<std::string> subscribedUserIds;
+    std::vector<std::string> audioSubscribedUserIds;
+    std::vector<std::string> videoSubscribedUserIds;
     int startUserIndex = (m_pageState.currentPage - 1) * m_pageState.usersPerPage;
     int endUserIndex = startUserIndex + m_pageState.usersPerPage;
 
@@ -891,9 +892,17 @@ void CChannelPageDlg::UpdateSubscribedUsers()
     for (int i = startUserIndex; i < endUserIndex && i < m_pageState.userList.GetSize(); i++) {
         ChannelUser* user = m_pageState.userList[i];
         if (user && !user->isLocal && user->isConnected) {
+            // 检查音频订阅状态
+            if (user->isAudioSubscribed) {
+                audioSubscribedUserIds.push_back(user->GetUserId());
+                LOG_INFO_FMT("Adding user {} to audio subscription list", user->GetUserId());
+            } else {
+                LOG_INFO_FMT("User {} audio subscription is disabled", user->GetUserId());
+            }
+            
             // 检查视频订阅状态
             if (user->isVideoSubscribed) {
-                subscribedUserIds.push_back(user->GetUserId());
+                videoSubscribedUserIds.push_back(user->GetUserId());
                 LOG_INFO_FMT("Adding user {} to video subscription list", user->GetUserId());
             } else {
                 LOG_INFO_FMT("User {} video subscription is disabled", user->GetUserId());
@@ -901,22 +910,40 @@ void CChannelPageDlg::UpdateSubscribedUsers()
         }
     }
 
-    // 将订阅用户列表传给RTE管理器
-    if (!subscribedUserIds.empty()) {
-        LOG_INFO_FMT("Subscribing to {} users: {}", subscribedUserIds.size(), 
+    // 将音频订阅用户列表传给RTE管理器
+    if (!audioSubscribedUserIds.empty()) {
+        LOG_INFO_FMT("Subscribing to {} users for audio: {}", audioSubscribedUserIds.size(), 
                  [&]() -> std::string {
                      std::string result;
-                     for (const auto& id : subscribedUserIds) {
+                     for (const auto& id : audioSubscribedUserIds) {
                          if (!result.empty()) result += ", ";
                          result += id;
                      }
                      return result;
                  }());
         
-        m_rteManager->SetSubscribedUsers(subscribedUserIds);
+        m_rteManager->SetAudioSubscribedUsers(audioSubscribedUserIds);
     } else {
-        LOG_INFO("No users to subscribe to");
-        m_rteManager->SetSubscribedUsers(std::vector<std::string>());
+        LOG_INFO("No users to subscribe to for audio");
+        m_rteManager->SetAudioSubscribedUsers(std::vector<std::string>());
+    }
+
+    // 将视频订阅用户列表传给RTE管理器
+    if (!videoSubscribedUserIds.empty()) {
+        LOG_INFO_FMT("Subscribing to {} users for video: {}", videoSubscribedUserIds.size(), 
+                 [&]() -> std::string {
+                     std::string result;
+                     for (const auto& id : videoSubscribedUserIds) {
+                         if (!result.empty()) result += ", ";
+                         result += id;
+                     }
+                     return result;
+                 }());
+        
+        m_rteManager->SetVideoSubscribedUsers(videoSubscribedUserIds);
+    } else {
+        LOG_INFO("No users to subscribe to for video");
+        m_rteManager->SetVideoSubscribedUsers(std::vector<std::string>());
     }
 }
 

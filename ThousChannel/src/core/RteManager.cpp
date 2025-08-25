@@ -457,9 +457,9 @@ void RteManager::LeaveChannel() {
     // Clear remote user data
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_remoteUsers.clear();
-        m_remoteUserCanvases.clear();
         m_viewToUserMap.clear();
+        m_audioSubscribedUserIds.clear();
+        m_videoSubscribedUserIds.clear();
     }
 }
 
@@ -534,46 +534,11 @@ void RteManager::SetLocalVideoCaptureEnabled(bool enabled) {
 void RteManager::SetViewUserBindings(const std::map<void*, std::string>& viewToUserMap) {
     LOG_INFO("SetViewUserBindings called.");
     std::lock_guard<std::mutex> lock(m_mutex);
-    
-    // Clear existing canvases for views that are no longer bound
-    for (const auto& pair : m_viewToUserMap) {
-        void* view = pair.first;
-        const std::string& userId = pair.second;
-        if (viewToUserMap.find(view) == viewToUserMap.end() || viewToUserMap.at(view) != userId) {
-            LOG_INFO_FMT("Unbinding view for user: {}", userId);
-            if (m_remoteUserCanvases.count(userId)) {
-                m_remoteUserCanvases.erase(userId);
-            }
-        }
-    }
-    
-    // Create new canvases for new view bindings
-    for (const auto& pair : viewToUserMap) {
-        void* view = pair.first;
-        const std::string& userId = pair.second;
-        if (m_viewToUserMap.find(view) == m_viewToUserMap.end() || m_viewToUserMap.at(view) != userId) {
-            LOG_INFO_FMT("Binding view for user: {}", userId);
-            if (m_rte) {
-                auto canvas = std::make_shared<rte::Canvas>(m_rte.get());
-                rte::Error err;
-                rte::View rteView = reinterpret_cast<rte::View>(view);
-                rte::ViewConfig viewConfig;
-                canvas->AddView(&rteView, &viewConfig, &err);
-                if (err.Code() == kRteOk) {
-                    m_remoteUserCanvases[userId] = canvas;
-                } else {
-                    LOG_ERROR_FMT("Failed to create canvas for user {}: error={}", userId, err.Code());
-                }
-            }
-        }
-    }
-    
     m_viewToUserMap = viewToUserMap;
 }
 
 int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
     LOG_INFO_FMT("SetupRemoteVideo for user: {}", userId);
-    std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_rte) {
         LOG_ERROR("SetupRemoteVideo failed: RTE not initialized");
@@ -581,11 +546,7 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
     }
     
     if (!view) {
-        // Remove canvas for user
-        if (m_remoteUserCanvases.count(userId)) {
-            m_remoteUserCanvases.erase(userId);
-            LOG_INFO_FMT("Removed canvas for user: {}", userId);
-        }
+        LOG_INFO_FMT("Removed canvas for user: {}", userId);
         return 0;
     }
     
@@ -602,7 +563,6 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
         canvas->SetConfigs(&canvasConfig, &err);
         
         if (err.Code() == kRteOk) {
-            m_remoteUserCanvases[userId] = canvas;
             LOG_INFO_FMT("Created canvas for user: {}", userId);
             return 0;
         }
@@ -613,32 +573,93 @@ int RteManager::SetupRemoteVideo(const std::string& userId, void* view) {
 }
 
 void RteManager::OnRemoteUserJoined(const std::string& userId) {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_remoteUsers.push_back(userId);
     LOG_INFO_FMT("Remote user joined: {}", userId);
 }
 
 void RteManager::OnRemoteUserLeft(const std::string& userId) {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    auto it = std::find(m_remoteUsers.begin(), m_remoteUsers.end(), userId);
-    if (it != m_remoteUsers.end()) {
-        m_remoteUsers.erase(it);
-    }
-    
-    // Clean up canvas for this user
-    if (m_remoteUserCanvases.count(userId)) {
-        m_remoteUserCanvases.erase(userId);
-    }
-    
     LOG_INFO_FMT("Remote user left: {}", userId);
 }
 
-void RteManager::SetSubscribedUsers(const std::vector<std::string>& userIds) {
-    LOG_INFO_FMT("SetSubscribedUsers called with {} users", userIds.size());
+void RteManager::SetAudioSubscribedUsers(const std::vector<std::string>& userIds) {
+    LOG_INFO_FMT("SetAudioSubscribedUsers called with {} users", userIds.size());
     
     std::lock_guard<std::mutex> lock(m_mutex);
-    // For now, just log the user IDs - implementation can be expanded later
-    for (const auto& userId : userIds) {
-        LOG_INFO_FMT("Subscribing to user: {}", userId);
+    
+    // 找出需要退订的用户（在旧列表中但不在新列表中）
+    std::vector<std::string> usersToUnsubscribe;
+    for (const auto& oldUserId : m_audioSubscribedUserIds) {
+        if (std::find(userIds.begin(), userIds.end(), oldUserId) == userIds.end()) {
+            usersToUnsubscribe.push_back(oldUserId);
+        }
     }
+    
+    // 找出需要订阅的用户（在新列表中但不在旧列表中）
+    std::vector<std::string> usersToSubscribe;
+    for (const auto& newUserId : userIds) {
+        if (std::find(m_audioSubscribedUserIds.begin(), m_audioSubscribedUserIds.end(), newUserId) == m_audioSubscribedUserIds.end()) {
+            usersToSubscribe.push_back(newUserId);
+        }
+    }
+    
+    // 执行退订操作
+    for (const auto& userId : usersToUnsubscribe) {
+        LOG_INFO_FMT("Unsubscribing from audio of user: {}", userId);
+        // TODO: 实现实际的音频退订逻辑
+        // m_channel->UnsubscribeAudio(userId);
+    }
+    
+    // 执行订阅操作
+    for (const auto& userId : usersToSubscribe) {
+        LOG_INFO_FMT("Subscribing to audio from user: {}", userId);
+        // TODO: 实现实际的音频订阅逻辑
+        // m_channel->SubscribeAudio(userId);
+    }
+    
+    // 更新本地记录
+    m_audioSubscribedUserIds = userIds;
+    
+    LOG_INFO_FMT("Audio subscription updated: {} unsubscribed, {} subscribed, {} total", 
+                 usersToUnsubscribe.size(), usersToSubscribe.size(), userIds.size());
+}
+
+void RteManager::SetVideoSubscribedUsers(const std::vector<std::string>& userIds) {
+    LOG_INFO_FMT("SetVideoSubscribedUsers called with {} users", userIds.size());
+    
+    std::lock_guard<std::mutex> lock(m_mutex);
+    
+    // 找出需要退订的用户（在旧列表中但不在新列表中）
+    std::vector<std::string> usersToUnsubscribe;
+    for (const auto& oldUserId : m_videoSubscribedUserIds) {
+        if (std::find(userIds.begin(), userIds.end(), oldUserId) == userIds.end()) {
+            usersToUnsubscribe.push_back(oldUserId);
+        }
+    }
+    
+    // 找出需要订阅的用户（在新列表中但不在旧列表中）
+    std::vector<std::string> usersToSubscribe;
+    for (const auto& newUserId : userIds) {
+        if (std::find(m_videoSubscribedUserIds.begin(), m_videoSubscribedUserIds.end(), newUserId) == m_videoSubscribedUserIds.end()) {
+            usersToSubscribe.push_back(newUserId);
+        }
+    }
+    
+    // 执行退订操作
+    for (const auto& userId : usersToUnsubscribe) {
+        LOG_INFO_FMT("Unsubscribing from video of user: {}", userId);
+        // TODO: 实现实际的视频退订逻辑
+        // m_channel->UnsubscribeVideo(userId);
+    }
+    
+    // 执行订阅操作
+    for (const auto& userId : usersToSubscribe) {
+        LOG_INFO_FMT("Subscribing to video from user: {}", userId);
+        // TODO: 实现实际的视频订阅逻辑
+        // m_channel->SubscribeVideo(userId);
+    }
+    
+    // 更新本地记录
+    m_videoSubscribedUserIds = userIds;
+    
+    LOG_INFO_FMT("Video subscription updated: {} unsubscribed, {} subscribed, {} total", 
+                 usersToUnsubscribe.size(), usersToSubscribe.size(), userIds.size());
 }
