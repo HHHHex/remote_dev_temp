@@ -58,17 +58,6 @@ CChannelPageDlg::CChannelPageDlg(const ChannelJoinParams& joinParams, CWnd* pPar
     m_pageState.usersPerPage = 4;
     m_rteManager = nullptr;
     m_isChannelJoined = false;
-
-    // Create placeholder users for grid display
-    int maxUsers = 32; // Assuming a max of 32 users for grid display
-    for (int i = 1; i < maxUsers; i++) {
-        ChannelUser* placeholderUser = new ChannelUser();
-        placeholderUser->userId = "-1";
-        placeholderUser->isLocal = false;
-        placeholderUser->isConnected = false;
-        placeholderUser->isRobot = false;
-        m_pageState.userList.Add(placeholderUser);
-    }
 }
 
 CChannelPageDlg::~CChannelPageDlg()
@@ -115,6 +104,9 @@ BOOL CChannelPageDlg::OnInitDialog()
     // SetupVideoContainer(); // This function was removed during refactoring.
     CreateVideoWindows();
     UpdateGridLayout();
+    
+    // 初始化用户列表 - 在UI初始化完成后进行
+    InitializeUserList();
 
     if (!InitializeRteEngine()) {
         LOG_ERROR("Failed to initialize RTE engine");
@@ -536,6 +528,31 @@ void CChannelPageDlg::InitializeControls()
     m_staticChannelId.SetWindowText(strChannelInfo);
     
     UpdatePageDisplay();
+}
+
+void CChannelPageDlg::InitializeUserList()
+{
+    LOG_INFO("Initializing user list with placeholder users");
+    
+    // 根据当前网格模式计算需要的用户数量
+    int maxUsers = m_pageState.currentGridMode * m_pageState.currentGridMode;
+    maxUsers = std::max(maxUsers, 32); // 至少32个用户，确保有足够的占位符
+    
+    LOG_INFO_FMT("Creating {} placeholder users for grid mode {}", maxUsers - 1, m_pageState.currentGridMode);
+    
+    // 创建占位符用户
+    for (int i = 1; i < maxUsers; i++) {
+        ChannelUser* placeholderUser = new ChannelUser();
+        placeholderUser->userId = "-1";
+        placeholderUser->isLocal = false;
+        placeholderUser->isConnected = false;
+        placeholderUser->isRobot = false;
+        placeholderUser->isVideoSubscribed = false;
+        placeholderUser->isAudioSubscribed = false;
+        m_pageState.userList.Add(placeholderUser);
+    }
+    
+    LOG_INFO_FMT("User list initialized with {} placeholder users", m_pageState.userList.GetSize());
 }
 
 

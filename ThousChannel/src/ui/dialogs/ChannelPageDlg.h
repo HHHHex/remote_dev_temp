@@ -124,6 +124,7 @@ private:
     // Initialization
     void InitializeControls();
     void InitializeFonts();
+    void InitializeUserList();
 
     // RTE Engine Management
     BOOL InitializeRteEngine();
