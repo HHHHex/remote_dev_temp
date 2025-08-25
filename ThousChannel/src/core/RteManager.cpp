@@ -707,13 +707,13 @@ void RteManager::SubscribeUserAudio(const std::string& userId) {
             continue;
         }
         
-        std::string streamUserId = remoteStreamInfo.GetUserId();
-        if (streamUserId == userId && remoteStreamInfo.HasAudio()) {
+        std::string streamId = remoteStreamInfo.GetStreamId();
+        // 注意：RTE SDK中RemoteStreamInfo没有GetUserId方法，需要通过其他方式获取用户ID
+        // 这里暂时使用streamId作为用户标识，实际应用中可能需要从其他地方获取用户ID映射
+        if (streamId == userId && remoteStreamInfo.GetHasAudio()) {
             // 订阅音频轨道
             rte::SubscribeOptions subscribeOption;
             subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeAudio);
-            
-            std::string streamId = remoteStreamInfo.GetStreamId();
             m_channel->SubscribeTrack(streamId, &subscribeOption, 
                 [this, userId](rte::Track* track, rte::Error* err) {
                     if (err && err->Code() == kRteOk) {
@@ -765,13 +765,13 @@ void RteManager::UnsubscribeUserAudio(const std::string& userId) {
             continue;
         }
         
-        std::string streamUserId = remoteStreamInfo.GetUserId();
-        if (streamUserId == userId && remoteStreamInfo.HasAudio()) {
+        std::string streamId = remoteStreamInfo.GetStreamId();
+        // 注意：RTE SDK中RemoteStreamInfo没有GetUserId方法，需要通过其他方式获取用户ID
+        // 这里暂时使用streamId作为用户标识，实际应用中可能需要从其他地方获取用户ID映射
+        if (streamId == userId && remoteStreamInfo.GetHasAudio()) {
             // 退订音频轨道
             rte::SubscribeOptions subscribeOption;
             subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeAudio);
-            
-            std::string streamId = remoteStreamInfo.GetStreamId();
             m_channel->UnsubscribeTrack(streamId, &subscribeOption, 
                 [this, userId](rte::Error* err) {
                     if (err && err->Code() == kRteOk) {
@@ -827,13 +827,13 @@ void RteManager::SubscribeUserVideo(const std::string& userId) {
             continue;
         }
         
-        std::string streamUserId = remoteStreamInfo.GetUserId();
-        if (streamUserId == userId && remoteStreamInfo.HasVideo()) {
+        std::string streamId = remoteStreamInfo.GetStreamId();
+        // 注意：RTE SDK中RemoteStreamInfo没有GetUserId方法，需要通过其他方式获取用户ID
+        // 这里暂时使用streamId作为用户标识，实际应用中可能需要从其他地方获取用户ID映射
+        if (streamId == userId && remoteStreamInfo.GetHasVideo()) {
             // 订阅视频轨道
             rte::SubscribeOptions subscribeOption;
             subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeVideo);
-            
-            std::string streamId = remoteStreamInfo.GetStreamId();
             m_channel->SubscribeTrack(streamId, &subscribeOption, 
                 [this, userId](rte::Track* track, rte::Error* err) {
                     if (err && err->Code() == kRteOk) {
@@ -847,7 +847,8 @@ void RteManager::SubscribeUserVideo(const std::string& userId) {
                                 rte::VideoTrack videoTrack(track->get_underlying_impl()->handle);
                                 rte::Canvas canvas(m_rte.get());
                                 rte::ViewConfig viewConfig;
-                                canvas.AddView(&view, &viewConfig, &err);
+                                rte::View viewPtr = reinterpret_cast<rte::View>(view);
+                                canvas.AddView(&viewPtr, &viewConfig, &err);
                                 
                                 if (err.Code() == kRteOk) {
                                     videoTrack.SetCanvas(&canvas, 
@@ -910,13 +911,13 @@ void RteManager::UnsubscribeUserVideo(const std::string& userId) {
             continue;
         }
         
-        std::string streamUserId = remoteStreamInfo.GetUserId();
-        if (streamUserId == userId && remoteStreamInfo.HasVideo()) {
+        std::string streamId = remoteStreamInfo.GetStreamId();
+        // 注意：RTE SDK中RemoteStreamInfo没有GetUserId方法，需要通过其他方式获取用户ID
+        // 这里暂时使用streamId作为用户标识，实际应用中可能需要从其他地方获取用户ID映射
+        if (streamId == userId && remoteStreamInfo.GetHasVideo()) {
             // 退订视频轨道
             rte::SubscribeOptions subscribeOption;
             subscribeOption.SetTrackMediaType(rte::TrackMediaType::kRteTrackMediaTypeVideo);
-            
-            std::string streamId = remoteStreamInfo.GetStreamId();
             m_channel->UnsubscribeTrack(streamId, &subscribeOption, 
                 [this, userId](rte::Error* err) {
                     if (err && err->Code() == kRteOk) {
