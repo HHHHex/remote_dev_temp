@@ -840,27 +840,37 @@ void RteManager::SubscribeUserVideo(const std::string& userId) {
                         LOG_INFO_FMT("Successfully subscribed to video from user: {}", userId);
                         
                         // 如果有对应的视图绑定，设置视频渲染
-                        auto it = m_viewToUserMap.find(userId);
-                        if (it != m_viewToUserMap.end()) {
-                            void* view = it->second;
-                            if (view) {
-                                rte::VideoTrack videoTrack(track->get_underlying_impl()->handle);
-                                rte::Canvas canvas(m_rte.get());
-                                rte::ViewConfig viewConfig;
-                                rte::View viewPtr = reinterpret_cast<rte::View>(view);
-                                canvas.AddView(&viewPtr, &viewConfig, &err);
+                        // 注意：m_viewToUserMap的键是void*，值是std::string，需要反向查找
+                        void* view = nullptr;
+                        for (const auto& pair : m_viewToUserMap) {
+                            if (pair.second == userId) {
+                                view = pair.first;
+                                break;
+                            }
+                        }
+                        
+                        if (view) {
+                            rte::VideoTrack videoTrack(track->get_underlying_impl()->handle);
+                            rte::Canvas canvas(m_rte.get());
+                            rte::ViewConfig viewConfig;
+                            rte::View viewPtr = reinterpret_cast<rte::View>(view);
+                            rte::Error canvasErr;
+                            canvas.AddView(&viewPtr, &viewConfig, &canvasErr);
                                 
-                                if (err.Code() == kRteOk) {
+                                if (canvasErr.Code() == kRteOk) {
                                     videoTrack.SetCanvas(&canvas, 
                                         rte::VideoPipelinePosition::kRteVideoPipelinePositionRemotePreRenderer,
-                                        [this, userId](rte::Error* err) {
-                                            if (err && err->Code() == kRteOk) {
+                                        [this, userId](rte::Error* canvasErr) {
+                                            if (canvasErr && canvasErr->Code() == kRteOk) {
                                                 LOG_INFO_FMT("Video canvas set successfully for user: {}", userId);
                                             } else {
                                                 LOG_ERROR_FMT("Failed to set video canvas for user: {}, error={}", 
-                                                             userId, err ? err->Code() : -1);
+                                                             userId, canvasErr ? canvasErr->Code() : -1);
                                             }
                                         });
+                                } else {
+                                    LOG_ERROR_FMT("Failed to add view to canvas for user: {}, error={}", 
+                                                 userId, canvasErr.Code());
                                 }
                             }
                         }
